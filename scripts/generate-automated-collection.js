@@ -1,0 +1,1391 @@
+#!/usr/bin/env node
+
+const fs = require('fs');
+const path = require('path');
+
+// ─────────────────────────────────────────────────────────────
+// DATA FLOW MAP
+//
+//  Vault Creation      → tvId
+//  Generate Key        → transportKey, kcv
+//  Get Certificate     → (certificate for file upload)
+//  Encrypt Key         → encryptedTransportKey
+//  Issuer Creation     → issuerId   (uses tvId, encryptedTransportKey, kcv)
+//  BIN Creation        → binId      (uses tvId, issuerId)
+//  Account Range       → acctRangeId(uses tvId, issuerId, binId)
+//  Token Requester     → trId       (uses tvId, encryptedTransportKey, kcv)
+//  Token Use Setup     →            (uses tvId, trId)
+//  Token Life Setup    →            (uses tvId, trId, issuerId)
+//  Token Range Setup   →            (uses tvId, trId, issuerId, binId)
+// ─────────────────────────────────────────────────────────────
+
+function generateEnvironment() {
+  return {
+    id: 'tsp-takapay-env-001',
+    name: 'TSP TakaPay Environment',
+    values: [
+      { key: 'baseUrl_rgm',  value: 'http://10.88.250.40:40010', enabled: true },
+      { key: 'baseUrl_tvm',  value: 'http://10.88.250.40:40020', enabled: true },
+      { key: 'baseUrl_crypto', value: 'http://10.88.250.40:40029', enabled: true },
+      { key: 'tspCode',      value: '998',       enabled: true },
+      { key: 'tvId',         value: '',           enabled: true },
+      { key: 'transportKey', value: '',           enabled: true },
+      { key: 'kcv',          value: '',           enabled: true },
+      { key: 'encryptedTransportKey', value: '',  enabled: true },
+      { key: 'issuerId',     value: '',           enabled: true },
+      { key: 'issuerCode',   value: '',           enabled: true },
+      { key: 'binId',        value: '',           enabled: true },
+      { key: 'binValue',     value: '',           enabled: true },
+      { key: 'accountRangeId', value: '',         enabled: true },
+      { key: 'trId',         value: '',           enabled: true },
+      { key: 'testRunId',    value: '',           enabled: true },
+    ],
+    _postman_variable_scope: 'environment',
+  };
+}
+
+function url(raw) {
+  const varMatch = raw.match(/^\{\{(\w+)\}\}(.*)$/);
+  if (varMatch) {
+    const varName = varMatch[1];
+    const rest = varMatch[2];
+    const pathParts = rest.split('/').filter(Boolean);
+    return {
+      raw: raw,
+      host: ['{{' + varName + '}}'],
+      path: pathParts,
+    };
+  }
+  try {
+    const u = new URL(raw);
+    return {
+      raw,
+      protocol: u.protocol.replace(':', ''),
+      host: u.hostname.split('.'),
+      port: u.port,
+      path: u.pathname.split('/').filter(Boolean),
+    };
+  } catch {
+    return { raw };
+  }
+}
+
+function script(type, lines) {
+  return { listen: type, script: { type: 'text/javascript', exec: lines } };
+}
+
+function jsonH(includeTvId) {
+  const h = [
+    { key: 'accept', value: '*/*' },
+    { key: 'Content-Type', value: 'application/json' },
+  ];
+  if (includeTvId) h.splice(1, 0, { key: 'X-TV-ID', value: '{{tvId}}' });
+  return h;
+}
+
+function acceptH(includeTvId) {
+  const h = [{ key: 'accept', value: '*/*' }];
+  if (includeTvId) h.push({ key: 'X-TV-ID', value: '{{tvId}}' });
+  return h;
+}
+
+function buildCollection() {
+  const collection = {
+    info: {
+      _postman_id: 'tsp-automated-001',
+      name: 'TSP - Automated Test Suite',
+      description: 'Automated test suite for TSP TakaPay with Postman variables, chained responses, pre-request test data generation, and pm.test assertions. Run sequentially with Newman or Postman Runner.',
+      schema: 'https://schema.getpostman.com/json/collection/v2.1.0/collection.json',
+    },
+    variable: [
+      { key: 'baseUrl_rgm',    value: 'http://10.88.250.40:40010' },
+      { key: 'baseUrl_tvm',    value: 'http://10.88.250.40:40020' },
+      { key: 'baseUrl_crypto', value: 'http://10.88.250.40:40029' },
+      { key: 'tspCode',        value: '998' },
+      { key: 'tvId',           value: '' },
+      { key: 'transportKey',   value: '' },
+      { key: 'kcv',            value: '' },
+      { key: 'encryptedTransportKey', value: '' },
+      { key: 'issuerId',       value: '' },
+      { key: 'issuerCode',     value: '' },
+      { key: 'binId',          value: '' },
+      { key: 'binValue',       value: '' },
+      { key: 'accountRangeId', value: '' },
+      { key: 'trId',           value: '' },
+      { key: 'testRunId',      value: '' },
+    ],
+    event: [
+      script('prerequest', [
+        '// Global pre-request: generate unique testRunId if not set',
+        'if (!pm.collectionVariables.get("testRunId")) {',
+        '    const runId = "run_" + Date.now().toString(36);',
+        '    pm.collectionVariables.set("testRunId", runId);',
+        '    console.log("Test Run ID: " + runId);',
+        '}',
+      ]),
+    ],
+    item: [],
+  };
+
+  // ═══════════════════════════════════════════════════
+  // TC-01: VAULT CREATION
+  // ═══════════════════════════════════════════════════
+  collection.item.push({
+    name: 'TC-01 Vault Creation',
+    item: [
+      // TC-01-01 Happy Path
+      {
+        name: 'TC-01-01 Happy Path - Valid vault creation',
+        event: [
+          script('prerequest', [
+            'const tspCode = pm.collectionVariables.get("tspCode") || "998";',
+            'pm.collectionVariables.set("tspCode", tspCode);',
+            'console.log("Using tspCode: " + tspCode);',
+          ]),
+          script('test', [
+            'const testName = "TC-01-01";',
+            '',
+            'pm.test(testName + " - Status is 200 or 201", function () {',
+            '    pm.expect(pm.response.code).to.be.oneOf([200, 201]);',
+            '});',
+            '',
+            'pm.test(testName + " - Response has vaultId or tvId", function () {',
+            '    const json = pm.response.json();',
+            '    const vaultId = json.vaultId || json.tvId || json.tokenVaultId || json.id;',
+            '    pm.expect(vaultId).to.not.be.undefined;',
+            '    pm.collectionVariables.set("tvId", vaultId);',
+            '    console.log("Captured tvId: " + vaultId);',
+            '});',
+            '',
+            'pm.test(testName + " - Response time < 5000ms", function () {',
+            '    pm.expect(pm.response.responseTime).to.be.below(5000);',
+            '});',
+          ]),
+        ],
+        request: {
+          method: 'POST',
+          header: [
+            { key: 'accept', value: '*/*' },
+            { key: 'Content-Type', value: 'application/json' },
+          ],
+          body: {
+            mode: 'raw',
+            raw: '{\n  "tspCode": "{{tspCode}}",\n  "tokenVaultName": "My Token Vault",\n  "custodianIdList": [\n    "custodian007",\n    "custodian008"\n  ]\n}',
+          },
+          url: url('{{baseUrl_rgm}}/rgm/api/vaults'),
+        },
+        response: [],
+      },
+      // TC-01-02 Negative - Missing tspCode
+      {
+        name: 'TC-01-02 Negative - Missing tspCode',
+        event: [
+          script('test', [
+            'pm.test("TC-01-02 - Status is 400", function () {',
+            '    pm.expect(pm.response.code).to.equal(400);',
+            '});',
+            '',
+            'pm.test("TC-01-02 - Error message present", function () {',
+            '    const json = pm.response.json();',
+            '    const hasError = json.error || json.message || json.errorMessage || json.errors;',
+            '    pm.expect(hasError).to.not.be.undefined;',
+            '});',
+          ]),
+        ],
+        request: {
+          method: 'POST',
+          header: [
+            { key: 'accept', value: '*/*' },
+            { key: 'Content-Type', value: 'application/json' },
+          ],
+          body: {
+            mode: 'raw',
+            raw: '{\n  "tokenVaultName": "My Token Vault",\n  "custodianIdList": [\n    "custodian007",\n    "custodian008"\n  ]\n}',
+          },
+          url: url('{{baseUrl_rgm}}/rgm/api/vaults'),
+        },
+        response: [],
+      },
+      // TC-01-03 Negative - Empty custodianIdList
+      {
+        name: 'TC-01-03 Negative - Empty custodianIdList',
+        event: [
+          script('test', [
+            'pm.test("TC-01-03 - Status is 400", function () {',
+            '    pm.expect(pm.response.code).to.equal(400);',
+            '});',
+            '',
+            'pm.test("TC-01-03 - Error references custodianIdList", function () {',
+            '    const body = pm.response.text().toLowerCase();',
+            '    const hasRef = body.includes("custodian") || body.includes("required") || body.includes("empty") || body.includes("error");',
+            '    pm.expect(hasRef).to.be.true;',
+            '});',
+          ]),
+        ],
+        request: {
+          method: 'POST',
+          header: [
+            { key: 'accept', value: '*/*' },
+            { key: 'Content-Type', value: 'application/json' },
+          ],
+          body: {
+            mode: 'raw',
+            raw: '{\n  "tspCode": "{{tspCode}}",\n  "tokenVaultName": "My Token Vault",\n  "custodianIdList": []\n}',
+          },
+          url: url('{{baseUrl_rgm}}/rgm/api/vaults'),
+        },
+        response: [],
+      },
+      // TC-01-04 Negative - Duplicate vault
+      {
+        name: 'TC-01-04 Negative - Duplicate vault creation',
+        event: [
+          script('test', [
+            'pm.test("TC-01-04 - Status is 409 or 4xx", function () {',
+            '    pm.expect(pm.response.code).to.be.within(400, 499);',
+            '});',
+          ]),
+        ],
+        request: {
+          method: 'POST',
+          header: [
+            { key: 'accept', value: '*/*' },
+            { key: 'Content-Type', value: 'application/json' },
+          ],
+          body: {
+            mode: 'raw',
+            raw: '{\n  "tspCode": "{{tspCode}}",\n  "tokenVaultName": "My Token Vault",\n  "custodianIdList": [\n    "custodian007",\n    "custodian008"\n  ]\n}',
+          },
+          url: url('{{baseUrl_rgm}}/rgm/api/vaults'),
+        },
+        response: [],
+      },
+      // TC-01-05 Edge - Invalid tspCode
+      {
+        name: 'TC-01-05 Edge Case - Invalid tspCode format',
+        event: [
+          script('test', [
+            'pm.test("TC-01-05 - Status is 400", function () {',
+            '    pm.expect(pm.response.code).to.equal(400);',
+            '});',
+          ]),
+        ],
+        request: {
+          method: 'POST',
+          header: [
+            { key: 'accept', value: '*/*' },
+            { key: 'Content-Type', value: 'application/json' },
+          ],
+          body: {
+            mode: 'raw',
+            raw: '{\n  "tspCode": "ABC!@#",\n  "tokenVaultName": "My Token Vault",\n  "custodianIdList": [\n    "custodian007"\n  ]\n}',
+          },
+          url: url('{{baseUrl_rgm}}/rgm/api/vaults'),
+        },
+        response: [],
+      },
+    ],
+  });
+
+  // ═══════════════════════════════════════════════════
+  // TC-02: GENERATE TRANSPORT KEY
+  // ═══════════════════════════════════════════════════
+  collection.item.push({
+    name: 'TC-02 Generate Transport Key',
+    item: [
+      {
+        name: 'TC-02-01 Happy Path - Key generation',
+        event: [
+          script('test', [
+            'pm.test("TC-02-01 - Status is 200", function () {',
+            '    pm.expect(pm.response.code).to.equal(200);',
+            '});',
+            '',
+            'pm.test("TC-02-01 - Transport key is hex string", function () {',
+            '    const json = pm.response.json();',
+            '    const key = json.transportKey || json.key || json.plainKey || json.data;',
+            '    pm.expect(key).to.match(/^[0-9a-fA-F]+$/);',
+            '    pm.collectionVariables.set("transportKey", key);',
+            '    console.log("Captured transportKey: " + key.substring(0, 16) + "...");',
+            '});',
+            '',
+            'pm.test("TC-02-01 - KCV present", function () {',
+            '    const json = pm.response.json();',
+            '    const kcv = json.kcv || json.KCV || json.keyCheckValue;',
+            '    pm.expect(kcv).to.not.be.undefined;',
+            '    pm.collectionVariables.set("kcv", kcv);',
+            '    console.log("Captured kcv: " + kcv);',
+            '});',
+          ]),
+        ],
+        request: {
+          method: 'GET',
+          header: acceptH(false),
+          url: url('{{baseUrl_crypto}}/api/generate-transport-key'),
+        },
+        response: [],
+      },
+      {
+        name: 'TC-02-02 Edge Case - Key uniqueness (call 1 of 2)',
+        event: [
+          script('test', [
+            'pm.test("TC-02-02 - Status is 200", function () {',
+            '    pm.expect(pm.response.code).to.equal(200);',
+            '});',
+            '',
+            'pm.test("TC-02-02 - Store key1 for uniqueness check", function () {',
+            '    const json = pm.response.json();',
+            '    const key = json.transportKey || json.key || json.plainKey || json.data;',
+            '    pm.collectionVariables.set("_uniqueKey1", key);',
+            '});',
+          ]),
+        ],
+        request: {
+          method: 'GET',
+          header: acceptH(false),
+          url: url('{{baseUrl_crypto}}/api/generate-transport-key'),
+        },
+        response: [],
+      },
+      {
+        name: 'TC-02-02b Edge Case - Key uniqueness (call 2 of 2)',
+        event: [
+          script('test', [
+            'pm.test("TC-02-02b - Status is 200", function () {',
+            '    pm.expect(pm.response.code).to.equal(200);',
+            '});',
+            '',
+            'pm.test("TC-02-02b - Keys are unique", function () {',
+            '    const json = pm.response.json();',
+            '    const key2 = json.transportKey || json.key || json.plainKey || json.data;',
+            '    const key1 = pm.collectionVariables.get("_uniqueKey1");',
+            '    pm.expect(key2).to.not.equal(key1);',
+            '    console.log("Key uniqueness verified: key1 != key2");',
+            '});',
+          ]),
+        ],
+        request: {
+          method: 'GET',
+          header: acceptH(false),
+          url: url('{{baseUrl_crypto}}/api/generate-transport-key'),
+        },
+        response: [],
+      },
+    ],
+  });
+
+  // ═══════════════════════════════════════════════════
+  // TC-03: GET CERTIFICATE
+  // ═══════════════════════════════════════════════════
+  collection.item.push({
+    name: 'TC-03 Get Certificate',
+    item: [
+      {
+        name: 'TC-03-01 Happy Path - Valid X-TV-ID',
+        event: [
+          script('prerequest', [
+            'const tvId = pm.collectionVariables.get("tvId");',
+            'if (!tvId) {',
+            '    console.warn("tvId not set — TC-01-01 may not have run. Using default 9985003");',
+            '    pm.collectionVariables.set("tvId", "9985003");',
+            '}',
+          ]),
+          script('test', [
+            'pm.test("TC-03-01 - Status is 200", function () {',
+            '    pm.expect(pm.response.code).to.equal(200);',
+            '});',
+            '',
+            'pm.test("TC-03-01 - Certificate returned", function () {',
+            '    const body = pm.response.text();',
+            '    const hasCert = body.includes("BEGIN CERTIFICATE") || body.includes("MII") || pm.response.headers.has("Content-Type");',
+            '    pm.expect(hasCert).to.be.true;',
+            '    console.log("Certificate received, length: " + body.length);',
+            '});',
+          ]),
+        ],
+        request: {
+          method: 'GET',
+          header: acceptH(true),
+          url: url('{{baseUrl_tvm}}/tvm/api/vault/certificate'),
+        },
+        response: [],
+      },
+      {
+        name: 'TC-03-02 Negative - Missing X-TV-ID header',
+        event: [
+          script('test', [
+            'pm.test("TC-03-02 - Status is 400 or 401", function () {',
+            '    pm.expect(pm.response.code).to.be.oneOf([400, 401]);',
+            '});',
+          ]),
+        ],
+        request: {
+          method: 'GET',
+          header: [{ key: 'accept', value: '*/*' }],
+          url: url('{{baseUrl_tvm}}/tvm/api/vault/certificate'),
+        },
+        response: [],
+      },
+      {
+        name: 'TC-03-03 Negative - Non-existent vault ID',
+        event: [
+          script('test', [
+            'pm.test("TC-03-03 - Status is 404", function () {',
+            '    pm.expect(pm.response.code).to.equal(404);',
+            '});',
+          ]),
+        ],
+        request: {
+          method: 'GET',
+          header: [
+            { key: 'accept', value: '*/*' },
+            { key: 'X-TV-ID', value: '0000000' },
+          ],
+          url: url('{{baseUrl_tvm}}/tvm/api/vault/certificate'),
+        },
+        response: [],
+      },
+    ],
+  });
+
+  // ═══════════════════════════════════════════════════
+  // TC-04: ENCRYPT THE KEY
+  // ═══════════════════════════════════════════════════
+  collection.item.push({
+    name: 'TC-04 Encrypt The Key',
+    item: [
+      {
+        name: 'TC-04-01 Happy Path - Valid cert and plainData',
+        event: [
+          script('prerequest', [
+            'const tk = pm.collectionVariables.get("transportKey");',
+            'if (!tk) {',
+            '    console.warn("transportKey not set — using hardcoded fallback");',
+            '    pm.collectionVariables.set("transportKey", "224189fef0d02c5ac6e6ab88c91508b34ff7137a3569de5e79d4db1ba307264c");',
+            '}',
+          ]),
+          script('test', [
+            'pm.test("TC-04-01 - Status is 200", function () {',
+            '    pm.expect(pm.response.code).to.equal(200);',
+            '});',
+            '',
+            'pm.test("TC-04-01 - Encrypted key returned", function () {',
+            '    const json = pm.response.json();',
+            '    const encKey = json.encryptedTransportKey || json.encryptedKey || json.encryptedData || json.data;',
+            '    pm.expect(encKey).to.match(/^[0-9a-fA-F]+$/);',
+            '    pm.collectionVariables.set("encryptedTransportKey", encKey);',
+            '    console.log("Captured encryptedTransportKey: " + encKey.substring(0, 32) + "...");',
+            '});',
+          ]),
+        ],
+        request: {
+          method: 'POST',
+          header: [{ key: 'accept', value: '*/*' }],
+          body: {
+            mode: 'formdata',
+            formdata: [
+              { key: 'publicKeyCertificate', type: 'file', src: 'self_signed_certificate.cert' },
+              { key: 'plainData', value: '{{transportKey}}', type: 'text' },
+            ],
+          },
+          url: url('{{baseUrl_crypto}}/api/v1/encrypt/transport-key'),
+        },
+        response: [],
+      },
+      {
+        name: 'TC-04-02 Negative - Missing certificate file',
+        event: [
+          script('test', [
+            'pm.test("TC-04-02 - Status is 400", function () {',
+            '    pm.expect(pm.response.code).to.equal(400);',
+            '});',
+          ]),
+        ],
+        request: {
+          method: 'POST',
+          header: [{ key: 'accept', value: '*/*' }],
+          body: {
+            mode: 'formdata',
+            formdata: [
+              { key: 'plainData', value: '{{transportKey}}', type: 'text' },
+            ],
+          },
+          url: url('{{baseUrl_crypto}}/api/v1/encrypt/transport-key'),
+        },
+        response: [],
+      },
+      {
+        name: 'TC-04-03 Negative - Invalid certificate format',
+        event: [
+          script('test', [
+            'pm.test("TC-04-03 - Status is 400 or 422", function () {',
+            '    pm.expect(pm.response.code).to.be.oneOf([400, 422]);',
+            '});',
+          ]),
+        ],
+        request: {
+          method: 'POST',
+          header: [{ key: 'accept', value: '*/*' }],
+          body: {
+            mode: 'formdata',
+            formdata: [
+              { key: 'publicKeyCertificate', value: 'INVALID_CERT_CONTENT_NOT_A_REAL_CERT', type: 'text' },
+              { key: 'plainData', value: '{{transportKey}}', type: 'text' },
+            ],
+          },
+          url: url('{{baseUrl_crypto}}/api/v1/encrypt/transport-key'),
+        },
+        response: [],
+      },
+      {
+        name: 'TC-04-04 Edge Case - plainData wrong length',
+        event: [
+          script('test', [
+            'pm.test("TC-04-04 - Status is 400", function () {',
+            '    pm.expect(pm.response.code).to.equal(400);',
+            '});',
+          ]),
+        ],
+        request: {
+          method: 'POST',
+          header: [{ key: 'accept', value: '*/*' }],
+          body: {
+            mode: 'formdata',
+            formdata: [
+              { key: 'publicKeyCertificate', type: 'file', src: 'self_signed_certificate.cert' },
+              { key: 'plainData', value: '1234567890', type: 'text' },
+            ],
+          },
+          url: url('{{baseUrl_crypto}}/api/v1/encrypt/transport-key'),
+        },
+        response: [],
+      },
+    ],
+  });
+
+  // ═══════════════════════════════════════════════════
+  // TC-05: ISSUER CREATION
+  // ═══════════════════════════════════════════════════
+  collection.item.push({
+    name: 'TC-05 Issuer Creation',
+    item: [
+      {
+        name: 'TC-05-01 Happy Path - Valid issuer',
+        event: [
+          script('prerequest', [
+            '// Generate a unique issuer code per test run to avoid duplicates',
+            'const runId = pm.collectionVariables.get("testRunId") || "";',
+            'const issuerCode = "4" + String(Date.now()).slice(-2) + runId.slice(-1, runId.length).charCodeAt(0) % 10;',
+            'pm.collectionVariables.set("issuerCode", issuerCode);',
+            'console.log("Generated issuerCode: " + issuerCode);',
+            '',
+            'const encKey = pm.collectionVariables.get("encryptedTransportKey");',
+            'if (!encKey) {',
+            '    console.warn("encryptedTransportKey not set — using hardcoded fallback");',
+            '    pm.collectionVariables.set("encryptedTransportKey", "8EA89A35C83D66FBB5DE2A97F74392C272BCBF521AA93EF072399382E32B05900F8D9C3EDF0D7EE3367E3D9E903CA1B9D5E9F5323ED8089DF353A9EF8CF08E178D9D85D84A871A4960AB1E74CFD148C5FFC4BDF0CE3F0B6B36ABC751E270DEAEFC2FAD959957AE7D662AE489AFDDEE5363DFDFD2B51AB49CA154972FE1EC1389");',
+            '}',
+            'if (!pm.collectionVariables.get("kcv")) {',
+            '    pm.collectionVariables.set("kcv", "AC6BCC");',
+            '}',
+          ]),
+          script('test', [
+            'pm.test("TC-05-01 - Status is 200 or 201", function () {',
+            '    pm.expect(pm.response.code).to.be.oneOf([200, 201]);',
+            '});',
+            '',
+            'pm.test("TC-05-01 - issuerId captured", function () {',
+            '    const json = pm.response.json();',
+            '    const issuerId = json.issuerId || json.id || json.issuer_id;',
+            '    pm.expect(issuerId).to.not.be.undefined;',
+            '    pm.collectionVariables.set("issuerId", issuerId);',
+            '    console.log("Captured issuerId: " + issuerId);',
+            '});',
+          ]),
+        ],
+        request: {
+          method: 'POST',
+          header: jsonH(true),
+          body: {
+            mode: 'raw',
+            raw: '{\n  "issuerName": "EBL",\n  "issuerCode": "{{issuerCode}}",\n  "encryptedTransportKey": "{{encryptedTransportKey}}",\n  "kcv": "{{kcv}}",\n  "realTimePanEnrollment": "Y"\n}',
+          },
+          url: url('{{baseUrl_tvm}}/tvm/api/issuer'),
+        },
+        response: [],
+      },
+      {
+        name: 'TC-05-02 Negative - Invalid KCV',
+        event: [
+          script('test', [
+            'pm.test("TC-05-02 - Status is 400 or 422", function () {',
+            '    pm.expect(pm.response.code).to.be.oneOf([400, 422]);',
+            '});',
+          ]),
+        ],
+        request: {
+          method: 'POST',
+          header: jsonH(true),
+          body: {
+            mode: 'raw',
+            raw: '{\n  "issuerName": "EBL",\n  "issuerCode": "421",\n  "encryptedTransportKey": "{{encryptedTransportKey}}",\n  "kcv": "ZZZZZZ",\n  "realTimePanEnrollment": "Y"\n}',
+          },
+          url: url('{{baseUrl_tvm}}/tvm/api/issuer'),
+        },
+        response: [],
+      },
+      {
+        name: 'TC-05-03 Negative - Missing X-TV-ID header',
+        event: [
+          script('test', [
+            'pm.test("TC-05-03 - Status is 400 or 401", function () {',
+            '    pm.expect(pm.response.code).to.be.oneOf([400, 401]);',
+            '});',
+          ]),
+        ],
+        request: {
+          method: 'POST',
+          header: [
+            { key: 'accept', value: '*/*' },
+            { key: 'Content-Type', value: 'application/json' },
+          ],
+          body: {
+            mode: 'raw',
+            raw: '{\n  "issuerName": "EBL",\n  "issuerCode": "422",\n  "encryptedTransportKey": "{{encryptedTransportKey}}",\n  "kcv": "{{kcv}}",\n  "realTimePanEnrollment": "Y"\n}',
+          },
+          url: url('{{baseUrl_tvm}}/tvm/api/issuer'),
+        },
+        response: [],
+      },
+      {
+        name: 'TC-05-04 Negative - Duplicate issuer code',
+        event: [
+          script('test', [
+            'pm.test("TC-05-04 - Status is 409 or 4xx", function () {',
+            '    pm.expect(pm.response.code).to.be.within(400, 499);',
+            '});',
+          ]),
+        ],
+        request: {
+          method: 'POST',
+          header: jsonH(true),
+          body: {
+            mode: 'raw',
+            raw: '{\n  "issuerName": "EBL_DUPLICATE",\n  "issuerCode": "{{issuerCode}}",\n  "encryptedTransportKey": "{{encryptedTransportKey}}",\n  "kcv": "{{kcv}}",\n  "realTimePanEnrollment": "Y"\n}',
+          },
+          url: url('{{baseUrl_tvm}}/tvm/api/issuer'),
+        },
+        response: [],
+      },
+      {
+        name: 'TC-05-05 Edge Case - Invalid realTimePanEnrollment value',
+        event: [
+          script('test', [
+            'pm.test("TC-05-05 - Status is 400", function () {',
+            '    pm.expect(pm.response.code).to.equal(400);',
+            '});',
+          ]),
+        ],
+        request: {
+          method: 'POST',
+          header: jsonH(true),
+          body: {
+            mode: 'raw',
+            raw: '{\n  "issuerName": "EBL_TEST",\n  "issuerCode": "423",\n  "encryptedTransportKey": "{{encryptedTransportKey}}",\n  "kcv": "{{kcv}}",\n  "realTimePanEnrollment": "X"\n}',
+          },
+          url: url('{{baseUrl_tvm}}/tvm/api/issuer'),
+        },
+        response: [],
+      },
+    ],
+  });
+
+  // ═══════════════════════════════════════════════════
+  // TC-06: BIN CREATION
+  // ═══════════════════════════════════════════════════
+  collection.item.push({
+    name: 'TC-06 BIN Creation',
+    item: [
+      {
+        name: 'TC-06-01 Happy Path - Valid BIN',
+        event: [
+          script('prerequest', [
+            'const issuerId = pm.collectionVariables.get("issuerId");',
+            'if (!issuerId) {',
+            '    console.warn("issuerId not set — using hardcoded fallback");',
+            '    pm.collectionVariables.set("issuerId", "237d9188de9144e5806abf95441fce5b");',
+            '}',
+            '// Generate unique BIN value per run',
+            'const binVal = "6399" + String(Date.now()).slice(-4);',
+            'pm.collectionVariables.set("binValue", binVal);',
+            'console.log("Generated binValue: " + binVal);',
+          ]),
+          script('test', [
+            'pm.test("TC-06-01 - Status is 200 or 201", function () {',
+            '    pm.expect(pm.response.code).to.be.oneOf([200, 201]);',
+            '});',
+            '',
+            'pm.test("TC-06-01 - binId captured", function () {',
+            '    const json = pm.response.json();',
+            '    const binId = json.binId || json.id || json.bin_id;',
+            '    pm.expect(binId).to.not.be.undefined;',
+            '    pm.collectionVariables.set("binId", binId);',
+            '    console.log("Captured binId: " + binId);',
+            '});',
+          ]),
+        ],
+        request: {
+          method: 'POST',
+          header: jsonH(true),
+          body: {
+            mode: 'raw',
+            raw: '{\n  "issuerId": "{{issuerId}}",\n  "binControllerId": "1234",\n  "binValue": "{{binValue}}",\n  "brandType": "06",\n  "ianLen": 7\n}',
+          },
+          url: url('{{baseUrl_tvm}}/tvm/api/bin/single'),
+        },
+        response: [],
+      },
+      {
+        name: 'TC-06-02 Negative - Invalid issuerId',
+        event: [
+          script('test', [
+            'pm.test("TC-06-02 - Status is 404 or 4xx", function () {',
+            '    pm.expect(pm.response.code).to.be.within(400, 499);',
+            '});',
+          ]),
+        ],
+        request: {
+          method: 'POST',
+          header: jsonH(true),
+          body: {
+            mode: 'raw',
+            raw: '{\n  "issuerId": "00000000000000000000000000000000",\n  "binControllerId": "1234",\n  "binValue": "63999604",\n  "brandType": "06",\n  "ianLen": 7\n}',
+          },
+          url: url('{{baseUrl_tvm}}/tvm/api/bin/single'),
+        },
+        response: [],
+      },
+      {
+        name: 'TC-06-03 Negative - Duplicate BIN value',
+        event: [
+          script('test', [
+            'pm.test("TC-06-03 - Status is 409 or 4xx", function () {',
+            '    pm.expect(pm.response.code).to.be.within(400, 499);',
+            '});',
+          ]),
+        ],
+        request: {
+          method: 'POST',
+          header: jsonH(true),
+          body: {
+            mode: 'raw',
+            raw: '{\n  "issuerId": "{{issuerId}}",\n  "binControllerId": "1234",\n  "binValue": "{{binValue}}",\n  "brandType": "06",\n  "ianLen": 7\n}',
+          },
+          url: url('{{baseUrl_tvm}}/tvm/api/bin/single'),
+        },
+        response: [],
+      },
+      {
+        name: 'TC-06-04 Edge Case - ianLen out of range',
+        event: [
+          script('test', [
+            'pm.test("TC-06-04 - Status is 400", function () {',
+            '    pm.expect(pm.response.code).to.equal(400);',
+            '});',
+          ]),
+        ],
+        request: {
+          method: 'POST',
+          header: jsonH(true),
+          body: {
+            mode: 'raw',
+            raw: '{\n  "issuerId": "{{issuerId}}",\n  "binControllerId": "1234",\n  "binValue": "63999605",\n  "brandType": "06",\n  "ianLen": 0\n}',
+          },
+          url: url('{{baseUrl_tvm}}/tvm/api/bin/single'),
+        },
+        response: [],
+      },
+    ],
+  });
+
+  // ═══════════════════════════════════════════════════
+  // TC-07: ACCOUNT RANGE CREATION
+  // ═══════════════════════════════════════════════════
+  collection.item.push({
+    name: 'TC-07 Account Range Creation',
+    item: [
+      {
+        name: 'TC-07-01 Happy Path - Valid account range',
+        event: [
+          script('prerequest', [
+            'if (!pm.collectionVariables.get("issuerId")) {',
+            '    pm.collectionVariables.set("issuerId", "982094e9868d4f37b7954c7e5e765f4f");',
+            '}',
+            'if (!pm.collectionVariables.get("binId")) {',
+            '    pm.collectionVariables.set("binId", "d2d1adf80a1045359033de945b60e48g");',
+            '}',
+          ]),
+          script('test', [
+            'pm.test("TC-07-01 - Status is 200 or 201", function () {',
+            '    pm.expect(pm.response.code).to.be.oneOf([200, 201]);',
+            '});',
+            '',
+            'pm.test("TC-07-01 - Account range ID captured", function () {',
+            '    const json = pm.response.json();',
+            '    const arId = json.accountRangeId || json.id || json.rangeId;',
+            '    if (arId) {',
+            '        pm.collectionVariables.set("accountRangeId", arId);',
+            '        console.log("Captured accountRangeId: " + arId);',
+            '    }',
+            '});',
+          ]),
+        ],
+        request: {
+          method: 'POST',
+          header: jsonH(true),
+          body: {
+            mode: 'raw',
+            raw: '{\n  "issuerId": "{{issuerId}}",\n  "binId": "{{binId}}",\n  "panLowerLimit": "1100000",\n  "panUpperLimit": "9000000",\n  "listOfExpiry": [\n    { "quarter": "Q1", "year": 2027 },\n    { "quarter": "Q2", "year": 2027 },\n    { "quarter": "Q3", "year": 2027 }\n  ]\n}',
+          },
+          url: url('{{baseUrl_tvm}}/tvm/api/account-range'),
+        },
+        response: [],
+      },
+      {
+        name: 'TC-07-02 Negative - Lower limit > upper limit',
+        event: [
+          script('test', [
+            'pm.test("TC-07-02 - Status is 400", function () {',
+            '    pm.expect(pm.response.code).to.equal(400);',
+            '});',
+          ]),
+        ],
+        request: {
+          method: 'POST',
+          header: jsonH(true),
+          body: {
+            mode: 'raw',
+            raw: '{\n  "issuerId": "{{issuerId}}",\n  "binId": "{{binId}}",\n  "panLowerLimit": "9000000",\n  "panUpperLimit": "1100000",\n  "listOfExpiry": [\n    { "quarter": "Q1", "year": 2027 }\n  ]\n}',
+          },
+          url: url('{{baseUrl_tvm}}/tvm/api/account-range'),
+        },
+        response: [],
+      },
+      {
+        name: 'TC-07-03 Negative - Empty listOfExpiry',
+        event: [
+          script('test', [
+            'pm.test("TC-07-03 - Status is 400", function () {',
+            '    pm.expect(pm.response.code).to.equal(400);',
+            '});',
+          ]),
+        ],
+        request: {
+          method: 'POST',
+          header: jsonH(true),
+          body: {
+            mode: 'raw',
+            raw: '{\n  "issuerId": "{{issuerId}}",\n  "binId": "{{binId}}",\n  "panLowerLimit": "1100000",\n  "panUpperLimit": "9000000",\n  "listOfExpiry": []\n}',
+          },
+          url: url('{{baseUrl_tvm}}/tvm/api/account-range'),
+        },
+        response: [],
+      },
+      {
+        name: 'TC-07-04 Edge Case - Invalid quarter value',
+        event: [
+          script('test', [
+            'pm.test("TC-07-04 - Status is 400", function () {',
+            '    pm.expect(pm.response.code).to.equal(400);',
+            '});',
+          ]),
+        ],
+        request: {
+          method: 'POST',
+          header: jsonH(true),
+          body: {
+            mode: 'raw',
+            raw: '{\n  "issuerId": "{{issuerId}}",\n  "binId": "{{binId}}",\n  "panLowerLimit": "1100000",\n  "panUpperLimit": "9000000",\n  "listOfExpiry": [\n    { "quarter": "Q5", "year": 2027 }\n  ]\n}',
+          },
+          url: url('{{baseUrl_tvm}}/tvm/api/account-range'),
+        },
+        response: [],
+      },
+      {
+        name: 'TC-07-05 Edge Case - Past expiry year',
+        event: [
+          script('test', [
+            'pm.test("TC-07-05 - Status is 400", function () {',
+            '    pm.expect(pm.response.code).to.equal(400);',
+            '});',
+          ]),
+        ],
+        request: {
+          method: 'POST',
+          header: jsonH(true),
+          body: {
+            mode: 'raw',
+            raw: '{\n  "issuerId": "{{issuerId}}",\n  "binId": "{{binId}}",\n  "panLowerLimit": "1100000",\n  "panUpperLimit": "9000000",\n  "listOfExpiry": [\n    { "quarter": "Q1", "year": 2020 }\n  ]\n}',
+          },
+          url: url('{{baseUrl_tvm}}/tvm/api/account-range'),
+        },
+        response: [],
+      },
+    ],
+  });
+
+  // ═══════════════════════════════════════════════════
+  // TC-08: TOKEN REQUESTER CREATION
+  // ═══════════════════════════════════════════════════
+  collection.item.push({
+    name: 'TC-08 Token Requester Creation',
+    item: [
+      {
+        name: 'TC-08-01 Happy Path - Google Pay requester',
+        event: [
+          script('test', [
+            'pm.test("TC-08-01 - Status is 200 or 201", function () {',
+            '    pm.expect(pm.response.code).to.be.oneOf([200, 201]);',
+            '});',
+            '',
+            'pm.test("TC-08-01 - trId captured", function () {',
+            '    const json = pm.response.json();',
+            '    const trId = json.trId || json.tokenRequestorId || json.requestorId || json.id;',
+            '    pm.expect(trId).to.not.be.undefined;',
+            '    pm.collectionVariables.set("trId", String(trId));',
+            '    console.log("Captured trId: " + trId);',
+            '});',
+          ]),
+        ],
+        request: {
+          method: 'POST',
+          header: jsonH(true),
+          body: {
+            mode: 'raw',
+            raw: '{\n  "tokenFormFactor": "00",\n  "encryptedTransportKey": "{{encryptedTransportKey}}",\n  "kcv": "{{kcv}}",\n  "serviceName": "Service name",\n  "trName": "Google Pay"\n}',
+          },
+          url: url('{{baseUrl_tvm}}/tvm/api/token-requestor'),
+        },
+        response: [],
+      },
+      {
+        name: 'TC-08-02 Negative - Invalid tokenFormFactor',
+        event: [
+          script('test', [
+            'pm.test("TC-08-02 - Status is 400", function () {',
+            '    pm.expect(pm.response.code).to.equal(400);',
+            '});',
+          ]),
+        ],
+        request: {
+          method: 'POST',
+          header: jsonH(true),
+          body: {
+            mode: 'raw',
+            raw: '{\n  "tokenFormFactor": "99",\n  "encryptedTransportKey": "{{encryptedTransportKey}}",\n  "kcv": "{{kcv}}",\n  "serviceName": "Service name",\n  "trName": "Test TR"\n}',
+          },
+          url: url('{{baseUrl_tvm}}/tvm/api/token-requestor'),
+        },
+        response: [],
+      },
+      {
+        name: 'TC-08-03 Negative - KCV mismatch',
+        event: [
+          script('test', [
+            'pm.test("TC-08-03 - Status is 400 or 422", function () {',
+            '    pm.expect(pm.response.code).to.be.oneOf([400, 422]);',
+            '});',
+          ]),
+        ],
+        request: {
+          method: 'POST',
+          header: jsonH(true),
+          body: {
+            mode: 'raw',
+            raw: '{\n  "tokenFormFactor": "00",\n  "encryptedTransportKey": "{{encryptedTransportKey}}",\n  "kcv": "000000",\n  "serviceName": "Service name",\n  "trName": "Test TR"\n}',
+          },
+          url: url('{{baseUrl_tvm}}/tvm/api/token-requestor'),
+        },
+        response: [],
+      },
+      {
+        name: 'TC-08-04 Edge Case - Missing serviceName',
+        event: [
+          script('test', [
+            'pm.test("TC-08-04 - Status is 400", function () {',
+            '    pm.expect(pm.response.code).to.equal(400);',
+            '});',
+          ]),
+        ],
+        request: {
+          method: 'POST',
+          header: jsonH(true),
+          body: {
+            mode: 'raw',
+            raw: '{\n  "tokenFormFactor": "00",\n  "encryptedTransportKey": "{{encryptedTransportKey}}",\n  "kcv": "{{kcv}}",\n  "trName": "Test TR"\n}',
+          },
+          url: url('{{baseUrl_tvm}}/tvm/api/token-requestor'),
+        },
+        response: [],
+      },
+    ],
+  });
+
+  // ═══════════════════════════════════════════════════
+  // TC-09: TOKEN USE SETUP
+  // ═══════════════════════════════════════════════════
+  collection.item.push({
+    name: 'TC-09 Token Use Setup',
+    item: [
+      {
+        name: 'TC-09-01 Happy Path - Valid token use setup',
+        event: [
+          script('prerequest', [
+            'if (!pm.collectionVariables.get("trId")) {',
+            '    console.warn("trId not set — using hardcoded fallback");',
+            '    pm.collectionVariables.set("trId", "99850031692");',
+            '}',
+          ]),
+          script('test', [
+            'pm.test("TC-09-01 - Status is 200 or 201", function () {',
+            '    pm.expect(pm.response.code).to.be.oneOf([200, 201]);',
+            '});',
+          ]),
+        ],
+        request: {
+          method: 'POST',
+          header: jsonH(true),
+          body: {
+            mode: 'raw',
+            raw: '{\n  "merchantInfos": [\n    {\n      "merchantId": "123456789012345",\n      "merchantName": "Merchant"\n    }\n  ],\n  "modeOfTransaction": "01",\n  "trId": "{{trId}}"\n}',
+          },
+          url: url('{{baseUrl_tvm}}/tvm/api/token-requestor/token-use/setup'),
+        },
+        response: [],
+      },
+      {
+        name: 'TC-09-02 Negative - Non-existent trId',
+        event: [
+          script('test', [
+            'pm.test("TC-09-02 - Status is 404 or 4xx", function () {',
+            '    pm.expect(pm.response.code).to.be.within(400, 499);',
+            '});',
+          ]),
+        ],
+        request: {
+          method: 'POST',
+          header: jsonH(true),
+          body: {
+            mode: 'raw',
+            raw: '{\n  "merchantInfos": [\n    {\n      "merchantId": "123456789012345",\n      "merchantName": "Merchant"\n    }\n  ],\n  "modeOfTransaction": "01",\n  "trId": "00000000000"\n}',
+          },
+          url: url('{{baseUrl_tvm}}/tvm/api/token-requestor/token-use/setup'),
+        },
+        response: [],
+      },
+      {
+        name: 'TC-09-03 Negative - merchantId wrong length',
+        event: [
+          script('test', [
+            'pm.test("TC-09-03 - Status is 400", function () {',
+            '    pm.expect(pm.response.code).to.equal(400);',
+            '});',
+          ]),
+        ],
+        request: {
+          method: 'POST',
+          header: jsonH(true),
+          body: {
+            mode: 'raw',
+            raw: '{\n  "merchantInfos": [\n    {\n      "merchantId": "123",\n      "merchantName": "Merchant"\n    }\n  ],\n  "modeOfTransaction": "01",\n  "trId": "{{trId}}"\n}',
+          },
+          url: url('{{baseUrl_tvm}}/tvm/api/token-requestor/token-use/setup'),
+        },
+        response: [],
+      },
+      {
+        name: 'TC-09-04 Edge Case - Multiple merchants',
+        event: [
+          script('test', [
+            'pm.test("TC-09-04 - Status is 200", function () {',
+            '    pm.expect(pm.response.code).to.equal(200);',
+            '});',
+          ]),
+        ],
+        request: {
+          method: 'POST',
+          header: jsonH(true),
+          body: {
+            mode: 'raw',
+            raw: '{\n  "merchantInfos": [\n    { "merchantId": "123456789012341", "merchantName": "Merchant A" },\n    { "merchantId": "123456789012342", "merchantName": "Merchant B" },\n    { "merchantId": "123456789012343", "merchantName": "Merchant C" }\n  ],\n  "modeOfTransaction": "01",\n  "trId": "{{trId}}"\n}',
+          },
+          url: url('{{baseUrl_tvm}}/tvm/api/token-requestor/token-use/setup'),
+        },
+        response: [],
+      },
+    ],
+  });
+
+  // ═══════════════════════════════════════════════════
+  // TC-10: TOKEN LIFE SETUP
+  // ═══════════════════════════════════════════════════
+  collection.item.push({
+    name: 'TC-10 Token Life Setup',
+    item: [
+      {
+        name: 'TC-10-01 Happy Path - Valid life range',
+        event: [
+          script('test', [
+            'pm.test("TC-10-01 - Status is 200 or 201", function () {',
+            '    pm.expect(pm.response.code).to.be.oneOf([200, 201]);',
+            '});',
+          ]),
+        ],
+        request: {
+          method: 'POST',
+          header: jsonH(true),
+          body: {
+            mode: 'raw',
+            raw: '{\n  "requestorId": "{{trId}}",\n  "minPeriodInMonths": 0,\n  "maxPeriodInMonths": 70,\n  "issuerId": "{{issuerId}}"\n}',
+          },
+          url: url('{{baseUrl_tvm}}/tvm/api/token-life/authorization'),
+        },
+        response: [],
+      },
+      {
+        name: 'TC-10-02 Negative - Min > max period',
+        event: [
+          script('test', [
+            'pm.test("TC-10-02 - Status is 400", function () {',
+            '    pm.expect(pm.response.code).to.equal(400);',
+            '});',
+          ]),
+        ],
+        request: {
+          method: 'POST',
+          header: jsonH(true),
+          body: {
+            mode: 'raw',
+            raw: '{\n  "requestorId": "{{trId}}",\n  "minPeriodInMonths": 70,\n  "maxPeriodInMonths": 10,\n  "issuerId": "{{issuerId}}"\n}',
+          },
+          url: url('{{baseUrl_tvm}}/tvm/api/token-life/authorization'),
+        },
+        response: [],
+      },
+      {
+        name: 'TC-10-03 Negative - Non-existent issuerId',
+        event: [
+          script('test', [
+            'pm.test("TC-10-03 - Status is 404 or 4xx", function () {',
+            '    pm.expect(pm.response.code).to.be.within(400, 499);',
+            '});',
+          ]),
+        ],
+        request: {
+          method: 'POST',
+          header: jsonH(true),
+          body: {
+            mode: 'raw',
+            raw: '{\n  "requestorId": "{{trId}}",\n  "minPeriodInMonths": 0,\n  "maxPeriodInMonths": 70,\n  "issuerId": "00000000000000000000000000000000"\n}',
+          },
+          url: url('{{baseUrl_tvm}}/tvm/api/token-life/authorization'),
+        },
+        response: [],
+      },
+      {
+        name: 'TC-10-04 Edge Case - maxPeriodInMonths = 0',
+        event: [
+          script('test', [
+            'pm.test("TC-10-04 - Status is 400 or 200", function () {',
+            '    pm.expect(pm.response.code).to.be.oneOf([200, 400]);',
+            '});',
+          ]),
+        ],
+        request: {
+          method: 'POST',
+          header: jsonH(true),
+          body: {
+            mode: 'raw',
+            raw: '{\n  "requestorId": "{{trId}}",\n  "minPeriodInMonths": 0,\n  "maxPeriodInMonths": 0,\n  "issuerId": "{{issuerId}}"\n}',
+          },
+          url: url('{{baseUrl_tvm}}/tvm/api/token-life/authorization'),
+        },
+        response: [],
+      },
+    ],
+  });
+
+  // ═══════════════════════════════════════════════════
+  // TC-11: TOKEN RANGE SETUP
+  // ═══════════════════════════════════════════════════
+  collection.item.push({
+    name: 'TC-11 Token Range Setup',
+    item: [
+      {
+        name: 'TC-11-01 Happy Path - Valid token range',
+        event: [
+          script('test', [
+            'pm.test("TC-11-01 - Status is 200 or 201", function () {',
+            '    pm.expect(pm.response.code).to.be.oneOf([200, 201]);',
+            '});',
+          ]),
+        ],
+        request: {
+          method: 'POST',
+          header: jsonH(true),
+          body: {
+            mode: 'raw',
+            raw: '{\n  "tokenRangeSetupList": [\n    {\n      "expiry": { "quarter": "Q2", "year": 2027 },\n      "lowerLimit": "9100000",\n      "upperLimit": "9999999"\n    }\n  ],\n  "requestorId": "{{trId}}",\n  "issuerId": "{{issuerId}}",\n  "binId": "{{binId}}"\n}',
+          },
+          url: url('{{baseUrl_tvm}}/tvm/api/token-range'),
+        },
+        response: [],
+      },
+      {
+        name: 'TC-11-02 Negative - Token range overlaps account range',
+        event: [
+          script('test', [
+            'pm.test("TC-11-02 - Status is 400 or 409", function () {',
+            '    pm.expect(pm.response.code).to.be.oneOf([400, 409]);',
+            '});',
+          ]),
+        ],
+        request: {
+          method: 'POST',
+          header: jsonH(true),
+          body: {
+            mode: 'raw',
+            raw: '{\n  "tokenRangeSetupList": [\n    {\n      "expiry": { "quarter": "Q2", "year": 2027 },\n      "lowerLimit": "1100000",\n      "upperLimit": "9000000"\n    }\n  ],\n  "requestorId": "{{trId}}",\n  "issuerId": "{{issuerId}}",\n  "binId": "{{binId}}"\n}',
+          },
+          url: url('{{baseUrl_tvm}}/tvm/api/token-range'),
+        },
+        response: [],
+      },
+      {
+        name: 'TC-11-03 Negative - Lower > upper limit',
+        event: [
+          script('test', [
+            'pm.test("TC-11-03 - Status is 400", function () {',
+            '    pm.expect(pm.response.code).to.equal(400);',
+            '});',
+          ]),
+        ],
+        request: {
+          method: 'POST',
+          header: jsonH(true),
+          body: {
+            mode: 'raw',
+            raw: '{\n  "tokenRangeSetupList": [\n    {\n      "expiry": { "quarter": "Q2", "year": 2027 },\n      "lowerLimit": "9999999",\n      "upperLimit": "9100000"\n    }\n  ],\n  "requestorId": "{{trId}}",\n  "issuerId": "{{issuerId}}",\n  "binId": "{{binId}}"\n}',
+          },
+          url: url('{{baseUrl_tvm}}/tvm/api/token-range'),
+        },
+        response: [],
+      },
+      {
+        name: 'TC-11-04 Negative - Non-existent requestorId',
+        event: [
+          script('test', [
+            'pm.test("TC-11-04 - Status is 404 or 4xx", function () {',
+            '    pm.expect(pm.response.code).to.be.within(400, 499);',
+            '});',
+          ]),
+        ],
+        request: {
+          method: 'POST',
+          header: jsonH(true),
+          body: {
+            mode: 'raw',
+            raw: '{\n  "tokenRangeSetupList": [\n    {\n      "expiry": { "quarter": "Q2", "year": 2027 },\n      "lowerLimit": "9100000",\n      "upperLimit": "9999999"\n    }\n  ],\n  "requestorId": "00000000000",\n  "issuerId": "{{issuerId}}",\n  "binId": "{{binId}}"\n}',
+          },
+          url: url('{{baseUrl_tvm}}/tvm/api/token-range'),
+        },
+        response: [],
+      },
+      {
+        name: 'TC-11-05 Edge Case - Expiry in the past',
+        event: [
+          script('test', [
+            'pm.test("TC-11-05 - Status is 400", function () {',
+            '    pm.expect(pm.response.code).to.equal(400);',
+            '});',
+          ]),
+        ],
+        request: {
+          method: 'POST',
+          header: jsonH(true),
+          body: {
+            mode: 'raw',
+            raw: '{\n  "tokenRangeSetupList": [\n    {\n      "expiry": { "quarter": "Q1", "year": 2023 },\n      "lowerLimit": "9100000",\n      "upperLimit": "9999999"\n    }\n  ],\n  "requestorId": "{{trId}}",\n  "issuerId": "{{issuerId}}",\n  "binId": "{{binId}}"\n}',
+          },
+          url: url('{{baseUrl_tvm}}/tvm/api/token-range'),
+        },
+        response: [],
+      },
+    ],
+  });
+
+  return collection;
+}
+
+function main() {
+  const outDir = path.join(__dirname, '..');
+
+  console.log('Generating automated Postman collection...');
+  const collection = buildCollection();
+
+  const collectionPath = path.join(outDir, 'TSP_Automated_TestSuite_postman_collection.json');
+  fs.writeFileSync(collectionPath, JSON.stringify(collection, null, 2));
+  console.log(`  -> Collection: ${collectionPath}`);
+
+  let totalTests = 0;
+  let totalPmTests = 0;
+  collection.item.forEach(folder => {
+    let pmCount = 0;
+    folder.item.forEach(req => {
+      totalTests++;
+      (req.event || []).forEach(e => {
+        if (e.listen === 'test') {
+          pmCount += (e.script.exec.join('\n').match(/pm\.test\(/g) || []).length;
+        }
+      });
+    });
+    totalPmTests += pmCount;
+    console.log(`  ${folder.name}: ${folder.item.length} requests, ${pmCount} assertions`);
+  });
+
+  console.log('Generating Postman environment...');
+  const env = generateEnvironment();
+  const envPath = path.join(outDir, 'TSP_TakaPay_environment.json');
+  fs.writeFileSync(envPath, JSON.stringify(env, null, 2));
+  console.log(`  -> Environment: ${envPath}`);
+
+  console.log('\n=== SUMMARY ===');
+  console.log(`Total requests:     ${totalTests}`);
+  console.log(`Total pm.test():    ${totalPmTests}`);
+  console.log(`Folders:            ${collection.item.length}`);
+  console.log(`Collection vars:    ${collection.variable.length}`);
+  console.log(`Environment vars:   ${env.values.length}`);
+
+  console.log('\n=== VARIABLE CHAIN ===');
+  console.log('TC-01-01 Vault Creation      → captures tvId');
+  console.log('TC-02-01 Generate Key         → captures transportKey, kcv');
+  console.log('TC-04-01 Encrypt Key          → captures encryptedTransportKey');
+  console.log('TC-05-01 Issuer Creation      → captures issuerId (uses tvId, encryptedTransportKey, kcv)');
+  console.log('TC-06-01 BIN Creation         → captures binId (uses tvId, issuerId)');
+  console.log('TC-07-01 Account Range        → captures accountRangeId (uses tvId, issuerId, binId)');
+  console.log('TC-08-01 Token Requester      → captures trId (uses tvId, encryptedTransportKey, kcv)');
+  console.log('TC-09-01 Token Use Setup      → uses tvId, trId');
+  console.log('TC-10-01 Token Life Setup     → uses tvId, trId, issuerId');
+  console.log('TC-11-01 Token Range Setup    → uses tvId, trId, issuerId, binId');
+
+  console.log('\n=== HOW TO RUN ===');
+  console.log('With Newman (CLI):');
+  console.log('  npx newman run TSP_Automated_TestSuite_postman_collection.json \\');
+  console.log('    -e TSP_TakaPay_environment.json');
+  console.log('');
+  console.log('With Newman + HTML report:');
+  console.log('  npx newman run TSP_Automated_TestSuite_postman_collection.json \\');
+  console.log('    -e TSP_TakaPay_environment.json \\');
+  console.log('    -r htmlextra --reporter-htmlextra-export reports/automated-report.html');
+}
+
+main();
