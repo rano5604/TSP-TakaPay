@@ -1,0 +1,2996 @@
+{
+  "info": {
+    "_postman_id": "tc-tsp-emvco-comprehensive-001",
+    "name": "TSP - EMVCo Comprehensive Test Cases",
+    "description": "Comprehensive EMVCo-compliant test cases for TSP TakaPay Token Vault covering: [A] Token Provisioning, [B] Account Range Validation, [C] Quarter BIN Range Setup, [D] Token Lifecycle, [E] Token Expiry Validation, [F] De-Tokenization, [G] Token Domain Restriction, [H] Security & Fraud Controls, [I] Boundary & Capacity Tests, [J] Error Handling & Response Codes. Generated per EMVCo Payment Tokenization Specification v2.2+.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "TC-A Token Provisioning",
+      "item": [
+        {
+          "name": "TC-TVT-001 Token Provisioning - Valid PAN in Q1 range",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "9985003"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/tokens/provision",
+              "protocol": "http",
+              "host": [
+                "10",
+                "88",
+                "250",
+                "40"
+              ],
+              "port": "40020",
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "POSITIVE: Provision a token for a valid PAN with Q1 expiry (Mar 2027). EMVCo Ref: Section 4.3. Business Rule: R1, R4. Expected: HTTP 200/201, token (13-19 digit Luhn-valid), TAL returned, token expiry within PAN expiry boundary.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pan\": \"6399960312345678\",\n  \"panExpiry\": \"0327\",\n  \"tokenRequestorId\": \"99850031692\",\n  \"tokenType\": \"CLOUD\",\n  \"tokenAssuranceLevel\": \"3\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-TVT-002 Token Provisioning - Valid PAN in Q2 range",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "9985003"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/tokens/provision",
+              "protocol": "http",
+              "host": [
+                "10",
+                "88",
+                "250",
+                "40"
+              ],
+              "port": "40020",
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "POSITIVE: Provision token with Q2 expiry (Jun 2027). EMVCo Ref: Section 4.3. Business Rule: R4. Expected: HTTP 200/201, token issued from Q2 BIN range.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pan\": \"6399960312345678\",\n  \"panExpiry\": \"0627\",\n  \"tokenRequestorId\": \"99850031692\",\n  \"tokenType\": \"CLOUD\",\n  \"tokenAssuranceLevel\": \"3\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-TVT-003 Token Provisioning - Valid PAN in Q3 range",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "9985003"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/tokens/provision",
+              "protocol": "http",
+              "host": [
+                "10",
+                "88",
+                "250",
+                "40"
+              ],
+              "port": "40020",
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "POSITIVE: Provision token with Q3 expiry (Sep 2027). EMVCo Ref: Section 4.3. Business Rule: R4. Expected: HTTP 200/201, token from Q3 BIN range.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pan\": \"6399960312345678\",\n  \"panExpiry\": \"0927\",\n  \"tokenRequestorId\": \"99850031692\",\n  \"tokenType\": \"CLOUD\",\n  \"tokenAssuranceLevel\": \"3\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-TVT-004 Token Provisioning - Valid PAN in Q4 range",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "9985003"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/tokens/provision",
+              "protocol": "http",
+              "host": [
+                "10",
+                "88",
+                "250",
+                "40"
+              ],
+              "port": "40020",
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "POSITIVE: Provision token with Q4 expiry (Dec 2027). EMVCo Ref: Section 4.3. Business Rule: R4. Expected: HTTP 200/201, token from Q4 BIN range.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pan\": \"6399960312345678\",\n  \"panExpiry\": \"1227\",\n  \"tokenRequestorId\": \"99850031692\",\n  \"tokenType\": \"CLOUD\",\n  \"tokenAssuranceLevel\": \"3\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-TVT-005 Token Provisioning - BIN range boundary first token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "9985003"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/tokens/provision",
+              "protocol": "http",
+              "host": [
+                "10",
+                "88",
+                "250",
+                "40"
+              ],
+              "port": "40020",
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "BOUNDARY: First token at BIN_START of quarter range. EMVCo Ref: Section 4.3.2. Business Rule: R2. Expected: HTTP 200/201, token value starts at configured BIN_START.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pan\": \"6399960311000001\",\n  \"panExpiry\": \"0627\",\n  \"tokenRequestorId\": \"99850031692\",\n  \"tokenType\": \"CLOUD\",\n  \"tokenAssuranceLevel\": \"3\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-TVT-006 Token Provisioning - BIN range boundary last token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "9985003"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/tokens/provision",
+              "protocol": "http",
+              "host": [
+                "10",
+                "88",
+                "250",
+                "40"
+              ],
+              "port": "40020",
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "BOUNDARY: Last token at BIN_END of quarter range (capacity-1 already allocated). EMVCo Ref: Section 4.3.2. Business Rule: R2, R3. Expected: HTTP 200/201, token at BIN_END.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pan\": \"6399960319000000\",\n  \"panExpiry\": \"0627\",\n  \"tokenRequestorId\": \"99850031692\",\n  \"tokenType\": \"CLOUD\",\n  \"tokenAssuranceLevel\": \"3\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-TVT-007 Token Provisioning - Range one away from exhaustion",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "9985003"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/tokens/provision",
+              "protocol": "http",
+              "host": [
+                "10",
+                "88",
+                "250",
+                "40"
+              ],
+              "port": "40020",
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "BOUNDARY: Quarter range has exactly 1 token remaining. EMVCo Ref: Section 4.3.2. Business Rule: R3, R5. Expected: HTTP 200/201, last token issued, remaining capacity = 0 after.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pan\": \"6399960318999999\",\n  \"panExpiry\": \"0627\",\n  \"tokenRequestorId\": \"99850031692\",\n  \"tokenType\": \"CLOUD\",\n  \"tokenAssuranceLevel\": \"3\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-TVT-008 Token Provisioning - Range fully exhausted",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "9985003"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/tokens/provision",
+              "protocol": "http",
+              "host": [
+                "10",
+                "88",
+                "250",
+                "40"
+              ],
+              "port": "40020",
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "NEGATIVE: Quarter BIN range fully exhausted (allocated = capacity). EMVCo Ref: Section 4.3.2. Business Rule: R3. Expected: HTTP 422, error: TOKEN_RANGE_EXHAUSTED.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pan\": \"6399960318999998\",\n  \"panExpiry\": \"0627\",\n  \"tokenRequestorId\": \"99850031692\",\n  \"tokenType\": \"CLOUD\",\n  \"tokenAssuranceLevel\": \"3\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-TVT-009 Token Provisioning - PAN outside account range",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "9985003"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/tokens/provision",
+              "protocol": "http",
+              "host": [
+                "10",
+                "88",
+                "250",
+                "40"
+              ],
+              "port": "40020",
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "NEGATIVE: PAN suffix below configured account range lower limit. EMVCo Ref: Section 4.2. Business Rule: R1. Expected: HTTP 422, error: ACCOUNT_NOT_ELIGIBLE.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pan\": \"6399960300000001\",\n  \"panExpiry\": \"0627\",\n  \"tokenRequestorId\": \"99850031692\",\n  \"tokenType\": \"CLOUD\",\n  \"tokenAssuranceLevel\": \"3\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-TVT-010 Token Provisioning - Expired PAN",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "9985003"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/tokens/provision",
+              "protocol": "http",
+              "host": [
+                "10",
+                "88",
+                "250",
+                "40"
+              ],
+              "port": "40020",
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "NEGATIVE: PAN expiry 01/2023 is in the past. EMVCo Ref: Section 4.3.1. Expected: HTTP 400, error: PAN expired, cannot issue token.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pan\": \"6399960312345678\",\n  \"panExpiry\": \"0123\",\n  \"tokenRequestorId\": \"99850031692\",\n  \"tokenType\": \"CLOUD\",\n  \"tokenAssuranceLevel\": \"3\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-TVT-011 Token Provisioning - Quarter not configured",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "9985003"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/tokens/provision",
+              "protocol": "http",
+              "host": [
+                "10",
+                "88",
+                "250",
+                "40"
+              ],
+              "port": "40020",
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "NEGATIVE: PAN expiry maps to Q4 2028 but no token range configured for that quarter/year. EMVCo Ref: Section 4.3. Business Rule: R4. Expected: HTTP 422, error: EXPIRY_QUARTER_MISMATCH or no range configured.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pan\": \"6399960312345678\",\n  \"panExpiry\": \"1028\",\n  \"tokenRequestorId\": \"99850031692\",\n  \"tokenType\": \"CLOUD\",\n  \"tokenAssuranceLevel\": \"3\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-TVT-012 Token Provisioning - Re-tokenize same PAN (idempotency)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "9985003"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/tokens/provision",
+              "protocol": "http",
+              "host": [
+                "10",
+                "88",
+                "250",
+                "40"
+              ],
+              "port": "40020",
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "FUNCTIONAL: Same PAN + same Token Requestor ID + same domain. EMVCo Ref: Section 4.3.4. Expected: HTTP 200, same token returned (idempotent), no new token allocated.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pan\": \"6399960312345678\",\n  \"panExpiry\": \"0627\",\n  \"tokenRequestorId\": \"99850031692\",\n  \"tokenType\": \"CLOUD\",\n  \"tokenAssuranceLevel\": \"3\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-TVT-013 Token Provisioning - Invalid PAN format (non-numeric)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "9985003"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/tokens/provision",
+              "protocol": "http",
+              "host": [
+                "10",
+                "88",
+                "250",
+                "40"
+              ],
+              "port": "40020",
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "NEGATIVE: PAN contains non-numeric characters. EMVCo Ref: Section 3.1. Expected: HTTP 400, invalid PAN format.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pan\": \"ABCDEFGH12345678\",\n  \"panExpiry\": \"0627\",\n  \"tokenRequestorId\": \"99850031692\",\n  \"tokenType\": \"CLOUD\",\n  \"tokenAssuranceLevel\": \"3\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-TVT-014 Token Provisioning - PAN too short (12 digits)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "9985003"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/tokens/provision",
+              "protocol": "http",
+              "host": [
+                "10",
+                "88",
+                "250",
+                "40"
+              ],
+              "port": "40020",
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "NEGATIVE: PAN length 12 digits (min 13 per EMVCo). EMVCo Ref: Section 3.1. Expected: HTTP 400, PAN length invalid.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pan\": \"639996031234\",\n  \"panExpiry\": \"0627\",\n  \"tokenRequestorId\": \"99850031692\",\n  \"tokenType\": \"CLOUD\",\n  \"tokenAssuranceLevel\": \"3\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-TVT-015 Token Provisioning - PAN too long (20 digits)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "9985003"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/tokens/provision",
+              "protocol": "http",
+              "host": [
+                "10",
+                "88",
+                "250",
+                "40"
+              ],
+              "port": "40020",
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "NEGATIVE: PAN length 20 digits (max 19 per EMVCo). EMVCo Ref: Section 3.1. Expected: HTTP 400, PAN length invalid.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pan\": \"63999603123456789012\",\n  \"panExpiry\": \"0627\",\n  \"tokenRequestorId\": \"99850031692\",\n  \"tokenType\": \"CLOUD\",\n  \"tokenAssuranceLevel\": \"3\"\n}"
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "TC-B Account Range Validation",
+      "item": [
+        {
+          "name": "TC-TVT-016 Account Range - PAN within valid range",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "9985003"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/tokens/provision",
+              "protocol": "http",
+              "host": [
+                "10",
+                "88",
+                "250",
+                "40"
+              ],
+              "port": "40020",
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "POSITIVE: PAN suffix 5000000 within range [1100000-9000000]. Business Rule: R1. Expected: HTTP 200/201, token issued.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pan\": \"6399960315000000\",\n  \"panExpiry\": \"0627\",\n  \"tokenRequestorId\": \"99850031692\",\n  \"tokenType\": \"CLOUD\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-TVT-017 Account Range - PAN at lower boundary",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "9985003"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/tokens/provision",
+              "protocol": "http",
+              "host": [
+                "10",
+                "88",
+                "250",
+                "40"
+              ],
+              "port": "40020",
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "BOUNDARY: PAN suffix exactly at panLowerLimit (1100000). Business Rule: R1. Expected: HTTP 200/201, accepted (inclusive boundary).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pan\": \"6399960311100000\",\n  \"panExpiry\": \"0627\",\n  \"tokenRequestorId\": \"99850031692\",\n  \"tokenType\": \"CLOUD\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-TVT-018 Account Range - PAN at upper boundary",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "9985003"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/tokens/provision",
+              "protocol": "http",
+              "host": [
+                "10",
+                "88",
+                "250",
+                "40"
+              ],
+              "port": "40020",
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "BOUNDARY: PAN suffix exactly at panUpperLimit (9000000). Business Rule: R1. Expected: HTTP 200/201, accepted (inclusive boundary).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pan\": \"6399960319000000\",\n  \"panExpiry\": \"0627\",\n  \"tokenRequestorId\": \"99850031692\",\n  \"tokenType\": \"CLOUD\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-TVT-019 Account Range - PAN below lower limit",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "9985003"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/tokens/provision",
+              "protocol": "http",
+              "host": [
+                "10",
+                "88",
+                "250",
+                "40"
+              ],
+              "port": "40020",
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "NEGATIVE: PAN suffix 0000001 below panLowerLimit 1100000. Business Rule: R1. Expected: HTTP 422, error: ACCOUNT_NOT_ELIGIBLE.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pan\": \"6399960310000001\",\n  \"panExpiry\": \"0627\",\n  \"tokenRequestorId\": \"99850031692\",\n  \"tokenType\": \"CLOUD\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-TVT-020 Account Range - PAN above upper limit",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "9985003"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/tokens/provision",
+              "protocol": "http",
+              "host": [
+                "10",
+                "88",
+                "250",
+                "40"
+              ],
+              "port": "40020",
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "NEGATIVE: PAN suffix 9999999 above panUpperLimit 9000000. Business Rule: R1. Expected: HTTP 422, error: ACCOUNT_NOT_ELIGIBLE.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pan\": \"6399960319999999\",\n  \"panExpiry\": \"0627\",\n  \"tokenRequestorId\": \"99850031692\",\n  \"tokenType\": \"CLOUD\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-TVT-021 Account Range - PAN in deactivated range",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "9985003"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/tokens/provision",
+              "protocol": "http",
+              "host": [
+                "10",
+                "88",
+                "250",
+                "40"
+              ],
+              "port": "40020",
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "NEGATIVE: Account range has been deactivated. Business Rule: R1. Precondition: Deactivate the account range first. Expected: HTTP 422, error: ACCOUNT_NOT_ELIGIBLE.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pan\": \"6399960315000000\",\n  \"panExpiry\": \"0627\",\n  \"tokenRequestorId\": \"99850031692\",\n  \"tokenType\": \"CLOUD\"\n}"
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "TC-C Quarter BIN Range Setup",
+      "item": [
+        {
+          "name": "TC-TVT-022 BIN Range - Configure non-overlapping Q4 range",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "9985003"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/token-range",
+              "protocol": "http",
+              "host": [
+                "10",
+                "88",
+                "250",
+                "40"
+              ],
+              "port": "40020",
+              "path": [
+                "tvm",
+                "api",
+                "token-range"
+              ]
+            },
+            "description": "POSITIVE: New non-overlapping BIN range for Q4 2027. Business Rule: R2, R6. Expected: HTTP 200/201, range created with capacity metadata.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tokenRangeSetupList\": [\n    {\n      \"expiry\": {\n        \"quarter\": \"Q4\",\n        \"year\": 2027\n      },\n      \"lowerLimit\": \"9100000\",\n      \"upperLimit\": \"9500000\"\n    }\n  ],\n  \"requestorId\": \"99850031692\",\n  \"issuerId\": \"237d9188de9144e5806abf95441fce5b\",\n  \"binId\": \"d2d1adf80a1045359033de945b60e48g\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-TVT-023 BIN Range - Overlapping range rejected",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "9985003"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/token-range",
+              "protocol": "http",
+              "host": [
+                "10",
+                "88",
+                "250",
+                "40"
+              ],
+              "port": "40020",
+              "path": [
+                "tvm",
+                "api",
+                "token-range"
+              ]
+            },
+            "description": "NEGATIVE: Range [9200000-9800000] overlaps existing Q2 range [9100000-9999999]. Business Rule: R6. Expected: HTTP 409, error: BIN_RANGE_OVERLAP_DETECTED.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tokenRangeSetupList\": [\n    {\n      \"expiry\": {\n        \"quarter\": \"Q2\",\n        \"year\": 2027\n      },\n      \"lowerLimit\": \"9200000\",\n      \"upperLimit\": \"9800000\"\n    }\n  ],\n  \"requestorId\": \"99850031692\",\n  \"issuerId\": \"237d9188de9144e5806abf95441fce5b\",\n  \"binId\": \"d2d1adf80a1045359033de945b60e48g\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-TVT-024 BIN Range - Already-configured quarter",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "9985003"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/token-range",
+              "protocol": "http",
+              "host": [
+                "10",
+                "88",
+                "250",
+                "40"
+              ],
+              "port": "40020",
+              "path": [
+                "tvm",
+                "api",
+                "token-range"
+              ]
+            },
+            "description": "NEGATIVE: Q2 2027 already has a configured range. Business Rule: R2. Expected: HTTP 409, error: quarter already configured or BIN_RANGE_OVERLAP_DETECTED.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tokenRangeSetupList\": [\n    {\n      \"expiry\": {\n        \"quarter\": \"Q2\",\n        \"year\": 2027\n      },\n      \"lowerLimit\": \"8000000\",\n      \"upperLimit\": \"8500000\"\n    }\n  ],\n  \"requestorId\": \"99850031692\",\n  \"issuerId\": \"237d9188de9144e5806abf95441fce5b\",\n  \"binId\": \"d2d1adf80a1045359033de945b60e48g\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-TVT-025 BIN Range - Start > End rejected",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "9985003"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/token-range",
+              "protocol": "http",
+              "host": [
+                "10",
+                "88",
+                "250",
+                "40"
+              ],
+              "port": "40020",
+              "path": [
+                "tvm",
+                "api",
+                "token-range"
+              ]
+            },
+            "description": "NEGATIVE: lowerLimit > upperLimit. Business Rule: R2. Expected: HTTP 400, invalid range: start > end.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tokenRangeSetupList\": [\n    {\n      \"expiry\": {\n        \"quarter\": \"Q1\",\n        \"year\": 2028\n      },\n      \"lowerLimit\": \"9500000\",\n      \"upperLimit\": \"9100000\"\n    }\n  ],\n  \"requestorId\": \"99850031692\",\n  \"issuerId\": \"237d9188de9144e5806abf95441fce5b\",\n  \"binId\": \"d2d1adf80a1045359033de945b60e48g\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-TVT-026 BIN Range - Zero capacity rejected",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "9985003"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/token-range",
+              "protocol": "http",
+              "host": [
+                "10",
+                "88",
+                "250",
+                "40"
+              ],
+              "port": "40020",
+              "path": [
+                "tvm",
+                "api",
+                "token-range"
+              ]
+            },
+            "description": "BOUNDARY: lowerLimit == upperLimit (capacity=1 or 0). Business Rule: R2. Expected: HTTP 400, zero or insufficient capacity.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tokenRangeSetupList\": [\n    {\n      \"expiry\": {\n        \"quarter\": \"Q1\",\n        \"year\": 2028\n      },\n      \"lowerLimit\": \"9100000\",\n      \"upperLimit\": \"9100000\"\n    }\n  ],\n  \"requestorId\": \"99850031692\",\n  \"issuerId\": \"237d9188de9144e5806abf95441fce5b\",\n  \"binId\": \"d2d1adf80a1045359033de945b60e48g\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-TVT-027 BIN Range - Retrieve config per quarter",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "9985003"
+              }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/token-range?requestorId=99850031692&issuerId=237d9188de9144e5806abf95441fce5b&binId=d2d1adf80a1045359033de945b60e48g",
+              "protocol": "http",
+              "host": [
+                "10",
+                "88",
+                "250",
+                "40"
+              ],
+              "port": "40020",
+              "path": [
+                "tvm",
+                "api",
+                "token-range"
+              ]
+            },
+            "description": "POSITIVE: Retrieve BIN range config. Business Rule: R2. Expected: HTTP 200, response includes quarter, year, capacity, allocatedCount, remainingCount per range."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "TC-D Token Lifecycle",
+      "item": [
+        {
+          "name": "TC-TVT-028 Lifecycle - Activate token (INACTIVE -> ACTIVE)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "9985003"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/tokens/{tokenId}/activate",
+              "protocol": "http",
+              "host": [
+                "10",
+                "88",
+                "250",
+                "40"
+              ],
+              "port": "40020",
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "%7BtokenId%7D",
+                "activate"
+              ]
+            },
+            "description": "POSITIVE: Activate a provisioned (INACTIVE) token. EMVCo Ref: Section 6.1. Expected: HTTP 200, status changes to ACTIVE.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tokenId\": \"{tokenId}\",\n  \"reason\": \"ID_AND_V_COMPLETE\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-TVT-029 Lifecycle - Suspend token (ACTIVE -> SUSPENDED)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "9985003"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/tokens/{tokenId}/suspend",
+              "protocol": "http",
+              "host": [
+                "10",
+                "88",
+                "250",
+                "40"
+              ],
+              "port": "40020",
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "%7BtokenId%7D",
+                "suspend"
+              ]
+            },
+            "description": "POSITIVE: Suspend an active token. EMVCo Ref: Section 6.2. Expected: HTTP 200, status changes to SUSPENDED.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tokenId\": \"{tokenId}\",\n  \"reason\": \"CARDHOLDER_REQUEST\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-TVT-030 Lifecycle - Resume token (SUSPENDED -> ACTIVE)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "9985003"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/tokens/{tokenId}/resume",
+              "protocol": "http",
+              "host": [
+                "10",
+                "88",
+                "250",
+                "40"
+              ],
+              "port": "40020",
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "%7BtokenId%7D",
+                "resume"
+              ]
+            },
+            "description": "POSITIVE: Resume a suspended token. EMVCo Ref: Section 6.3. Expected: HTTP 200, status changes back to ACTIVE.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tokenId\": \"{tokenId}\",\n  \"reason\": \"CARDHOLDER_REQUEST\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-TVT-031 Lifecycle - Delete token (any state -> DELETED)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "9985003"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/tokens/{tokenId}",
+              "protocol": "http",
+              "host": [
+                "10",
+                "88",
+                "250",
+                "40"
+              ],
+              "port": "40020",
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "%7BtokenId%7D"
+              ]
+            },
+            "description": "POSITIVE: Delete a token from any state. EMVCo Ref: Section 6.4. Expected: HTTP 200, status changes to DELETED, token cannot be used."
+          },
+          "response": []
+        },
+        {
+          "name": "TC-TVT-032 Lifecycle - Transaction on SUSPENDED token rejected",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "9985003"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/tokens/authorize",
+              "protocol": "http",
+              "host": [
+                "10",
+                "88",
+                "250",
+                "40"
+              ],
+              "port": "40020",
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "authorize"
+              ]
+            },
+            "description": "NEGATIVE: Attempt payment authorization with SUSPENDED token. EMVCo Ref: Section 6.5. Expected: HTTP 403, error: token is suspended.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tokenValue\": \"{suspended_token}\",\n  \"cryptogram\": \"{tavv_cryptogram}\",\n  \"amount\": \"100.00\",\n  \"currency\": \"BDT\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-TVT-033 Lifecycle - Transaction on DELETED token rejected",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "9985003"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/tokens/authorize",
+              "protocol": "http",
+              "host": [
+                "10",
+                "88",
+                "250",
+                "40"
+              ],
+              "port": "40020",
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "authorize"
+              ]
+            },
+            "description": "NEGATIVE: Attempt payment authorization with DELETED token. EMVCo Ref: Section 6.5. Expected: HTTP 403, error: token is deleted.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tokenValue\": \"{deleted_token}\",\n  \"cryptogram\": \"{tavv_cryptogram}\",\n  \"amount\": \"100.00\",\n  \"currency\": \"BDT\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-TVT-034 Lifecycle - Invalid state transition (INACTIVE -> SUSPENDED)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "9985003"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/tokens/{tokenId}/suspend",
+              "protocol": "http",
+              "host": [
+                "10",
+                "88",
+                "250",
+                "40"
+              ],
+              "port": "40020",
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "%7BtokenId%7D",
+                "suspend"
+              ]
+            },
+            "description": "NEGATIVE: Cannot suspend a token that is still INACTIVE. EMVCo Ref: Section 6.2. Expected: HTTP 400, invalid state transition.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tokenId\": \"{inactive_tokenId}\",\n  \"reason\": \"FRAUD_DETECTION\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-TVT-035 Lifecycle - Delete already deleted token",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "9985003"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/tokens/{deleted_tokenId}",
+              "protocol": "http",
+              "host": [
+                "10",
+                "88",
+                "250",
+                "40"
+              ],
+              "port": "40020",
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "%7Bdeleted_tokenId%7D"
+              ]
+            },
+            "description": "NEGATIVE: Attempt to delete an already deleted token. EMVCo Ref: Section 6.4. Expected: HTTP 404 or 409, token already deleted."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "TC-E Token Expiry Validation",
+      "item": [
+        {
+          "name": "TC-TVT-036 Expiry - Token expiry within PAN expiry",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "9985003"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/tokens/provision",
+              "protocol": "http",
+              "host": [
+                "10",
+                "88",
+                "250",
+                "40"
+              ],
+              "port": "40020",
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "POSITIVE: PAN expiry Jun 2028, token assigned to Q2 2028 range. EMVCo Ref: Section 4.4. Expected: HTTP 200, token expiry <= PAN expiry.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pan\": \"6399960312345678\",\n  \"panExpiry\": \"0628\",\n  \"tokenRequestorId\": \"99850031692\",\n  \"tokenType\": \"CLOUD\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-TVT-037 Expiry - Token expiry beyond PAN expiry rejected",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "9985003"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/tokens/provision",
+              "protocol": "http",
+              "host": [
+                "10",
+                "88",
+                "250",
+                "40"
+              ],
+              "port": "40020",
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "NEGATIVE: Forced token expiry (Jun 2027) beyond PAN expiry (Jan 2027). EMVCo Ref: Section 4.4. Expected: HTTP 400, EMVCo violation: token expiry cannot exceed PAN expiry.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pan\": \"6399960312345678\",\n  \"panExpiry\": \"0127\",\n  \"tokenRequestorId\": \"99850031692\",\n  \"tokenType\": \"CLOUD\",\n  \"forceTokenExpiry\": \"0627\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-TVT-038 Expiry - Provision for already expired PAN",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "9985003"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/tokens/provision",
+              "protocol": "http",
+              "host": [
+                "10",
+                "88",
+                "250",
+                "40"
+              ],
+              "port": "40020",
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "NEGATIVE: PAN expiry Jan 2024 is already past. EMVCo Ref: Section 4.4. Expected: HTTP 400, cannot tokenize expired PAN.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pan\": \"6399960312345678\",\n  \"panExpiry\": \"0124\",\n  \"tokenRequestorId\": \"99850031692\",\n  \"tokenType\": \"CLOUD\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-TVT-039 Expiry - Quarter matches PAN expiry correctly",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "9985003"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/tokens/provision",
+              "protocol": "http",
+              "host": [
+                "10",
+                "88",
+                "250",
+                "40"
+              ],
+              "port": "40020",
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "POSITIVE: PAN expiry Aug 2027 maps to Q3. Business Rule: R4. Expected: HTTP 200, token issued from Q3 2027 BIN range.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pan\": \"6399960312345678\",\n  \"panExpiry\": \"0827\",\n  \"tokenRequestorId\": \"99850031692\",\n  \"tokenType\": \"CLOUD\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-TVT-040 Expiry - Quarter mismatch error",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "9985003"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/tokens/provision",
+              "protocol": "http",
+              "host": [
+                "10",
+                "88",
+                "250",
+                "40"
+              ],
+              "port": "40020",
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "NEGATIVE: PAN expiry Dec 2027 maps to Q4 but Q4 2027 range not configured. Business Rule: R4. Expected: HTTP 422, error: EXPIRY_QUARTER_MISMATCH.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pan\": \"6399960312345678\",\n  \"panExpiry\": \"1227\",\n  \"tokenRequestorId\": \"99850031692\",\n  \"tokenType\": \"CLOUD\"\n}"
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "TC-F De-Tokenization",
+      "item": [
+        {
+          "name": "TC-TVT-041 De-tokenize - Authorized party valid active token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "9985003"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/tokens/detokenize",
+              "protocol": "http",
+              "host": [
+                "10",
+                "88",
+                "250",
+                "40"
+              ],
+              "port": "40020",
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "detokenize"
+              ]
+            },
+            "description": "POSITIVE: Authorized party de-tokenizes an active token. EMVCo Ref: Section 5.1. Expected: HTTP 200, original PAN returned.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tokenValue\": \"{active_token}\",\n  \"tokenRequestorId\": \"99850031692\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-TVT-042 De-tokenize - Unauthorized party rejected",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "0000000"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/tokens/detokenize",
+              "protocol": "http",
+              "host": [
+                "10",
+                "88",
+                "250",
+                "40"
+              ],
+              "port": "40020",
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "detokenize"
+              ]
+            },
+            "description": "NEGATIVE: Unauthorized party attempts de-tokenization. EMVCo Ref: Section 5.2. Expected: HTTP 403, de-tokenization not permitted.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tokenValue\": \"{active_token}\",\n  \"tokenRequestorId\": \"UNAUTHORIZED_TR\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-TVT-043 De-tokenize - Deleted token rejected",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "9985003"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/tokens/detokenize",
+              "protocol": "http",
+              "host": [
+                "10",
+                "88",
+                "250",
+                "40"
+              ],
+              "port": "40020",
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "detokenize"
+              ]
+            },
+            "description": "NEGATIVE: De-tokenize a deleted token. EMVCo Ref: Section 5.3. Expected: HTTP 404 or 422, token not found or deleted.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tokenValue\": \"{deleted_token}\",\n  \"tokenRequestorId\": \"99850031692\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-TVT-044 De-tokenize - Invalid token format (non-Luhn)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "9985003"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/tokens/detokenize",
+              "protocol": "http",
+              "host": [
+                "10",
+                "88",
+                "250",
+                "40"
+              ],
+              "port": "40020",
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "detokenize"
+              ]
+            },
+            "description": "NEGATIVE: Token value fails Luhn check. EMVCo Ref: Section 3.2. Expected: HTTP 400, error: INVALID_TOKEN_FORMAT.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tokenValue\": \"1234567890123456\",\n  \"tokenRequestorId\": \"99850031692\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-TVT-045 De-tokenize - Tampered token value",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "9985003"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/tokens/detokenize",
+              "protocol": "http",
+              "host": [
+                "10",
+                "88",
+                "250",
+                "40"
+              ],
+              "port": "40020",
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "detokenize"
+              ]
+            },
+            "description": "NEGATIVE: Token value does not exist in vault. EMVCo Ref: Section 5.4. Expected: HTTP 404, token not found in vault.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tokenValue\": \"9999999999999999\",\n  \"tokenRequestorId\": \"99850031692\"\n}"
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "TC-G Token Domain Restriction Control",
+      "item": [
+        {
+          "name": "TC-TVT-046 TDRC - Token used within allowed domain",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "9985003"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/tokens/authorize",
+              "protocol": "http",
+              "host": [
+                "10",
+                "88",
+                "250",
+                "40"
+              ],
+              "port": "40020",
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "authorize"
+              ]
+            },
+            "description": "POSITIVE: Token with ECOMMERCE domain used for e-commerce transaction. EMVCo Ref: Section 7.1. Expected: HTTP 200, authorization approved.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tokenValue\": \"{token_with_domain}\",\n  \"cryptogram\": \"{tavv}\",\n  \"domain\": \"ECOMMERCE\",\n  \"merchantId\": \"123456789012345\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-TVT-047 TDRC - Token used outside allowed domain rejected",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "9985003"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/tokens/authorize",
+              "protocol": "http",
+              "host": [
+                "10",
+                "88",
+                "250",
+                "40"
+              ],
+              "port": "40020",
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "authorize"
+              ]
+            },
+            "description": "NEGATIVE: Token restricted to ECOMMERCE used for CONTACTLESS. EMVCo Ref: Section 7.2. Expected: HTTP 403, error: TOKEN_DOMAIN_VIOLATION.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tokenValue\": \"{token_ecommerce_only}\",\n  \"cryptogram\": \"{tavv}\",\n  \"domain\": \"CONTACTLESS\",\n  \"merchantId\": \"123456789012345\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-TVT-048 TDRC - Token with no domain restriction",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "9985003"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/tokens/authorize",
+              "protocol": "http",
+              "host": [
+                "10",
+                "88",
+                "250",
+                "40"
+              ],
+              "port": "40020",
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "authorize"
+              ]
+            },
+            "description": "POSITIVE: Token with no domain restriction used in any domain. EMVCo Ref: Section 7.3. Expected: HTTP 200, authorization approved.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tokenValue\": \"{token_no_domain_restriction}\",\n  \"cryptogram\": \"{tavv}\",\n  \"domain\": \"CONTACTLESS\",\n  \"merchantId\": \"123456789012345\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-TVT-049 TDRC - Domain updated mid-lifecycle",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "9985003"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/tokens/{tokenId}/domain",
+              "protocol": "http",
+              "host": [
+                "10",
+                "88",
+                "250",
+                "40"
+              ],
+              "port": "40020",
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "%7BtokenId%7D",
+                "domain"
+              ]
+            },
+            "description": "POSITIVE: Update domain restriction on an active token. EMVCo Ref: Section 7.4. Expected: HTTP 200, new restriction enforced on subsequent transactions.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tokenId\": \"{tokenId}\",\n  \"newDomainRestriction\": \"QR_CODE\"\n}"
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "TC-H Security and Fraud Controls",
+      "item": [
+        {
+          "name": "TC-TVT-050 Security - Duplicate token request idempotent",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "9985003"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/tokens/provision",
+              "protocol": "http",
+              "host": [
+                "10",
+                "88",
+                "250",
+                "40"
+              ],
+              "port": "40020",
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "FUNCTIONAL: Duplicate request with same idempotencyKey. EMVCo Ref: Section 4.3.4. Expected: HTTP 200, same token returned, no new allocation.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pan\": \"6399960312345678\",\n  \"panExpiry\": \"0627\",\n  \"tokenRequestorId\": \"99850031692\",\n  \"tokenType\": \"CLOUD\",\n  \"idempotencyKey\": \"unique-request-123\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-TVT-051 Security - Brute-force token enumeration rate limited",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "9985003"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/tokens/detokenize",
+              "protocol": "http",
+              "host": [
+                "10",
+                "88",
+                "250",
+                "40"
+              ],
+              "port": "40020",
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "detokenize"
+              ]
+            },
+            "description": "SECURITY: Rapidly send 100+ de-tokenization attempts with random token values. EMVCo Ref: Section 8.1. Expected: HTTP 429 after threshold, rate limiting enforced.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tokenValue\": \"1111111111111111\",\n  \"tokenRequestorId\": \"99850031692\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-TVT-052 Security - Manipulated Luhn check rejected",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "9985003"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/tokens/detokenize",
+              "protocol": "http",
+              "host": [
+                "10",
+                "88",
+                "250",
+                "40"
+              ],
+              "port": "40020",
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "detokenize"
+              ]
+            },
+            "description": "SECURITY: Token with bad Luhn check digit. EMVCo Ref: Section 3.2. Expected: HTTP 400, error: INVALID_TOKEN_FORMAT.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tokenValue\": \"6399960312345670\",\n  \"tokenRequestorId\": \"99850031692\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-TVT-053 Security - Expired JWT/OAuth in header",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "9985003"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer expired.jwt.token"
+              }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/tokens/provision",
+              "protocol": "http",
+              "host": [
+                "10",
+                "88",
+                "250",
+                "40"
+              ],
+              "port": "40020",
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "SECURITY: Expired JWT token in Authorization header. Expected: HTTP 401, unauthorized.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pan\": \"6399960312345678\",\n  \"panExpiry\": \"0627\",\n  \"tokenRequestorId\": \"99850031692\",\n  \"tokenType\": \"CLOUD\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-TVT-054 Security - Missing authorization header",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/tokens/provision",
+              "protocol": "http",
+              "host": [
+                "10",
+                "88",
+                "250",
+                "40"
+              ],
+              "port": "40020",
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "SECURITY: No Authorization header and no X-TV-ID. Expected: HTTP 401, missing credentials.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pan\": \"6399960312345678\",\n  \"panExpiry\": \"0627\",\n  \"tokenRequestorId\": \"99850031692\",\n  \"tokenType\": \"CLOUD\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-TVT-055 Security - SQL injection in PAN field",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "9985003"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/tokens/provision",
+              "protocol": "http",
+              "host": [
+                "10",
+                "88",
+                "250",
+                "40"
+              ],
+              "port": "40020",
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "SECURITY: SQL injection attempt in PAN field. Expected: HTTP 400, input sanitized and rejected, no DB impact.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pan\": \"6399960312345'; DROP TABLE tokens;--\",\n  \"panExpiry\": \"0627\",\n  \"tokenRequestorId\": \"99850031692\",\n  \"tokenType\": \"CLOUD\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-TVT-056 Security - Token Assurance Level returned",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "9985003"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/tokens/provision",
+              "protocol": "http",
+              "host": [
+                "10",
+                "88",
+                "250",
+                "40"
+              ],
+              "port": "40020",
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "FUNCTIONAL: TAL correctly calculated based on ID&V method. EMVCo Ref: Section 4.5. Expected: HTTP 200, tokenAssuranceLevel field present with appropriate level.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pan\": \"6399960312345678\",\n  \"panExpiry\": \"0627\",\n  \"tokenRequestorId\": \"99850031692\",\n  \"tokenType\": \"CLOUD\",\n  \"identificationAndVerificationMethod\": \"APP_TO_APP\"\n}"
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "TC-I Boundary and Capacity Tests",
+      "item": [
+        {
+          "name": "TC-TVT-057 Boundary - First token of quarter range",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "9985003"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/tokens/provision",
+              "protocol": "http",
+              "host": [
+                "10",
+                "88",
+                "250",
+                "40"
+              ],
+              "port": "40020",
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "BOUNDARY: First-ever token issuance from a fresh Q2 range. Business Rule: R2. Expected: HTTP 200, token at BIN_START, remaining = capacity - 1.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pan\": \"6399960311100000\",\n  \"panExpiry\": \"0627\",\n  \"tokenRequestorId\": \"99850031692\",\n  \"tokenType\": \"CLOUD\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-TVT-058 Boundary - Last token of quarter range",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "9985003"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/tokens/provision",
+              "protocol": "http",
+              "host": [
+                "10",
+                "88",
+                "250",
+                "40"
+              ],
+              "port": "40020",
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "BOUNDARY: Last token when allocated = capacity - 1. Business Rule: R3. Expected: HTTP 200, token at BIN_END, remaining = 0 after.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pan\": \"6399960319000000\",\n  \"panExpiry\": \"0627\",\n  \"tokenRequestorId\": \"99850031692\",\n  \"tokenType\": \"CLOUD\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-TVT-059 Boundary - Allocated = capacity (exhausted)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "9985003"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/tokens/provision",
+              "protocol": "http",
+              "host": [
+                "10",
+                "88",
+                "250",
+                "40"
+              ],
+              "port": "40020",
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "NEGATIVE: Request when allocated = capacity. Business Rule: R3. Expected: HTTP 422, error: TOKEN_RANGE_EXHAUSTED.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pan\": \"6399960319000001\",\n  \"panExpiry\": \"0627\",\n  \"tokenRequestorId\": \"99850031692\",\n  \"tokenType\": \"CLOUD\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-TVT-060 Boundary - Concurrent requests at range boundary",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "9985003"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/tokens/provision",
+              "protocol": "http",
+              "host": [
+                "10",
+                "88",
+                "250",
+                "40"
+              ],
+              "port": "40020",
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "PERFORMANCE: Send 10 concurrent provision requests when only 5 tokens remain. Business Rule: R3. Expected: Exactly 5 succeed, 5 return TOKEN_RANGE_EXHAUSTED. No over-allocation.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pan\": \"6399960315000000\",\n  \"panExpiry\": \"0627\",\n  \"tokenRequestorId\": \"99850031692\",\n  \"tokenType\": \"CLOUD\",\n  \"concurrencyTest\": true\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-TVT-061 Boundary - Remaining capacity decrements correctly",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "9985003"
+              }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/token-range?requestorId=99850031692&issuerId=237d9188de9144e5806abf95441fce5b&binId=d2d1adf80a1045359033de945b60e48g",
+              "protocol": "http",
+              "host": [
+                "10",
+                "88",
+                "250",
+                "40"
+              ],
+              "port": "40020",
+              "path": [
+                "tvm",
+                "api",
+                "token-range"
+              ]
+            },
+            "description": "FUNCTIONAL: After issuing N tokens, verify remainingCount = capacity - N. Business Rule: R5. Expected: HTTP 200, remainingCount field accurately reflects allocation."
+          },
+          "response": []
+        },
+        {
+          "name": "TC-TVT-062 Boundary - Partial utilization does not block future issuance",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "9985003"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/tokens/provision",
+              "protocol": "http",
+              "host": [
+                "10",
+                "88",
+                "250",
+                "40"
+              ],
+              "port": "40020",
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "POSITIVE: Quarter range partially used (e.g., 50%). Business Rule: R5. Expected: HTTP 200, token issued successfully from remaining capacity.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pan\": \"6399960315500000\",\n  \"panExpiry\": \"0627\",\n  \"tokenRequestorId\": \"99850031692\",\n  \"tokenType\": \"CLOUD\"\n}"
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "TC-J Error Handling and Response Codes",
+      "item": [
+        {
+          "name": "TC-TVT-063 Error - ACCOUNT_NOT_ELIGIBLE",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "9985003"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/tokens/provision",
+              "protocol": "http",
+              "host": [
+                "10",
+                "88",
+                "250",
+                "40"
+              ],
+              "port": "40020",
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "NEGATIVE: Validate error code ACCOUNT_NOT_ELIGIBLE and response structure. Business Rule: R1. Expected: HTTP 422, body contains errorCode, errorMessage, traceId, timestamp.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pan\": \"6399960300000001\",\n  \"panExpiry\": \"0627\",\n  \"tokenRequestorId\": \"99850031692\",\n  \"tokenType\": \"CLOUD\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-TVT-064 Error - TOKEN_RANGE_EXHAUSTED",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "9985003"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/tokens/provision",
+              "protocol": "http",
+              "host": [
+                "10",
+                "88",
+                "250",
+                "40"
+              ],
+              "port": "40020",
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "NEGATIVE: Validate error code TOKEN_RANGE_EXHAUSTED. Business Rule: R3. Precondition: Exhaust the Q2 range. Expected: HTTP 422, body contains errorCode, errorMessage, traceId, timestamp.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pan\": \"6399960312345678\",\n  \"panExpiry\": \"0627\",\n  \"tokenRequestorId\": \"99850031692\",\n  \"tokenType\": \"CLOUD\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-TVT-065 Error - EXPIRY_QUARTER_MISMATCH",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "9985003"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/tokens/provision",
+              "protocol": "http",
+              "host": [
+                "10",
+                "88",
+                "250",
+                "40"
+              ],
+              "port": "40020",
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "NEGATIVE: Validate error code EXPIRY_QUARTER_MISMATCH. Business Rule: R4. Expected: HTTP 422, body contains errorCode, errorMessage, traceId, timestamp.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pan\": \"6399960312345678\",\n  \"panExpiry\": \"1228\",\n  \"tokenRequestorId\": \"99850031692\",\n  \"tokenType\": \"CLOUD\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-TVT-066 Error - BIN_RANGE_OVERLAP_DETECTED",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "9985003"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/token-range",
+              "protocol": "http",
+              "host": [
+                "10",
+                "88",
+                "250",
+                "40"
+              ],
+              "port": "40020",
+              "path": [
+                "tvm",
+                "api",
+                "token-range"
+              ]
+            },
+            "description": "NEGATIVE: Validate error code BIN_RANGE_OVERLAP_DETECTED. Business Rule: R6. Expected: HTTP 409, body contains errorCode, errorMessage, traceId, timestamp.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tokenRangeSetupList\": [\n    {\n      \"expiry\": {\n        \"quarter\": \"Q2\",\n        \"year\": 2027\n      },\n      \"lowerLimit\": \"9100000\",\n      \"upperLimit\": \"9999999\"\n    }\n  ],\n  \"requestorId\": \"99850031692\",\n  \"issuerId\": \"237d9188de9144e5806abf95441fce5b\",\n  \"binId\": \"d2d1adf80a1045359033de945b60e48g\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-TVT-067 Error - INVALID_TOKEN_FORMAT",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "9985003"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/tokens/detokenize",
+              "protocol": "http",
+              "host": [
+                "10",
+                "88",
+                "250",
+                "40"
+              ],
+              "port": "40020",
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "detokenize"
+              ]
+            },
+            "description": "NEGATIVE: Validate error code INVALID_TOKEN_FORMAT. EMVCo Ref: Section 3.2. Expected: HTTP 400, body contains errorCode, errorMessage, traceId, timestamp.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tokenValue\": \"ABCDEFGHIJ123456\",\n  \"tokenRequestorId\": \"99850031692\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-TVT-068 Error - TOKEN_DOMAIN_VIOLATION",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "9985003"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/tokens/authorize",
+              "protocol": "http",
+              "host": [
+                "10",
+                "88",
+                "250",
+                "40"
+              ],
+              "port": "40020",
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "authorize"
+              ]
+            },
+            "description": "NEGATIVE: Validate error code TOKEN_DOMAIN_VIOLATION. EMVCo Ref: Section 7.2. Expected: HTTP 403, body contains errorCode, errorMessage, traceId, timestamp.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tokenValue\": \"{ecommerce_token}\",\n  \"cryptogram\": \"{tavv}\",\n  \"domain\": \"IN_APP\",\n  \"merchantId\": \"123456789012345\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-TVT-069 Error - Response structure validation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "9985003"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/tokens/provision",
+              "protocol": "http",
+              "host": [
+                "10",
+                "88",
+                "250",
+                "40"
+              ],
+              "port": "40020",
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "NEGATIVE: Empty required fields. Expected: HTTP 400, response body MUST contain: errorCode (string), errorMessage (string), traceId (UUID), timestamp (ISO-8601).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pan\": \"\",\n  \"panExpiry\": \"\",\n  \"tokenRequestorId\": \"\"\n}"
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

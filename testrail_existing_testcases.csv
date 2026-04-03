@@ -1,0 +1,378 @@
+ID,Title,Section,Type,Priority,Preconditions,Steps,Expected Result,EMVCo Reference,Business Rule,API Endpoint,Expected HTTP
+TC-01-01,TC-01-01 Happy Path - Valid vault creation,TC-01 Vault Creation,POSITIVE,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40010/rgm/api/vaults
+2. Request body: {
+  ""tspCode"": ""998"",
+  ""tokenVaultName"": ""My Token Vault"",
+  ""custodianIdList"": [
+    ""custodian007"",
+    ""custodian008""
+  ]
+}
+3. Verify HTTP response code 200/201
+4. Validate response body structure and fields","HTTP 200/201, vaultId returned in response.",,,POST http://10.88.250.40:40010/rgm/api/vaults,200/201
+TC-01-02,TC-01-02 Negative - Missing tspCode,TC-01 Vault Creation,NEGATIVE,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40010/rgm/api/vaults
+2. Request body: {
+  ""tokenVaultName"": ""My Token Vault"",
+  ""custodianIdList"": [
+    ""custodian007"",
+    ""custodian008""
+  ]
+}
+3. Verify HTTP response code 400
+4. Validate response body structure and fields","HTTP 400, validation error indicating tspCode is required.",,,POST http://10.88.250.40:40010/rgm/api/vaults,400
+TC-01-03,TC-01-03 Negative - Empty custodianIdList,TC-01 Vault Creation,NEGATIVE,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40010/rgm/api/vaults
+2. Request body: {
+  ""tspCode"": ""998"",
+  ""tokenVaultName"": ""My Token Vault"",
+  ""custodianIdList"": []
+}
+3. Verify HTTP response code 400
+4. Validate response body structure and fields","HTTP 400, error: at least one custodian required.",,,POST http://10.88.250.40:40010/rgm/api/vaults,400
+TC-01-04,TC-01-04 Negative - Duplicate vault creation,TC-01 Vault Creation,NEGATIVE,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40010/rgm/api/vaults
+2. Request body: {
+  ""tspCode"": ""998"",
+  ""tokenVaultName"": ""My Token Vault"",
+  ""custodianIdList"": [
+    ""custodian007"",
+    ""custodian008""
+  ]
+}
+3. Verify HTTP response code 409
+4. Validate response body structure and fields",HTTP 409 Conflict or appropriate duplicate error.,,,POST http://10.88.250.40:40010/rgm/api/vaults,409
+TC-01-05,TC-01-05 Edge Case - Invalid tspCode format,TC-01 Vault Creation,EDGE CASE,Medium,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40010/rgm/api/vaults
+2. Request body: {
+  ""tspCode"": ""ABC!@#"",
+  ""tokenVaultName"": ""My Token Vault"",
+  ""custodianIdList"": [
+    ""custodian007""
+  ]
+}
+3. Verify HTTP response code 400
+4. Validate response body structure and fields","HTTP 400, validation error on tspCode format.",,,POST http://10.88.250.40:40010/rgm/api/vaults,400
+TC-02-01,TC-02-01 Happy Path - Key generation,TC-02 Generate Transport Key,POSITIVE,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send GET request to http://10.88.250.40:40029/api/generate-transport-key
+2. Verify HTTP response code 200
+3. Validate response body structure and fields","HTTP 200, transport key (hex string) returned, KCV value present.",,,GET http://10.88.250.40:40029/api/generate-transport-key,200
+TC-02-02,TC-02-02 Edge Case - Key uniqueness (call 1 of 2),TC-02 Generate Transport Key,EDGE CASE,Medium,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send GET request to http://10.88.250.40:40029/api/generate-transport-key
+2. Verify HTTP response code 
+3. Validate response body structure and fields",Distinct key values across both calls.,,,GET http://10.88.250.40:40029/api/generate-transport-key,
+TC-02-02b,TC-02-02b Edge Case - Key uniqueness (call 2 of 2),TC-02 Generate Transport Key,EDGE CASE,Medium,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send GET request to http://10.88.250.40:40029/api/generate-transport-key
+2. Verify HTTP response code 
+3. Validate response body structure and fields",Key must differ from first call.,,,GET http://10.88.250.40:40029/api/generate-transport-key,
+TC-03-01,TC-03-01 Happy Path - Valid X-TV-ID,TC-03 Get Certificate,POSITIVE,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send GET request to http://10.88.250.40:40020/tvm/api/vault/certificate
+2. Verify HTTP response code 200
+3. Validate response body structure and fields","HTTP 200, PEM/DER certificate returned.",,,GET http://10.88.250.40:40020/tvm/api/vault/certificate,200
+TC-03-02,TC-03-02 Negative - Missing X-TV-ID header,TC-03 Get Certificate,NEGATIVE,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send GET request to http://10.88.250.40:40020/tvm/api/vault/certificate
+2. Verify HTTP response code 400
+3. Validate response body structure and fields","HTTP 400 or 401, error: missing vault identifier.",,,GET http://10.88.250.40:40020/tvm/api/vault/certificate,400
+TC-03-03,TC-03-03 Negative - Non-existent vault ID,TC-03 Get Certificate,NEGATIVE,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send GET request to http://10.88.250.40:40020/tvm/api/vault/certificate
+2. Verify HTTP response code 404
+3. Validate response body structure and fields","HTTP 404, vault not found.",,,GET http://10.88.250.40:40020/tvm/api/vault/certificate,404
+TC-04-01,TC-04-01 Happy Path - Valid cert and plainData,TC-04 Encrypt The Key,POSITIVE,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40029/api/v1/encrypt/transport-key
+2. Verify HTTP response code 200
+3. Validate response body structure and fields","HTTP 200, encryptedTransportKey hex string returned.",,,POST http://10.88.250.40:40029/api/v1/encrypt/transport-key,200
+TC-04-02,TC-04-02 Negative - Missing certificate file,TC-04 Encrypt The Key,NEGATIVE,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40029/api/v1/encrypt/transport-key
+2. Verify HTTP response code 400
+3. Validate response body structure and fields","HTTP 400, error: certificate required.",,,POST http://10.88.250.40:40029/api/v1/encrypt/transport-key,400
+TC-04-03,TC-04-03 Negative - Invalid certificate format,TC-04 Encrypt The Key,NEGATIVE,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40029/api/v1/encrypt/transport-key
+2. Verify HTTP response code 400/422
+3. Validate response body structure and fields","HTTP 400/422, certificate parse error.",,,POST http://10.88.250.40:40029/api/v1/encrypt/transport-key,400/422
+TC-04-04,TC-04-04 Edge Case - plainData wrong length,TC-04 Encrypt The Key,EDGE CASE,Medium,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40029/api/v1/encrypt/transport-key
+2. Verify HTTP response code 400
+3. Validate response body structure and fields","HTTP 400, invalid plainData length or format.",,,POST http://10.88.250.40:40029/api/v1/encrypt/transport-key,400
+TC-05-01,TC-05-01 Happy Path - Valid issuer,TC-05 Issuer Creation,POSITIVE,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/issuer
+2. Request body: {
+  ""issuerName"": ""EBL"",
+  ""issuerCode"": ""420"",
+  ""encryptedTransportKey"": ""8EA89A35C83D66FBB5DE2A97F74392C272BCBF521AA93EF072399382E32B05900F8D9C3EDF0D7EE3367E3D9E903CA1B9D5E9F5323ED8089DF353A9EF8CF0...
+3. Verify HTTP response code 200/201
+4. Validate response body structure and fields","HTTP 200/201, issuerId (UUID) returned.",,,POST http://10.88.250.40:40020/tvm/api/issuer,200/201
+TC-05-02,TC-05-02 Negative - Invalid KCV,TC-05 Issuer Creation,NEGATIVE,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/issuer
+2. Request body: {
+  ""issuerName"": ""EBL"",
+  ""issuerCode"": ""421"",
+  ""encryptedTransportKey"": ""8EA89A35C83D66FBB5DE2A97F74392C272BCBF521AA93EF072399382E32B05900F8D9C3EDF0D7EE3367E3D9E903CA1B9D5E9F5323ED8089DF353A9EF8CF0...
+3. Verify HTTP response code 400/422
+4. Validate response body structure and fields","HTTP 400/422, KCV verification failure.",,,POST http://10.88.250.40:40020/tvm/api/issuer,400/422
+TC-05-03,TC-05-03 Negative - Missing X-TV-ID header,TC-05 Issuer Creation,NEGATIVE,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/issuer
+2. Request body: {
+  ""issuerName"": ""EBL"",
+  ""issuerCode"": ""422"",
+  ""encryptedTransportKey"": ""8EA89A35C83D66FBB5DE2A97F74392C272BCBF521AA93EF072399382E32B05900F8D9C3EDF0D7EE3367E3D9E903CA1B9D5E9F5323ED8089DF353A9EF8CF0...
+3. Verify HTTP response code 400
+4. Validate response body structure and fields",HTTP 400 or 401.,,,POST http://10.88.250.40:40020/tvm/api/issuer,400
+TC-05-04,TC-05-04 Negative - Duplicate issuer code,TC-05 Issuer Creation,NEGATIVE,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/issuer
+2. Request body: {
+  ""issuerName"": ""EBL_DUPLICATE"",
+  ""issuerCode"": ""420"",
+  ""encryptedTransportKey"": ""8EA89A35C83D66FBB5DE2A97F74392C272BCBF521AA93EF072399382E32B05900F8D9C3EDF0D7EE3367E3D9E903CA1B9D5E9F5323ED8089DF3...
+3. Verify HTTP response code 409
+4. Validate response body structure and fields",HTTP 409 Conflict.,,,POST http://10.88.250.40:40020/tvm/api/issuer,409
+TC-05-05,TC-05-05 Edge Case - Invalid realTimePanEnrollment value,TC-05 Issuer Creation,EDGE CASE,Medium,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/issuer
+2. Request body: {
+  ""issuerName"": ""EBL_TEST"",
+  ""issuerCode"": ""423"",
+  ""encryptedTransportKey"": ""8EA89A35C83D66FBB5DE2A97F74392C272BCBF521AA93EF072399382E32B05900F8D9C3EDF0D7EE3367E3D9E903CA1B9D5E9F5323ED8089DF353A9E...
+3. Verify HTTP response code 400
+4. Validate response body structure and fields","HTTP 400, validation error on enum field.",,,POST http://10.88.250.40:40020/tvm/api/issuer,400
+TC-06-01,TC-06-01 Happy Path - Valid BIN,TC-06 BIN Creation,POSITIVE,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/bin/single
+2. Request body: {
+  ""issuerId"": ""237d9188de9144e5806abf95441fce5b"",
+  ""binControllerId"": ""1234"",
+  ""binValue"": ""63999603"",
+  ""brandType"": ""06"",
+  ""ianLen"": 7
+}
+3. Verify HTTP response code 200/201
+4. Validate response body structure and fields","HTTP 200/201, binId returned.",,,POST http://10.88.250.40:40020/tvm/api/bin/single,200/201
+TC-06-02,TC-06-02 Negative - Invalid issuerId,TC-06 BIN Creation,NEGATIVE,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/bin/single
+2. Request body: {
+  ""issuerId"": ""00000000000000000000000000000000"",
+  ""binControllerId"": ""1234"",
+  ""binValue"": ""63999604"",
+  ""brandType"": ""06"",
+  ""ianLen"": 7
+}
+3. Verify HTTP response code 404
+4. Validate response body structure and fields","HTTP 404, issuer not found.",,,POST http://10.88.250.40:40020/tvm/api/bin/single,404
+TC-06-03,TC-06-03 Negative - Duplicate BIN value,TC-06 BIN Creation,NEGATIVE,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/bin/single
+2. Request body: {
+  ""issuerId"": ""237d9188de9144e5806abf95441fce5b"",
+  ""binControllerId"": ""1234"",
+  ""binValue"": ""63999603"",
+  ""brandType"": ""06"",
+  ""ianLen"": 7
+}
+3. Verify HTTP response code 409
+4. Validate response body structure and fields",HTTP 409 Conflict.,,,POST http://10.88.250.40:40020/tvm/api/bin/single,409
+TC-06-04,TC-06-04 Edge Case - ianLen out of range,TC-06 BIN Creation,EDGE CASE,Medium,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/bin/single
+2. Request body: {
+  ""issuerId"": ""237d9188de9144e5806abf95441fce5b"",
+  ""binControllerId"": ""1234"",
+  ""binValue"": ""63999605"",
+  ""brandType"": ""06"",
+  ""ianLen"": 0
+}
+3. Verify HTTP response code 400
+4. Validate response body structure and fields","HTTP 400, validation error on ianLen.",,,POST http://10.88.250.40:40020/tvm/api/bin/single,400
+TC-07-01,TC-07-01 Happy Path - Valid account range,TC-07 Account Range Creation,POSITIVE,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/account-range
+2. Request body: {
+  ""issuerId"": ""982094e9868d4f37b7954c7e5e765f4f"",
+  ""binId"": ""d2d1adf80a1045359033de945b60e48g"",
+  ""panLowerLimit"": ""1100000"",
+  ""panUpperLimit"": ""9000000"",
+  ""listOfExpiry"": [
+    { ""quarter"": ""Q1""...
+3. Verify HTTP response code 200/201
+4. Validate response body structure and fields","HTTP 200/201, account range ID returned.",,,POST http://10.88.250.40:40020/tvm/api/account-range,200/201
+TC-07-02,TC-07-02 Negative - Lower limit > upper limit,TC-07 Account Range Creation,NEGATIVE,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/account-range
+2. Request body: {
+  ""issuerId"": ""982094e9868d4f37b7954c7e5e765f4f"",
+  ""binId"": ""d2d1adf80a1045359033de945b60e48g"",
+  ""panLowerLimit"": ""9000000"",
+  ""panUpperLimit"": ""1100000"",
+  ""listOfExpiry"": [
+    { ""quarter"": ""Q1""...
+3. Verify HTTP response code 400
+4. Validate response body structure and fields","HTTP 400, invalid range: lower > upper.",,,POST http://10.88.250.40:40020/tvm/api/account-range,400
+TC-07-03,TC-07-03 Negative - Empty listOfExpiry,TC-07 Account Range Creation,NEGATIVE,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/account-range
+2. Request body: {
+  ""issuerId"": ""982094e9868d4f37b7954c7e5e765f4f"",
+  ""binId"": ""d2d1adf80a1045359033de945b60e48g"",
+  ""panLowerLimit"": ""1100000"",
+  ""panUpperLimit"": ""9000000"",
+  ""listOfExpiry"": []
+}
+3. Verify HTTP response code 400
+4. Validate response body structure and fields","HTTP 400, at least one expiry required.",,,POST http://10.88.250.40:40020/tvm/api/account-range,400
+TC-07-04,TC-07-04 Edge Case - Invalid quarter value,TC-07 Account Range Creation,EDGE CASE,Medium,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/account-range
+2. Request body: {
+  ""issuerId"": ""982094e9868d4f37b7954c7e5e765f4f"",
+  ""binId"": ""d2d1adf80a1045359033de945b60e48g"",
+  ""panLowerLimit"": ""1100000"",
+  ""panUpperLimit"": ""9000000"",
+  ""listOfExpiry"": [
+    { ""quarter"": ""Q5""...
+3. Verify HTTP response code 400
+4. Validate response body structure and fields","HTTP 400, quarter must be Q1-Q4.",,,POST http://10.88.250.40:40020/tvm/api/account-range,400
+TC-07-05,TC-07-05 Edge Case - Past expiry year,TC-07 Account Range Creation,EDGE CASE,Medium,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/account-range
+2. Request body: {
+  ""issuerId"": ""982094e9868d4f37b7954c7e5e765f4f"",
+  ""binId"": ""d2d1adf80a1045359033de945b60e48g"",
+  ""panLowerLimit"": ""1100000"",
+  ""panUpperLimit"": ""9000000"",
+  ""listOfExpiry"": [
+    { ""quarter"": ""Q1""...
+3. Verify HTTP response code 400
+4. Validate response body structure and fields",HTTP 400 or warning: expiry date in the past.,,,POST http://10.88.250.40:40020/tvm/api/account-range,400
+TC-08-01,TC-08-01 Happy Path - Google Pay requester,TC-08 Token Requester Creation,POSITIVE,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/token-requestor
+2. Request body: {
+  ""tokenFormFactor"": ""00"",
+  ""encryptedTransportKey"": ""8EA89A35C83D66FBB5DE2A97F74392C272BCBF521AA93EF072399382E32B05900F8D9C3EDF0D7EE3367E3D9E903CA1B9D5E9F5323ED8089DF353A9EF8CF08E178D9D85D84A871A4...
+3. Verify HTTP response code 200/201
+4. Validate response body structure and fields","HTTP 200/201, token requestor ID (trId) returned.",,,POST http://10.88.250.40:40020/tvm/api/token-requestor,200/201
+TC-08-02,TC-08-02 Negative - Invalid tokenFormFactor,TC-08 Token Requester Creation,NEGATIVE,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/token-requestor
+2. Request body: {
+  ""tokenFormFactor"": ""99"",
+  ""encryptedTransportKey"": ""8EA89A35C83D66FBB5DE2A97F74392C272BCBF521AA93EF072399382E32B05900F8D9C3EDF0D7EE3367E3D9E903CA1B9D5E9F5323ED8089DF353A9EF8CF08E178D9D85D84A871A4...
+3. Verify HTTP response code 400
+4. Validate response body structure and fields","HTTP 400, unsupported form factor.",,,POST http://10.88.250.40:40020/tvm/api/token-requestor,400
+TC-08-03,TC-08-03 Negative - KCV mismatch,TC-08 Token Requester Creation,NEGATIVE,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/token-requestor
+2. Request body: {
+  ""tokenFormFactor"": ""00"",
+  ""encryptedTransportKey"": ""8EA89A35C83D66FBB5DE2A97F74392C272BCBF521AA93EF072399382E32B05900F8D9C3EDF0D7EE3367E3D9E903CA1B9D5E9F5323ED8089DF353A9EF8CF08E178D9D85D84A871A4...
+3. Verify HTTP response code 400/422
+4. Validate response body structure and fields","HTTP 400/422, KCV verification failure.",,,POST http://10.88.250.40:40020/tvm/api/token-requestor,400/422
+TC-08-04,TC-08-04 Edge Case - Missing serviceName,TC-08 Token Requester Creation,EDGE CASE,Medium,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/token-requestor
+2. Request body: {
+  ""tokenFormFactor"": ""00"",
+  ""encryptedTransportKey"": ""8EA89A35C83D66FBB5DE2A97F74392C272BCBF521AA93EF072399382E32B05900F8D9C3EDF0D7EE3367E3D9E903CA1B9D5E9F5323ED8089DF353A9EF8CF08E178D9D85D84A871A4...
+3. Verify HTTP response code 400
+4. Validate response body structure and fields","HTTP 400, required field missing.",,,POST http://10.88.250.40:40020/tvm/api/token-requestor,400
+TC-09-01,TC-09-01 Happy Path - Valid token use setup,TC-09 Token Use Setup,POSITIVE,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/token-requestor/token-use/setup
+2. Request body: {
+  ""merchantInfos"": [
+    {
+      ""merchantId"": ""123456789012345"",
+      ""merchantName"": ""Merchant""
+    }
+  ],
+  ""modeOfTransaction"": ""01"",
+  ""trId"": ""99850031692""
+}
+3. Verify HTTP response code 200/201
+4. Validate response body structure and fields","HTTP 200/201, token use configuration confirmed.",,,POST http://10.88.250.40:40020/tvm/api/token-requestor/token-use/setup,200/201
+TC-09-02,TC-09-02 Negative - Non-existent trId,TC-09 Token Use Setup,NEGATIVE,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/token-requestor/token-use/setup
+2. Request body: {
+  ""merchantInfos"": [
+    {
+      ""merchantId"": ""123456789012345"",
+      ""merchantName"": ""Merchant""
+    }
+  ],
+  ""modeOfTransaction"": ""01"",
+  ""trId"": ""00000000000""
+}
+3. Verify HTTP response code 404
+4. Validate response body structure and fields","HTTP 404, token requestor not found.",,,POST http://10.88.250.40:40020/tvm/api/token-requestor/token-use/setup,404
+TC-09-03,TC-09-03 Negative - merchantId wrong length,TC-09 Token Use Setup,NEGATIVE,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/token-requestor/token-use/setup
+2. Request body: {
+  ""merchantInfos"": [
+    {
+      ""merchantId"": ""123"",
+      ""merchantName"": ""Merchant""
+    }
+  ],
+  ""modeOfTransaction"": ""01"",
+  ""trId"": ""99850031692""
+}
+3. Verify HTTP response code 400
+4. Validate response body structure and fields","HTTP 400, invalid merchantId format.",,,POST http://10.88.250.40:40020/tvm/api/token-requestor/token-use/setup,400
+TC-09-04,TC-09-04 Edge Case - Multiple merchants,TC-09 Token Use Setup,EDGE CASE,Medium,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/token-requestor/token-use/setup
+2. Request body: {
+  ""merchantInfos"": [
+    { ""merchantId"": ""123456789012341"", ""merchantName"": ""Merchant A"" },
+    { ""merchantId"": ""123456789012342"", ""merchantName"": ""Merchant B"" },
+    { ""merchantId"": ""12345678901234...
+3. Verify HTTP response code 200
+4. Validate response body structure and fields","HTTP 200, all merchants configured successfully.",,,POST http://10.88.250.40:40020/tvm/api/token-requestor/token-use/setup,200
+TC-10-01,TC-10-01 Happy Path - Valid life range,TC-10 Token Life Setup,POSITIVE,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/token-life/authorization
+2. Request body: {
+  ""requestorId"": ""99850031692"",
+  ""minPeriodInMonths"": 0,
+  ""maxPeriodInMonths"": 70,
+  ""issuerId"": ""237d9188de9144e5806abf95441fce5c""
+}
+3. Verify HTTP response code 200/201
+4. Validate response body structure and fields","HTTP 200/201, token life authorization saved.",,,POST http://10.88.250.40:40020/tvm/api/token-life/authorization,200/201
+TC-10-02,TC-10-02 Negative - Min > max period,TC-10 Token Life Setup,NEGATIVE,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/token-life/authorization
+2. Request body: {
+  ""requestorId"": ""99850031692"",
+  ""minPeriodInMonths"": 70,
+  ""maxPeriodInMonths"": 10,
+  ""issuerId"": ""237d9188de9144e5806abf95441fce5c""
+}
+3. Verify HTTP response code 400
+4. Validate response body structure and fields","HTTP 400, min must be <= max.",,,POST http://10.88.250.40:40020/tvm/api/token-life/authorization,400
+TC-10-03,TC-10-03 Negative - Non-existent issuerId,TC-10 Token Life Setup,NEGATIVE,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/token-life/authorization
+2. Request body: {
+  ""requestorId"": ""99850031692"",
+  ""minPeriodInMonths"": 0,
+  ""maxPeriodInMonths"": 70,
+  ""issuerId"": ""00000000000000000000000000000000""
+}
+3. Verify HTTP response code 404
+4. Validate response body structure and fields","HTTP 404, issuer not found.",,,POST http://10.88.250.40:40020/tvm/api/token-life/authorization,404
+TC-10-04,TC-10-04 Edge Case - maxPeriodInMonths = 0,TC-10 Token Life Setup,EDGE CASE,Medium,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/token-life/authorization
+2. Request body: {
+  ""requestorId"": ""99850031692"",
+  ""minPeriodInMonths"": 0,
+  ""maxPeriodInMonths"": 0,
+  ""issuerId"": ""237d9188de9144e5806abf95441fce5c""
+}
+3. Verify HTTP response code 400
+4. Validate response body structure and fields",HTTP 400 or 200 depending on business rule.,,,POST http://10.88.250.40:40020/tvm/api/token-life/authorization,400
+TC-11-01,TC-11-01 Happy Path - Valid token range,TC-11 Token Range Setup,POSITIVE,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/token-range
+2. Request body: {
+  ""tokenRangeSetupList"": [
+    {
+      ""expiry"": { ""quarter"": ""Q2"", ""year"": 2027 },
+      ""lowerLimit"": ""9100000"",
+      ""upperLimit"": ""9999999""
+    }
+  ],
+  ""requestorId"": ""99850031692"",
+  ""issuerI...
+3. Verify HTTP response code 200/201
+4. Validate response body structure and fields","HTTP 200/201, token range assigned.",,,POST http://10.88.250.40:40020/tvm/api/token-range,200/201
+TC-11-02,TC-11-02 Negative - Token range overlaps account range,TC-11 Token Range Setup,NEGATIVE,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/token-range
+2. Request body: {
+  ""tokenRangeSetupList"": [
+    {
+      ""expiry"": { ""quarter"": ""Q2"", ""year"": 2027 },
+      ""lowerLimit"": ""1100000"",
+      ""upperLimit"": ""9000000""
+    }
+  ],
+  ""requestorId"": ""99850031692"",
+  ""issuerI...
+3. Verify HTTP response code 400/409
+4. Validate response body structure and fields","HTTP 400/409, range conflict.",,,POST http://10.88.250.40:40020/tvm/api/token-range,400/409
+TC-11-03,TC-11-03 Negative - Lower > upper limit,TC-11 Token Range Setup,NEGATIVE,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/token-range
+2. Request body: {
+  ""tokenRangeSetupList"": [
+    {
+      ""expiry"": { ""quarter"": ""Q2"", ""year"": 2027 },
+      ""lowerLimit"": ""9999999"",
+      ""upperLimit"": ""9100000""
+    }
+  ],
+  ""requestorId"": ""99850031692"",
+  ""issuerI...
+3. Verify HTTP response code 400
+4. Validate response body structure and fields","HTTP 400, invalid range.",,,POST http://10.88.250.40:40020/tvm/api/token-range,400
+TC-11-04,TC-11-04 Negative - Non-existent requestorId,TC-11 Token Range Setup,NEGATIVE,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/token-range
+2. Request body: {
+  ""tokenRangeSetupList"": [
+    {
+      ""expiry"": { ""quarter"": ""Q2"", ""year"": 2027 },
+      ""lowerLimit"": ""9100000"",
+      ""upperLimit"": ""9999999""
+    }
+  ],
+  ""requestorId"": ""00000000000"",
+  ""issuerI...
+3. Verify HTTP response code 404
+4. Validate response body structure and fields","HTTP 404, token requestor not found.",,,POST http://10.88.250.40:40020/tvm/api/token-range,404
+TC-11-05,TC-11-05 Edge Case - Expiry in the past,TC-11 Token Range Setup,EDGE CASE,Medium,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/token-range
+2. Request body: {
+  ""tokenRangeSetupList"": [
+    {
+      ""expiry"": { ""quarter"": ""Q1"", ""year"": 2023 },
+      ""lowerLimit"": ""9100000"",
+      ""upperLimit"": ""9999999""
+    }
+  ],
+  ""requestorId"": ""99850031692"",
+  ""issuerI...
+3. Verify HTTP response code 400
+4. Validate response body structure and fields","HTTP 400, expiry must be in the future.",,,POST http://10.88.250.40:40020/tvm/api/token-range,400

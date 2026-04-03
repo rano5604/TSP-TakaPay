@@ -1,0 +1,626 @@
+ID,Title,Section,Type,Priority,Preconditions,Steps,Expected Result,EMVCo Reference,Business Rule,API Endpoint,Expected HTTP
+TC-TVT-001,TC-TVT-001 Token Provisioning - Valid PAN in Q1 range,TC-A Token Provisioning,POSITIVE,Medium,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/tokens/provision
+2. Request body: {
+  ""pan"": ""6399960312345678"",
+  ""panExpiry"": ""0327"",
+  ""tokenRequestorId"": ""99850031692"",
+  ""tokenType"": ""CLOUD"",
+  ""tokenAssuranceLevel"": ""3""
+}
+3. Verify HTTP response code 200/201
+4. Validate response body structure and fields","HTTP 200/201, token (13-19 digit Luhn-valid), TAL returned, token expiry within PAN expiry boundary.",Section 4.3.,"R1, R4",POST http://10.88.250.40:40020/tvm/api/tokens/provision,200/201
+TC-TVT-002,TC-TVT-002 Token Provisioning - Valid PAN in Q2 range,TC-A Token Provisioning,POSITIVE,Medium,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/tokens/provision
+2. Request body: {
+  ""pan"": ""6399960312345678"",
+  ""panExpiry"": ""0627"",
+  ""tokenRequestorId"": ""99850031692"",
+  ""tokenType"": ""CLOUD"",
+  ""tokenAssuranceLevel"": ""3""
+}
+3. Verify HTTP response code 200/201
+4. Validate response body structure and fields","HTTP 200/201, token issued from Q2 BIN range.",Section 4.3.,R4,POST http://10.88.250.40:40020/tvm/api/tokens/provision,200/201
+TC-TVT-003,TC-TVT-003 Token Provisioning - Valid PAN in Q3 range,TC-A Token Provisioning,POSITIVE,Medium,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/tokens/provision
+2. Request body: {
+  ""pan"": ""6399960312345678"",
+  ""panExpiry"": ""0927"",
+  ""tokenRequestorId"": ""99850031692"",
+  ""tokenType"": ""CLOUD"",
+  ""tokenAssuranceLevel"": ""3""
+}
+3. Verify HTTP response code 200/201
+4. Validate response body structure and fields","HTTP 200/201, token from Q3 BIN range.",Section 4.3.,R4,POST http://10.88.250.40:40020/tvm/api/tokens/provision,200/201
+TC-TVT-004,TC-TVT-004 Token Provisioning - Valid PAN in Q4 range,TC-A Token Provisioning,POSITIVE,Medium,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/tokens/provision
+2. Request body: {
+  ""pan"": ""6399960312345678"",
+  ""panExpiry"": ""1227"",
+  ""tokenRequestorId"": ""99850031692"",
+  ""tokenType"": ""CLOUD"",
+  ""tokenAssuranceLevel"": ""3""
+}
+3. Verify HTTP response code 200/201
+4. Validate response body structure and fields","HTTP 200/201, token from Q4 BIN range.",Section 4.3.,R4,POST http://10.88.250.40:40020/tvm/api/tokens/provision,200/201
+TC-TVT-005,TC-TVT-005 Token Provisioning - BIN range boundary first token,TC-A Token Provisioning,BOUNDARY,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/tokens/provision
+2. Request body: {
+  ""pan"": ""6399960311000001"",
+  ""panExpiry"": ""0627"",
+  ""tokenRequestorId"": ""99850031692"",
+  ""tokenType"": ""CLOUD"",
+  ""tokenAssuranceLevel"": ""3""
+}
+3. Verify HTTP response code 200/201
+4. Validate response body structure and fields","HTTP 200/201, token value starts at configured BIN_START.",Section 4.3.2.,R2,POST http://10.88.250.40:40020/tvm/api/tokens/provision,200/201
+TC-TVT-006,TC-TVT-006 Token Provisioning - BIN range boundary last token,TC-A Token Provisioning,BOUNDARY,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/tokens/provision
+2. Request body: {
+  ""pan"": ""6399960319000000"",
+  ""panExpiry"": ""0627"",
+  ""tokenRequestorId"": ""99850031692"",
+  ""tokenType"": ""CLOUD"",
+  ""tokenAssuranceLevel"": ""3""
+}
+3. Verify HTTP response code 200/201
+4. Validate response body structure and fields","HTTP 200/201, token at BIN_END.",Section 4.3.2.,"R2, R3",POST http://10.88.250.40:40020/tvm/api/tokens/provision,200/201
+TC-TVT-007,TC-TVT-007 Token Provisioning - Range one away from exhaustion,TC-A Token Provisioning,BOUNDARY,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/tokens/provision
+2. Request body: {
+  ""pan"": ""6399960318999999"",
+  ""panExpiry"": ""0627"",
+  ""tokenRequestorId"": ""99850031692"",
+  ""tokenType"": ""CLOUD"",
+  ""tokenAssuranceLevel"": ""3""
+}
+3. Verify HTTP response code 200/201
+4. Validate response body structure and fields","HTTP 200/201, last token issued, remaining capacity = 0 after.",Section 4.3.2.,"R3, R5",POST http://10.88.250.40:40020/tvm/api/tokens/provision,200/201
+TC-TVT-008,TC-TVT-008 Token Provisioning - Range fully exhausted,TC-A Token Provisioning,NEGATIVE,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/tokens/provision
+2. Request body: {
+  ""pan"": ""6399960318999998"",
+  ""panExpiry"": ""0627"",
+  ""tokenRequestorId"": ""99850031692"",
+  ""tokenType"": ""CLOUD"",
+  ""tokenAssuranceLevel"": ""3""
+}
+3. Verify HTTP response code 422
+4. Validate response body structure and fields","HTTP 422, error: TOKEN_RANGE_EXHAUSTED.",Section 4.3.2.,R3,POST http://10.88.250.40:40020/tvm/api/tokens/provision,422
+TC-TVT-009,TC-TVT-009 Token Provisioning - PAN outside account range,TC-A Token Provisioning,NEGATIVE,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/tokens/provision
+2. Request body: {
+  ""pan"": ""6399960300000001"",
+  ""panExpiry"": ""0627"",
+  ""tokenRequestorId"": ""99850031692"",
+  ""tokenType"": ""CLOUD"",
+  ""tokenAssuranceLevel"": ""3""
+}
+3. Verify HTTP response code 422
+4. Validate response body structure and fields","HTTP 422, error: ACCOUNT_NOT_ELIGIBLE.",Section 4.2.,R1,POST http://10.88.250.40:40020/tvm/api/tokens/provision,422
+TC-TVT-010,TC-TVT-010 Token Provisioning - Expired PAN,TC-A Token Provisioning,NEGATIVE,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/tokens/provision
+2. Request body: {
+  ""pan"": ""6399960312345678"",
+  ""panExpiry"": ""0123"",
+  ""tokenRequestorId"": ""99850031692"",
+  ""tokenType"": ""CLOUD"",
+  ""tokenAssuranceLevel"": ""3""
+}
+3. Verify HTTP response code 400
+4. Validate response body structure and fields","HTTP 400, error: PAN expired, cannot issue token.",Section 4.3.1.,,POST http://10.88.250.40:40020/tvm/api/tokens/provision,400
+TC-TVT-011,TC-TVT-011 Token Provisioning - Quarter not configured,TC-A Token Provisioning,NEGATIVE,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/tokens/provision
+2. Request body: {
+  ""pan"": ""6399960312345678"",
+  ""panExpiry"": ""1028"",
+  ""tokenRequestorId"": ""99850031692"",
+  ""tokenType"": ""CLOUD"",
+  ""tokenAssuranceLevel"": ""3""
+}
+3. Verify HTTP response code 422
+4. Validate response body structure and fields","HTTP 422, error: EXPIRY_QUARTER_MISMATCH or no range configured.",Section 4.3.,R4,POST http://10.88.250.40:40020/tvm/api/tokens/provision,422
+TC-TVT-012,TC-TVT-012 Token Provisioning - Re-tokenize same PAN (idempotency),TC-A Token Provisioning,FUNCTIONAL,Medium,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/tokens/provision
+2. Request body: {
+  ""pan"": ""6399960312345678"",
+  ""panExpiry"": ""0627"",
+  ""tokenRequestorId"": ""99850031692"",
+  ""tokenType"": ""CLOUD"",
+  ""tokenAssuranceLevel"": ""3""
+}
+3. Verify HTTP response code 200
+4. Validate response body structure and fields","HTTP 200, same token returned (idempotent), no new token allocated.",Section 4.3.4.,,POST http://10.88.250.40:40020/tvm/api/tokens/provision,200
+TC-TVT-013,TC-TVT-013 Token Provisioning - Invalid PAN format (non-numeric),TC-A Token Provisioning,NEGATIVE,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/tokens/provision
+2. Request body: {
+  ""pan"": ""ABCDEFGH12345678"",
+  ""panExpiry"": ""0627"",
+  ""tokenRequestorId"": ""99850031692"",
+  ""tokenType"": ""CLOUD"",
+  ""tokenAssuranceLevel"": ""3""
+}
+3. Verify HTTP response code 400
+4. Validate response body structure and fields","HTTP 400, invalid PAN format.",Section 3.1.,,POST http://10.88.250.40:40020/tvm/api/tokens/provision,400
+TC-TVT-014,TC-TVT-014 Token Provisioning - PAN too short (12 digits),TC-A Token Provisioning,NEGATIVE,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/tokens/provision
+2. Request body: {
+  ""pan"": ""639996031234"",
+  ""panExpiry"": ""0627"",
+  ""tokenRequestorId"": ""99850031692"",
+  ""tokenType"": ""CLOUD"",
+  ""tokenAssuranceLevel"": ""3""
+}
+3. Verify HTTP response code 400
+4. Validate response body structure and fields","HTTP 400, PAN length invalid.",Section 3.1.,,POST http://10.88.250.40:40020/tvm/api/tokens/provision,400
+TC-TVT-015,TC-TVT-015 Token Provisioning - PAN too long (20 digits),TC-A Token Provisioning,NEGATIVE,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/tokens/provision
+2. Request body: {
+  ""pan"": ""63999603123456789012"",
+  ""panExpiry"": ""0627"",
+  ""tokenRequestorId"": ""99850031692"",
+  ""tokenType"": ""CLOUD"",
+  ""tokenAssuranceLevel"": ""3""
+}
+3. Verify HTTP response code 400
+4. Validate response body structure and fields","HTTP 400, PAN length invalid.",Section 3.1.,,POST http://10.88.250.40:40020/tvm/api/tokens/provision,400
+TC-TVT-016,TC-TVT-016 Account Range - PAN within valid range,TC-B Account Range Validation,POSITIVE,Medium,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/tokens/provision
+2. Request body: {
+  ""pan"": ""6399960315000000"",
+  ""panExpiry"": ""0627"",
+  ""tokenRequestorId"": ""99850031692"",
+  ""tokenType"": ""CLOUD""
+}
+3. Verify HTTP response code 200/201
+4. Validate response body structure and fields","HTTP 200/201, token issued.",,R1,POST http://10.88.250.40:40020/tvm/api/tokens/provision,200/201
+TC-TVT-017,TC-TVT-017 Account Range - PAN at lower boundary,TC-B Account Range Validation,BOUNDARY,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/tokens/provision
+2. Request body: {
+  ""pan"": ""6399960311100000"",
+  ""panExpiry"": ""0627"",
+  ""tokenRequestorId"": ""99850031692"",
+  ""tokenType"": ""CLOUD""
+}
+3. Verify HTTP response code 200/201
+4. Validate response body structure and fields","HTTP 200/201, accepted (inclusive boundary).",,R1,POST http://10.88.250.40:40020/tvm/api/tokens/provision,200/201
+TC-TVT-018,TC-TVT-018 Account Range - PAN at upper boundary,TC-B Account Range Validation,BOUNDARY,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/tokens/provision
+2. Request body: {
+  ""pan"": ""6399960319000000"",
+  ""panExpiry"": ""0627"",
+  ""tokenRequestorId"": ""99850031692"",
+  ""tokenType"": ""CLOUD""
+}
+3. Verify HTTP response code 200/201
+4. Validate response body structure and fields","HTTP 200/201, accepted (inclusive boundary).",,R1,POST http://10.88.250.40:40020/tvm/api/tokens/provision,200/201
+TC-TVT-019,TC-TVT-019 Account Range - PAN below lower limit,TC-B Account Range Validation,NEGATIVE,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/tokens/provision
+2. Request body: {
+  ""pan"": ""6399960310000001"",
+  ""panExpiry"": ""0627"",
+  ""tokenRequestorId"": ""99850031692"",
+  ""tokenType"": ""CLOUD""
+}
+3. Verify HTTP response code 422
+4. Validate response body structure and fields","HTTP 422, error: ACCOUNT_NOT_ELIGIBLE.",,R1,POST http://10.88.250.40:40020/tvm/api/tokens/provision,422
+TC-TVT-020,TC-TVT-020 Account Range - PAN above upper limit,TC-B Account Range Validation,NEGATIVE,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/tokens/provision
+2. Request body: {
+  ""pan"": ""6399960319999999"",
+  ""panExpiry"": ""0627"",
+  ""tokenRequestorId"": ""99850031692"",
+  ""tokenType"": ""CLOUD""
+}
+3. Verify HTTP response code 422
+4. Validate response body structure and fields","HTTP 422, error: ACCOUNT_NOT_ELIGIBLE.",,R1,POST http://10.88.250.40:40020/tvm/api/tokens/provision,422
+TC-TVT-021,TC-TVT-021 Account Range - PAN in deactivated range,TC-B Account Range Validation,NEGATIVE,High,Deactivate the account range first.,"1. Send POST request to http://10.88.250.40:40020/tvm/api/tokens/provision
+2. Request body: {
+  ""pan"": ""6399960315000000"",
+  ""panExpiry"": ""0627"",
+  ""tokenRequestorId"": ""99850031692"",
+  ""tokenType"": ""CLOUD""
+}
+3. Verify HTTP response code 422
+4. Validate response body structure and fields","HTTP 422, error: ACCOUNT_NOT_ELIGIBLE.",,R1,POST http://10.88.250.40:40020/tvm/api/tokens/provision,422
+TC-TVT-022,TC-TVT-022 BIN Range - Configure non-overlapping Q4 range,TC-C Quarter BIN Range Setup,POSITIVE,Medium,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/token-range
+2. Request body: {
+  ""tokenRangeSetupList"": [
+    {
+      ""expiry"": {
+        ""quarter"": ""Q4"",
+        ""year"": 2027
+      },
+      ""lowerLimit"": ""9100000"",
+      ""upperLimit"": ""9500000""
+    }
+  ],
+  ""requestorId"": ""99...
+3. Verify HTTP response code 200/201
+4. Validate response body structure and fields","HTTP 200/201, range created with capacity metadata.",,"R2, R6",POST http://10.88.250.40:40020/tvm/api/token-range,200/201
+TC-TVT-023,TC-TVT-023 BIN Range - Overlapping range rejected,TC-C Quarter BIN Range Setup,NEGATIVE,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/token-range
+2. Request body: {
+  ""tokenRangeSetupList"": [
+    {
+      ""expiry"": {
+        ""quarter"": ""Q2"",
+        ""year"": 2027
+      },
+      ""lowerLimit"": ""9200000"",
+      ""upperLimit"": ""9800000""
+    }
+  ],
+  ""requestorId"": ""99...
+3. Verify HTTP response code 409
+4. Validate response body structure and fields","HTTP 409, error: BIN_RANGE_OVERLAP_DETECTED.",,R6,POST http://10.88.250.40:40020/tvm/api/token-range,409
+TC-TVT-024,TC-TVT-024 BIN Range - Already-configured quarter,TC-C Quarter BIN Range Setup,NEGATIVE,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/token-range
+2. Request body: {
+  ""tokenRangeSetupList"": [
+    {
+      ""expiry"": {
+        ""quarter"": ""Q2"",
+        ""year"": 2027
+      },
+      ""lowerLimit"": ""8000000"",
+      ""upperLimit"": ""8500000""
+    }
+  ],
+  ""requestorId"": ""99...
+3. Verify HTTP response code 409
+4. Validate response body structure and fields","HTTP 409, error: quarter already configured or BIN_RANGE_OVERLAP_DETECTED.",,R2,POST http://10.88.250.40:40020/tvm/api/token-range,409
+TC-TVT-025,TC-TVT-025 BIN Range - Start > End rejected,TC-C Quarter BIN Range Setup,NEGATIVE,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/token-range
+2. Request body: {
+  ""tokenRangeSetupList"": [
+    {
+      ""expiry"": {
+        ""quarter"": ""Q1"",
+        ""year"": 2028
+      },
+      ""lowerLimit"": ""9500000"",
+      ""upperLimit"": ""9100000""
+    }
+  ],
+  ""requestorId"": ""99...
+3. Verify HTTP response code 400
+4. Validate response body structure and fields","HTTP 400, invalid range: start > end.",,R2,POST http://10.88.250.40:40020/tvm/api/token-range,400
+TC-TVT-026,TC-TVT-026 BIN Range - Zero capacity rejected,TC-C Quarter BIN Range Setup,BOUNDARY,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/token-range
+2. Request body: {
+  ""tokenRangeSetupList"": [
+    {
+      ""expiry"": {
+        ""quarter"": ""Q1"",
+        ""year"": 2028
+      },
+      ""lowerLimit"": ""9100000"",
+      ""upperLimit"": ""9100000""
+    }
+  ],
+  ""requestorId"": ""99...
+3. Verify HTTP response code 400
+4. Validate response body structure and fields","HTTP 400, zero or insufficient capacity.",,R2,POST http://10.88.250.40:40020/tvm/api/token-range,400
+TC-TVT-027,TC-TVT-027 BIN Range - Retrieve config per quarter,TC-C Quarter BIN Range Setup,POSITIVE,Medium,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send GET request to http://10.88.250.40:40020/tvm/api/token-range?requestorId=99850031692&issuerId=237d9188de9144e5806abf95441fce5b&binId=d2d1adf80a1045359033de945b60e48g
+2. Verify HTTP response code 200
+3. Validate response body structure and fields","HTTP 200, response includes quarter, year, capacity, allocatedCount, remainingCount per range.",,R2,GET http://10.88.250.40:40020/tvm/api/token-range?requestorId=99850031692&issuerId=237d9188de9144e5806abf95441fce5b&binId=d2d1adf80a1045359033de945b60e48g,200
+TC-TVT-028,TC-TVT-028 Lifecycle - Activate token (INACTIVE -> ACTIVE),TC-D Token Lifecycle,POSITIVE,Medium,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send PUT request to http://10.88.250.40:40020/tvm/api/tokens/{tokenId}/activate
+2. Request body: {
+  ""tokenId"": ""{tokenId}"",
+  ""reason"": ""ID_AND_V_COMPLETE""
+}
+3. Verify HTTP response code 200
+4. Validate response body structure and fields","HTTP 200, status changes to ACTIVE.",Section 6.1.,,PUT http://10.88.250.40:40020/tvm/api/tokens/{tokenId}/activate,200
+TC-TVT-029,TC-TVT-029 Lifecycle - Suspend token (ACTIVE -> SUSPENDED),TC-D Token Lifecycle,POSITIVE,Medium,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send PUT request to http://10.88.250.40:40020/tvm/api/tokens/{tokenId}/suspend
+2. Request body: {
+  ""tokenId"": ""{tokenId}"",
+  ""reason"": ""CARDHOLDER_REQUEST""
+}
+3. Verify HTTP response code 200
+4. Validate response body structure and fields","HTTP 200, status changes to SUSPENDED.",Section 6.2.,,PUT http://10.88.250.40:40020/tvm/api/tokens/{tokenId}/suspend,200
+TC-TVT-030,TC-TVT-030 Lifecycle - Resume token (SUSPENDED -> ACTIVE),TC-D Token Lifecycle,POSITIVE,Medium,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send PUT request to http://10.88.250.40:40020/tvm/api/tokens/{tokenId}/resume
+2. Request body: {
+  ""tokenId"": ""{tokenId}"",
+  ""reason"": ""CARDHOLDER_REQUEST""
+}
+3. Verify HTTP response code 200
+4. Validate response body structure and fields","HTTP 200, status changes back to ACTIVE.",Section 6.3.,,PUT http://10.88.250.40:40020/tvm/api/tokens/{tokenId}/resume,200
+TC-TVT-031,TC-TVT-031 Lifecycle - Delete token (any state -> DELETED),TC-D Token Lifecycle,POSITIVE,Medium,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send DELETE request to http://10.88.250.40:40020/tvm/api/tokens/{tokenId}
+2. Verify HTTP response code 200
+3. Validate response body structure and fields","HTTP 200, status changes to DELETED, token cannot be used.",Section 6.4.,,DELETE http://10.88.250.40:40020/tvm/api/tokens/{tokenId},200
+TC-TVT-032,TC-TVT-032 Lifecycle - Transaction on SUSPENDED token rejected,TC-D Token Lifecycle,NEGATIVE,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/tokens/authorize
+2. Request body: {
+  ""tokenValue"": ""{suspended_token}"",
+  ""cryptogram"": ""{tavv_cryptogram}"",
+  ""amount"": ""100.00"",
+  ""currency"": ""BDT""
+}
+3. Verify HTTP response code 403
+4. Validate response body structure and fields","HTTP 403, error: token is suspended.",Section 6.5.,,POST http://10.88.250.40:40020/tvm/api/tokens/authorize,403
+TC-TVT-033,TC-TVT-033 Lifecycle - Transaction on DELETED token rejected,TC-D Token Lifecycle,NEGATIVE,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/tokens/authorize
+2. Request body: {
+  ""tokenValue"": ""{deleted_token}"",
+  ""cryptogram"": ""{tavv_cryptogram}"",
+  ""amount"": ""100.00"",
+  ""currency"": ""BDT""
+}
+3. Verify HTTP response code 403
+4. Validate response body structure and fields","HTTP 403, error: token is deleted.",Section 6.5.,,POST http://10.88.250.40:40020/tvm/api/tokens/authorize,403
+TC-TVT-034,TC-TVT-034 Lifecycle - Invalid state transition (INACTIVE -> SUSPENDED),TC-D Token Lifecycle,NEGATIVE,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send PUT request to http://10.88.250.40:40020/tvm/api/tokens/{tokenId}/suspend
+2. Request body: {
+  ""tokenId"": ""{inactive_tokenId}"",
+  ""reason"": ""FRAUD_DETECTION""
+}
+3. Verify HTTP response code 400
+4. Validate response body structure and fields","HTTP 400, invalid state transition.",Section 6.2.,,PUT http://10.88.250.40:40020/tvm/api/tokens/{tokenId}/suspend,400
+TC-TVT-035,TC-TVT-035 Lifecycle - Delete already deleted token,TC-D Token Lifecycle,NEGATIVE,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send DELETE request to http://10.88.250.40:40020/tvm/api/tokens/{deleted_tokenId}
+2. Verify HTTP response code 404
+3. Validate response body structure and fields","HTTP 404 or 409, token already deleted.",Section 6.4.,,DELETE http://10.88.250.40:40020/tvm/api/tokens/{deleted_tokenId},404
+TC-TVT-036,TC-TVT-036 Expiry - Token expiry within PAN expiry,TC-E Token Expiry Validation,POSITIVE,Medium,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/tokens/provision
+2. Request body: {
+  ""pan"": ""6399960312345678"",
+  ""panExpiry"": ""0628"",
+  ""tokenRequestorId"": ""99850031692"",
+  ""tokenType"": ""CLOUD""
+}
+3. Verify HTTP response code 200
+4. Validate response body structure and fields","HTTP 200, token expiry <= PAN expiry.",Section 4.4.,,POST http://10.88.250.40:40020/tvm/api/tokens/provision,200
+TC-TVT-037,TC-TVT-037 Expiry - Token expiry beyond PAN expiry rejected,TC-E Token Expiry Validation,NEGATIVE,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/tokens/provision
+2. Request body: {
+  ""pan"": ""6399960312345678"",
+  ""panExpiry"": ""0127"",
+  ""tokenRequestorId"": ""99850031692"",
+  ""tokenType"": ""CLOUD"",
+  ""forceTokenExpiry"": ""0627""
+}
+3. Verify HTTP response code 400
+4. Validate response body structure and fields","HTTP 400, EMVCo violation: token expiry cannot exceed PAN expiry.",Section 4.4.,,POST http://10.88.250.40:40020/tvm/api/tokens/provision,400
+TC-TVT-038,TC-TVT-038 Expiry - Provision for already expired PAN,TC-E Token Expiry Validation,NEGATIVE,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/tokens/provision
+2. Request body: {
+  ""pan"": ""6399960312345678"",
+  ""panExpiry"": ""0124"",
+  ""tokenRequestorId"": ""99850031692"",
+  ""tokenType"": ""CLOUD""
+}
+3. Verify HTTP response code 400
+4. Validate response body structure and fields","HTTP 400, cannot tokenize expired PAN.",Section 4.4.,,POST http://10.88.250.40:40020/tvm/api/tokens/provision,400
+TC-TVT-039,TC-TVT-039 Expiry - Quarter matches PAN expiry correctly,TC-E Token Expiry Validation,POSITIVE,Medium,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/tokens/provision
+2. Request body: {
+  ""pan"": ""6399960312345678"",
+  ""panExpiry"": ""0827"",
+  ""tokenRequestorId"": ""99850031692"",
+  ""tokenType"": ""CLOUD""
+}
+3. Verify HTTP response code 200
+4. Validate response body structure and fields","HTTP 200, token issued from Q3 2027 BIN range.",,R4,POST http://10.88.250.40:40020/tvm/api/tokens/provision,200
+TC-TVT-040,TC-TVT-040 Expiry - Quarter mismatch error,TC-E Token Expiry Validation,NEGATIVE,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/tokens/provision
+2. Request body: {
+  ""pan"": ""6399960312345678"",
+  ""panExpiry"": ""1227"",
+  ""tokenRequestorId"": ""99850031692"",
+  ""tokenType"": ""CLOUD""
+}
+3. Verify HTTP response code 422
+4. Validate response body structure and fields","HTTP 422, error: EXPIRY_QUARTER_MISMATCH.",,R4,POST http://10.88.250.40:40020/tvm/api/tokens/provision,422
+TC-TVT-041,TC-TVT-041 De-tokenize - Authorized party valid active token,TC-F De-Tokenization,POSITIVE,Medium,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/tokens/detokenize
+2. Request body: {
+  ""tokenValue"": ""{active_token}"",
+  ""tokenRequestorId"": ""99850031692""
+}
+3. Verify HTTP response code 200
+4. Validate response body structure and fields","HTTP 200, original PAN returned.",Section 5.1.,,POST http://10.88.250.40:40020/tvm/api/tokens/detokenize,200
+TC-TVT-042,TC-TVT-042 De-tokenize - Unauthorized party rejected,TC-F De-Tokenization,NEGATIVE,Critical,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/tokens/detokenize
+2. Request body: {
+  ""tokenValue"": ""{active_token}"",
+  ""tokenRequestorId"": ""UNAUTHORIZED_TR""
+}
+3. Verify HTTP response code 403
+4. Validate response body structure and fields","HTTP 403, de-tokenization not permitted.",Section 5.2.,,POST http://10.88.250.40:40020/tvm/api/tokens/detokenize,403
+TC-TVT-043,TC-TVT-043 De-tokenize - Deleted token rejected,TC-F De-Tokenization,NEGATIVE,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/tokens/detokenize
+2. Request body: {
+  ""tokenValue"": ""{deleted_token}"",
+  ""tokenRequestorId"": ""99850031692""
+}
+3. Verify HTTP response code 404
+4. Validate response body structure and fields","HTTP 404 or 422, token not found or deleted.",Section 5.3.,,POST http://10.88.250.40:40020/tvm/api/tokens/detokenize,404
+TC-TVT-044,TC-TVT-044 De-tokenize - Invalid token format (non-Luhn),TC-F De-Tokenization,NEGATIVE,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/tokens/detokenize
+2. Request body: {
+  ""tokenValue"": ""1234567890123456"",
+  ""tokenRequestorId"": ""99850031692""
+}
+3. Verify HTTP response code 400
+4. Validate response body structure and fields","HTTP 400, error: INVALID_TOKEN_FORMAT.",Section 3.2.,,POST http://10.88.250.40:40020/tvm/api/tokens/detokenize,400
+TC-TVT-045,TC-TVT-045 De-tokenize - Tampered token value,TC-F De-Tokenization,NEGATIVE,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/tokens/detokenize
+2. Request body: {
+  ""tokenValue"": ""9999999999999999"",
+  ""tokenRequestorId"": ""99850031692""
+}
+3. Verify HTTP response code 404
+4. Validate response body structure and fields","HTTP 404, token not found in vault.",Section 5.4.,,POST http://10.88.250.40:40020/tvm/api/tokens/detokenize,404
+TC-TVT-046,TC-TVT-046 TDRC - Token used within allowed domain,TC-G Token Domain Restriction Control,POSITIVE,Medium,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/tokens/authorize
+2. Request body: {
+  ""tokenValue"": ""{token_with_domain}"",
+  ""cryptogram"": ""{tavv}"",
+  ""domain"": ""ECOMMERCE"",
+  ""merchantId"": ""123456789012345""
+}
+3. Verify HTTP response code 200
+4. Validate response body structure and fields","HTTP 200, authorization approved.",Section 7.1.,,POST http://10.88.250.40:40020/tvm/api/tokens/authorize,200
+TC-TVT-047,TC-TVT-047 TDRC - Token used outside allowed domain rejected,TC-G Token Domain Restriction Control,NEGATIVE,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/tokens/authorize
+2. Request body: {
+  ""tokenValue"": ""{token_ecommerce_only}"",
+  ""cryptogram"": ""{tavv}"",
+  ""domain"": ""CONTACTLESS"",
+  ""merchantId"": ""123456789012345""
+}
+3. Verify HTTP response code 403
+4. Validate response body structure and fields","HTTP 403, error: TOKEN_DOMAIN_VIOLATION.",Section 7.2.,,POST http://10.88.250.40:40020/tvm/api/tokens/authorize,403
+TC-TVT-048,TC-TVT-048 TDRC - Token with no domain restriction,TC-G Token Domain Restriction Control,POSITIVE,Medium,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/tokens/authorize
+2. Request body: {
+  ""tokenValue"": ""{token_no_domain_restriction}"",
+  ""cryptogram"": ""{tavv}"",
+  ""domain"": ""CONTACTLESS"",
+  ""merchantId"": ""123456789012345""
+}
+3. Verify HTTP response code 200
+4. Validate response body structure and fields","HTTP 200, authorization approved.",Section 7.3.,,POST http://10.88.250.40:40020/tvm/api/tokens/authorize,200
+TC-TVT-049,TC-TVT-049 TDRC - Domain updated mid-lifecycle,TC-G Token Domain Restriction Control,POSITIVE,Medium,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send PUT request to http://10.88.250.40:40020/tvm/api/tokens/{tokenId}/domain
+2. Request body: {
+  ""tokenId"": ""{tokenId}"",
+  ""newDomainRestriction"": ""QR_CODE""
+}
+3. Verify HTTP response code 200
+4. Validate response body structure and fields","HTTP 200, new restriction enforced on subsequent transactions.",Section 7.4.,,PUT http://10.88.250.40:40020/tvm/api/tokens/{tokenId}/domain,200
+TC-TVT-050,TC-TVT-050 Security - Duplicate token request idempotent,TC-H Security and Fraud Controls,FUNCTIONAL,Medium,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/tokens/provision
+2. Request body: {
+  ""pan"": ""6399960312345678"",
+  ""panExpiry"": ""0627"",
+  ""tokenRequestorId"": ""99850031692"",
+  ""tokenType"": ""CLOUD"",
+  ""idempotencyKey"": ""unique-request-123""
+}
+3. Verify HTTP response code 200
+4. Validate response body structure and fields","HTTP 200, same token returned, no new allocation.",Section 4.3.4.,,POST http://10.88.250.40:40020/tvm/api/tokens/provision,200
+TC-TVT-051,TC-TVT-051 Security - Brute-force token enumeration rate limited,TC-H Security and Fraud Controls,SECURITY,Critical,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/tokens/detokenize
+2. Request body: {
+  ""tokenValue"": ""1111111111111111"",
+  ""tokenRequestorId"": ""99850031692""
+}
+3. Verify HTTP response code 429
+4. Validate response body structure and fields","HTTP 429 after threshold, rate limiting enforced.",Section 8.1.,,POST http://10.88.250.40:40020/tvm/api/tokens/detokenize,429
+TC-TVT-052,TC-TVT-052 Security - Manipulated Luhn check rejected,TC-H Security and Fraud Controls,SECURITY,Critical,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/tokens/detokenize
+2. Request body: {
+  ""tokenValue"": ""6399960312345670"",
+  ""tokenRequestorId"": ""99850031692""
+}
+3. Verify HTTP response code 400
+4. Validate response body structure and fields","HTTP 400, error: INVALID_TOKEN_FORMAT.",Section 3.2.,,POST http://10.88.250.40:40020/tvm/api/tokens/detokenize,400
+TC-TVT-053,TC-TVT-053 Security - Expired JWT/OAuth in header,TC-H Security and Fraud Controls,SECURITY,Critical,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/tokens/provision
+2. Request body: {
+  ""pan"": ""6399960312345678"",
+  ""panExpiry"": ""0627"",
+  ""tokenRequestorId"": ""99850031692"",
+  ""tokenType"": ""CLOUD""
+}
+3. Verify HTTP response code 401
+4. Validate response body structure and fields","HTTP 401, unauthorized.",,,POST http://10.88.250.40:40020/tvm/api/tokens/provision,401
+TC-TVT-054,TC-TVT-054 Security - Missing authorization header,TC-H Security and Fraud Controls,SECURITY,Critical,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/tokens/provision
+2. Request body: {
+  ""pan"": ""6399960312345678"",
+  ""panExpiry"": ""0627"",
+  ""tokenRequestorId"": ""99850031692"",
+  ""tokenType"": ""CLOUD""
+}
+3. Verify HTTP response code 401
+4. Validate response body structure and fields","HTTP 401, missing credentials.",,,POST http://10.88.250.40:40020/tvm/api/tokens/provision,401
+TC-TVT-055,TC-TVT-055 Security - SQL injection in PAN field,TC-H Security and Fraud Controls,SECURITY,Critical,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/tokens/provision
+2. Request body: {
+  ""pan"": ""6399960312345'; DROP TABLE tokens;--"",
+  ""panExpiry"": ""0627"",
+  ""tokenRequestorId"": ""99850031692"",
+  ""tokenType"": ""CLOUD""
+}
+3. Verify HTTP response code 400
+4. Validate response body structure and fields","HTTP 400, input sanitized and rejected, no DB impact.",,,POST http://10.88.250.40:40020/tvm/api/tokens/provision,400
+TC-TVT-056,TC-TVT-056 Security - Token Assurance Level returned,TC-H Security and Fraud Controls,FUNCTIONAL,Medium,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/tokens/provision
+2. Request body: {
+  ""pan"": ""6399960312345678"",
+  ""panExpiry"": ""0627"",
+  ""tokenRequestorId"": ""99850031692"",
+  ""tokenType"": ""CLOUD"",
+  ""identificationAndVerificationMethod"": ""APP_TO_APP""
+}
+3. Verify HTTP response code 200
+4. Validate response body structure and fields","HTTP 200, tokenAssuranceLevel field present with appropriate level.",Section 4.5.,,POST http://10.88.250.40:40020/tvm/api/tokens/provision,200
+TC-TVT-057,TC-TVT-057 Boundary - First token of quarter range,TC-I Boundary and Capacity Tests,BOUNDARY,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/tokens/provision
+2. Request body: {
+  ""pan"": ""6399960311100000"",
+  ""panExpiry"": ""0627"",
+  ""tokenRequestorId"": ""99850031692"",
+  ""tokenType"": ""CLOUD""
+}
+3. Verify HTTP response code 200
+4. Validate response body structure and fields","HTTP 200, token at BIN_START, remaining = capacity - 1.",,R2,POST http://10.88.250.40:40020/tvm/api/tokens/provision,200
+TC-TVT-058,TC-TVT-058 Boundary - Last token of quarter range,TC-I Boundary and Capacity Tests,BOUNDARY,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/tokens/provision
+2. Request body: {
+  ""pan"": ""6399960319000000"",
+  ""panExpiry"": ""0627"",
+  ""tokenRequestorId"": ""99850031692"",
+  ""tokenType"": ""CLOUD""
+}
+3. Verify HTTP response code 200
+4. Validate response body structure and fields","HTTP 200, token at BIN_END, remaining = 0 after.",,R3,POST http://10.88.250.40:40020/tvm/api/tokens/provision,200
+TC-TVT-059,TC-TVT-059 Boundary - Allocated = capacity (exhausted),TC-I Boundary and Capacity Tests,NEGATIVE,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/tokens/provision
+2. Request body: {
+  ""pan"": ""6399960319000001"",
+  ""panExpiry"": ""0627"",
+  ""tokenRequestorId"": ""99850031692"",
+  ""tokenType"": ""CLOUD""
+}
+3. Verify HTTP response code 422
+4. Validate response body structure and fields","HTTP 422, error: TOKEN_RANGE_EXHAUSTED.",,R3,POST http://10.88.250.40:40020/tvm/api/tokens/provision,422
+TC-TVT-060,TC-TVT-060 Boundary - Concurrent requests at range boundary,TC-I Boundary and Capacity Tests,PERFORMANCE,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/tokens/provision
+2. Request body: {
+  ""pan"": ""6399960315000000"",
+  ""panExpiry"": ""0627"",
+  ""tokenRequestorId"": ""99850031692"",
+  ""tokenType"": ""CLOUD"",
+  ""concurrencyTest"": true
+}
+3. Verify HTTP response code 
+4. Validate response body structure and fields","Exactly 5 succeed, 5 return TOKEN_RANGE_EXHAUSTED. No over-allocation.",,R3,POST http://10.88.250.40:40020/tvm/api/tokens/provision,
+TC-TVT-061,TC-TVT-061 Boundary - Remaining capacity decrements correctly,TC-I Boundary and Capacity Tests,FUNCTIONAL,Medium,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send GET request to http://10.88.250.40:40020/tvm/api/token-range?requestorId=99850031692&issuerId=237d9188de9144e5806abf95441fce5b&binId=d2d1adf80a1045359033de945b60e48g
+2. Verify HTTP response code 200
+3. Validate response body structure and fields","HTTP 200, remainingCount field accurately reflects allocation.",,R5,GET http://10.88.250.40:40020/tvm/api/token-range?requestorId=99850031692&issuerId=237d9188de9144e5806abf95441fce5b&binId=d2d1adf80a1045359033de945b60e48g,200
+TC-TVT-062,TC-TVT-062 Boundary - Partial utilization does not block future issuance,TC-I Boundary and Capacity Tests,POSITIVE,Medium,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/tokens/provision
+2. Request body: {
+  ""pan"": ""6399960315500000"",
+  ""panExpiry"": ""0627"",
+  ""tokenRequestorId"": ""99850031692"",
+  ""tokenType"": ""CLOUD""
+}
+3. Verify HTTP response code 200
+4. Validate response body structure and fields","HTTP 200, token issued successfully from remaining capacity.",,R5,POST http://10.88.250.40:40020/tvm/api/tokens/provision,200
+TC-TVT-063,TC-TVT-063 Error - ACCOUNT_NOT_ELIGIBLE,TC-J Error Handling and Response Codes,NEGATIVE,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/tokens/provision
+2. Request body: {
+  ""pan"": ""6399960300000001"",
+  ""panExpiry"": ""0627"",
+  ""tokenRequestorId"": ""99850031692"",
+  ""tokenType"": ""CLOUD""
+}
+3. Verify HTTP response code 422
+4. Validate response body structure and fields","HTTP 422, body contains errorCode, errorMessage, traceId, timestamp.",,R1,POST http://10.88.250.40:40020/tvm/api/tokens/provision,422
+TC-TVT-064,TC-TVT-064 Error - TOKEN_RANGE_EXHAUSTED,TC-J Error Handling and Response Codes,NEGATIVE,High,Exhaust the Q2 range.,"1. Send POST request to http://10.88.250.40:40020/tvm/api/tokens/provision
+2. Request body: {
+  ""pan"": ""6399960312345678"",
+  ""panExpiry"": ""0627"",
+  ""tokenRequestorId"": ""99850031692"",
+  ""tokenType"": ""CLOUD""
+}
+3. Verify HTTP response code 422
+4. Validate response body structure and fields","HTTP 422, body contains errorCode, errorMessage, traceId, timestamp.",,R3,POST http://10.88.250.40:40020/tvm/api/tokens/provision,422
+TC-TVT-065,TC-TVT-065 Error - EXPIRY_QUARTER_MISMATCH,TC-J Error Handling and Response Codes,NEGATIVE,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/tokens/provision
+2. Request body: {
+  ""pan"": ""6399960312345678"",
+  ""panExpiry"": ""1228"",
+  ""tokenRequestorId"": ""99850031692"",
+  ""tokenType"": ""CLOUD""
+}
+3. Verify HTTP response code 422
+4. Validate response body structure and fields","HTTP 422, body contains errorCode, errorMessage, traceId, timestamp.",,R4,POST http://10.88.250.40:40020/tvm/api/tokens/provision,422
+TC-TVT-066,TC-TVT-066 Error - BIN_RANGE_OVERLAP_DETECTED,TC-J Error Handling and Response Codes,NEGATIVE,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/token-range
+2. Request body: {
+  ""tokenRangeSetupList"": [
+    {
+      ""expiry"": {
+        ""quarter"": ""Q2"",
+        ""year"": 2027
+      },
+      ""lowerLimit"": ""9100000"",
+      ""upperLimit"": ""9999999""
+    }
+  ],
+  ""requestorId"": ""99...
+3. Verify HTTP response code 409
+4. Validate response body structure and fields","HTTP 409, body contains errorCode, errorMessage, traceId, timestamp.",,R6,POST http://10.88.250.40:40020/tvm/api/token-range,409
+TC-TVT-067,TC-TVT-067 Error - INVALID_TOKEN_FORMAT,TC-J Error Handling and Response Codes,NEGATIVE,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/tokens/detokenize
+2. Request body: {
+  ""tokenValue"": ""ABCDEFGHIJ123456"",
+  ""tokenRequestorId"": ""99850031692""
+}
+3. Verify HTTP response code 400
+4. Validate response body structure and fields","HTTP 400, body contains errorCode, errorMessage, traceId, timestamp.",Section 3.2.,,POST http://10.88.250.40:40020/tvm/api/tokens/detokenize,400
+TC-TVT-068,TC-TVT-068 Error - TOKEN_DOMAIN_VIOLATION,TC-J Error Handling and Response Codes,NEGATIVE,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/tokens/authorize
+2. Request body: {
+  ""tokenValue"": ""{ecommerce_token}"",
+  ""cryptogram"": ""{tavv}"",
+  ""domain"": ""IN_APP"",
+  ""merchantId"": ""123456789012345""
+}
+3. Verify HTTP response code 403
+4. Validate response body structure and fields","HTTP 403, body contains errorCode, errorMessage, traceId, timestamp.",Section 7.2.,,POST http://10.88.250.40:40020/tvm/api/tokens/authorize,403
+TC-TVT-069,TC-TVT-069 Error - Response structure validation,TC-J Error Handling and Response Codes,NEGATIVE,High,"Vault created, issuer onboarded, BIN and account ranges configured.","1. Send POST request to http://10.88.250.40:40020/tvm/api/tokens/provision
+2. Request body: {
+  ""pan"": """",
+  ""panExpiry"": """",
+  ""tokenRequestorId"": """"
+}
+3. Verify HTTP response code 400
+4. Validate response body structure and fields","HTTP 400, response body MUST contain: errorCode (string), errorMessage (string), traceId (UUID), timestamp (ISO-8601).",,,POST http://10.88.250.40:40020/tvm/api/tokens/provision,400
