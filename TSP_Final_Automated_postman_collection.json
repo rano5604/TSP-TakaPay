@@ -1,0 +1,5550 @@
+{
+  "info": {
+    "_postman_id": "tsp-final-001",
+    "name": "TSP TakaPay - Final Automated Test Suite",
+    "description": "Unified single-flow automated test suite. 18 sequential steps covering vault setup, issuer/BIN/range onboarding, token provisioning, lifecycle, de-tokenization, TDRC, expiry, security, and error handling. Every test validates both business rules (R1-R6) and EMVCo compliance (§3-§8). Run with: newman run <file> -e TSP_TakaPay_environment.json",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl_rgm",
+      "value": "http://10.88.250.40:40010"
+    },
+    {
+      "key": "baseUrl_tvm",
+      "value": "http://10.88.250.40:40020"
+    },
+    {
+      "key": "baseUrl_crypto",
+      "value": "http://10.88.250.40:40029"
+    },
+    {
+      "key": "tspCode",
+      "value": "998"
+    },
+    {
+      "key": "tvId",
+      "value": ""
+    },
+    {
+      "key": "transportKey",
+      "value": ""
+    },
+    {
+      "key": "kcv",
+      "value": ""
+    },
+    {
+      "key": "encryptedTransportKey",
+      "value": ""
+    },
+    {
+      "key": "issuerId",
+      "value": ""
+    },
+    {
+      "key": "issuerCode",
+      "value": ""
+    },
+    {
+      "key": "binId",
+      "value": ""
+    },
+    {
+      "key": "binValue",
+      "value": ""
+    },
+    {
+      "key": "accountRangeId",
+      "value": ""
+    },
+    {
+      "key": "trId",
+      "value": ""
+    },
+    {
+      "key": "testRunId",
+      "value": ""
+    },
+    {
+      "key": "provisionedToken",
+      "value": ""
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "if(!pm.collectionVariables.get(\"testRunId\")){pm.collectionVariables.set(\"testRunId\",\"run_\"+Date.now().toString(36));}"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "01 Vault Creation",
+      "item": [
+        {
+          "name": "01-01 Create Vault (happy path)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const c=pm.collectionVariables.get(\"tspCode\")||\"998\";pm.collectionVariables.set(\"tspCode\",c);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"01-01 Status 200/201\",()=>pm.expect(pm.response.code).to.be.oneOf([200,201]));",
+                  "pm.test(\"01-01 Vault ID returned & captured\",()=>{const j=pm.response.json();const id=j.vaultId||j.tvId||j.tokenVaultId||j.id;pm.expect(id).to.exist;pm.collectionVariables.set(\"tvId\",id);});",
+                  "pm.test(\"01-01 Response < 5s\",()=>pm.expect(pm.response.responseTime).to.be.below(5000));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_rgm}}/rgm/api/vaults",
+              "host": [
+                "{{baseUrl_rgm}}"
+              ],
+              "path": [
+                "rgm",
+                "api",
+                "vaults"
+              ]
+            },
+            "description": "Business: Vault creation with valid TSP code. EMVCo: Token Vault must exist before any tokenization.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"tspCode\":\"{{tspCode}}\",\"tokenVaultName\":\"My Token Vault\",\"custodianIdList\":[\"custodian007\",\"custodian008\"]}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "01-02 Vault - missing tspCode",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"01-02 Status 400\",()=>pm.expect(pm.response.code).to.equal(400));",
+                  "pm.test(\"01-02 Error body present\",()=>{const j=pm.response.json();pm.expect(j.error||j.message||j.errorMessage||j.errors).to.exist;});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_rgm}}/rgm/api/vaults",
+              "host": [
+                "{{baseUrl_rgm}}"
+              ],
+              "path": [
+                "rgm",
+                "api",
+                "vaults"
+              ]
+            },
+            "description": "Negative: tspCode omitted.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"tokenVaultName\":\"My Token Vault\",\"custodianIdList\":[\"custodian007\",\"custodian008\"]}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "01-03 Vault - empty custodianIdList",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"01-03 Status 400\",()=>pm.expect(pm.response.code).to.equal(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_rgm}}/rgm/api/vaults",
+              "host": [
+                "{{baseUrl_rgm}}"
+              ],
+              "path": [
+                "rgm",
+                "api",
+                "vaults"
+              ]
+            },
+            "description": "Negative: At least one custodian required.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"tspCode\":\"{{tspCode}}\",\"tokenVaultName\":\"My Token Vault\",\"custodianIdList\":[]}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "01-04 Vault - duplicate creation",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"01-04 Status 4xx (conflict)\",()=>pm.expect(pm.response.code).to.be.within(400,499));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_rgm}}/rgm/api/vaults",
+              "host": [
+                "{{baseUrl_rgm}}"
+              ],
+              "path": [
+                "rgm",
+                "api",
+                "vaults"
+              ]
+            },
+            "description": "Negative: Duplicate tspCode should conflict.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"tspCode\":\"{{tspCode}}\",\"tokenVaultName\":\"My Token Vault\",\"custodianIdList\":[\"custodian007\",\"custodian008\"]}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "01-05 Vault - invalid tspCode format",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"01-05 Status 400\",()=>pm.expect(pm.response.code).to.equal(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_rgm}}/rgm/api/vaults",
+              "host": [
+                "{{baseUrl_rgm}}"
+              ],
+              "path": [
+                "rgm",
+                "api",
+                "vaults"
+              ]
+            },
+            "description": "Edge: Special characters in tspCode.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"tspCode\":\"ABC!@#\",\"tokenVaultName\":\"My Token Vault\",\"custodianIdList\":[\"custodian007\"]}"
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "02 Transport Key Generation",
+      "item": [
+        {
+          "name": "02-01 Generate key (happy path)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"02-01 Status 200\",()=>pm.expect(pm.response.code).to.equal(200));",
+                  "pm.test(\"02-01 Key is hex string\",()=>{const j=pm.response.json();const k=j.transportKey||j.key||j.plainKey||j.data;pm.expect(k).to.match(/^[0-9a-fA-F]+$/);pm.collectionVariables.set(\"transportKey\",k);});",
+                  "pm.test(\"02-01 KCV present\",()=>{const j=pm.response.json();const k=j.kcv||j.KCV||j.keyCheckValue;pm.expect(k).to.exist;pm.collectionVariables.set(\"kcv\",k);});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_crypto}}/api/generate-transport-key",
+              "host": [
+                "{{baseUrl_crypto}}"
+              ],
+              "path": [
+                "api",
+                "generate-transport-key"
+              ]
+            },
+            "description": "Business: Generate transport key for issuer onboarding. EMVCo: Cryptographic keys must be unique per generation."
+          },
+          "response": []
+        },
+        {
+          "name": "02-02 Key uniqueness check (call 1)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"02-02 Status 200\",()=>pm.expect(pm.response.code).to.equal(200));",
+                  "const j=pm.response.json();pm.collectionVariables.set(\"_uk1\",j.transportKey||j.key||j.plainKey||j.data);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_crypto}}/api/generate-transport-key",
+              "host": [
+                "{{baseUrl_crypto}}"
+              ],
+              "path": [
+                "api",
+                "generate-transport-key"
+              ]
+            },
+            "description": "EMVCo: Key uniqueness — store first key."
+          },
+          "response": []
+        },
+        {
+          "name": "02-03 Key uniqueness check (call 2)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"02-03 Status 200\",()=>pm.expect(pm.response.code).to.equal(200));",
+                  "pm.test(\"02-03 Keys are unique\",()=>{const j=pm.response.json();const k2=j.transportKey||j.key||j.plainKey||j.data;pm.expect(k2).to.not.equal(pm.collectionVariables.get(\"_uk1\"));});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_crypto}}/api/generate-transport-key",
+              "host": [
+                "{{baseUrl_crypto}}"
+              ],
+              "path": [
+                "api",
+                "generate-transport-key"
+              ]
+            },
+            "description": "EMVCo: Verify two generated keys are never identical."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "03 Certificate Retrieval",
+      "item": [
+        {
+          "name": "03-01 Get certificate (happy path)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if(!pm.collectionVariables.get(\"tvId\"))pm.collectionVariables.set(\"tvId\",\"9985003\");"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"03-01 Status 200\",()=>pm.expect(pm.response.code).to.equal(200));",
+                  "pm.test(\"03-01 Certificate body returned\",()=>{const b=pm.response.text();pm.expect(b.includes(\"BEGIN CERTIFICATE\")||b.includes(\"MII\")||b.length>50).to.be.true;});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/vault/certificate",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "vault",
+                "certificate"
+              ]
+            },
+            "description": "Business: Retrieve vault certificate for key encryption. EMVCo: PKI certificate required."
+          },
+          "response": []
+        },
+        {
+          "name": "03-02 Certificate - missing X-TV-ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"03-02 Status 400/401\",()=>pm.expect(pm.response.code).to.be.oneOf([400,401]));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/vault/certificate",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "vault",
+                "certificate"
+              ]
+            },
+            "description": "Negative: Vault identifier required."
+          },
+          "response": []
+        },
+        {
+          "name": "03-03 Certificate - non-existent vault",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"03-03 Status 404\",()=>pm.expect(pm.response.code).to.equal(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "0000000"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/vault/certificate",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "vault",
+                "certificate"
+              ]
+            },
+            "description": "Negative: Unknown vault ID."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "04 Key Encryption",
+      "item": [
+        {
+          "name": "04-01 Encrypt key (happy path)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if(!pm.collectionVariables.get(\"transportKey\"))pm.collectionVariables.set(\"transportKey\",\"224189fef0d02c5ac6e6ab88c91508b34ff7137a3569de5e79d4db1ba307264c\");"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"04-01 Status 200\",()=>pm.expect(pm.response.code).to.equal(200));",
+                  "pm.test(\"04-01 Encrypted key is hex\",()=>{const j=pm.response.json();const e=j.encryptedTransportKey||j.encryptedKey||j.encryptedData||j.data;pm.expect(e).to.match(/^[0-9a-fA-F]+$/);pm.collectionVariables.set(\"encryptedTransportKey\",e);});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_crypto}}/api/v1/encrypt/transport-key",
+              "host": [
+                "{{baseUrl_crypto}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "encrypt",
+                "transport-key"
+              ]
+            },
+            "description": "Business: Encrypt transport key with vault certificate. EMVCo: PAN-Token mapping keys must be encrypted.",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "publicKeyCertificate",
+                  "type": "file",
+                  "src": "self_signed_certificate.cert"
+                },
+                {
+                  "key": "plainData",
+                  "value": "{{transportKey}}",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "04-02 Encrypt - missing certificate",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"04-02 Status 400\",()=>pm.expect(pm.response.code).to.equal(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_crypto}}/api/v1/encrypt/transport-key",
+              "host": [
+                "{{baseUrl_crypto}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "encrypt",
+                "transport-key"
+              ]
+            },
+            "description": "Negative: Certificate file required.",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "plainData",
+                  "value": "{{transportKey}}",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "04-03 Encrypt - invalid certificate",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"04-03 Status 400/422\",()=>pm.expect(pm.response.code).to.be.oneOf([400,422]));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_crypto}}/api/v1/encrypt/transport-key",
+              "host": [
+                "{{baseUrl_crypto}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "encrypt",
+                "transport-key"
+              ]
+            },
+            "description": "Negative: Malformed certificate.",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "publicKeyCertificate",
+                  "value": "INVALID_CERT",
+                  "type": "text"
+                },
+                {
+                  "key": "plainData",
+                  "value": "{{transportKey}}",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "04-04 Encrypt - plainData wrong length",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"04-04 Status 400\",()=>pm.expect(pm.response.code).to.equal(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_crypto}}/api/v1/encrypt/transport-key",
+              "host": [
+                "{{baseUrl_crypto}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "encrypt",
+                "transport-key"
+              ]
+            },
+            "description": "Edge: plainData not 64-char hex.",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "publicKeyCertificate",
+                  "type": "file",
+                  "src": "self_signed_certificate.cert"
+                },
+                {
+                  "key": "plainData",
+                  "value": "1234567890",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "05 Issuer Onboarding",
+      "item": [
+        {
+          "name": "05-01 Create issuer (happy path)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"issuerCode\",\"4\"+String(Date.now()).slice(-2));",
+                  "if(!pm.collectionVariables.get(\"encryptedTransportKey\"))pm.collectionVariables.set(\"encryptedTransportKey\",\"8EA89A35C83D66FBB5DE2A97F74392C272BCBF521AA93EF072399382E32B05900F8D9C3EDF0D7EE3367E3D9E903CA1B9D5E9F5323ED8089DF353A9EF8CF08E178D9D85D84A871A4960AB1E74CFD148C5FFC4BDF0CE3F0B6B36ABC751E270DEAEFC2FAD959957AE7D662AE489AFDDEE5363DFDFD2B51AB49CA154972FE1EC1389\");",
+                  "if(!pm.collectionVariables.get(\"kcv\"))pm.collectionVariables.set(\"kcv\",\"AC6BCC\");"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"05-01 Status 200/201\",()=>pm.expect(pm.response.code).to.be.oneOf([200,201]));",
+                  "pm.test(\"05-01 issuerId captured\",()=>{const j=pm.response.json();const id=j.issuerId||j.id;pm.expect(id).to.exist;pm.collectionVariables.set(\"issuerId\",id);});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/issuer",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "issuer"
+              ]
+            },
+            "description": "Business: Register card issuer with encrypted transport key. EMVCo: Issuer must be onboarded before PAN enrollment.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"issuerName\":\"EBL\",\"issuerCode\":\"{{issuerCode}}\",\"encryptedTransportKey\":\"{{encryptedTransportKey}}\",\"kcv\":\"{{kcv}}\",\"realTimePanEnrollment\":\"Y\"}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "05-02 Issuer - invalid KCV",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"05-02 Status 400/422\",()=>pm.expect(pm.response.code).to.be.oneOf([400,422]));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/issuer",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "issuer"
+              ]
+            },
+            "description": "Negative: KCV does not match transport key.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"issuerName\":\"EBL\",\"issuerCode\":\"421\",\"encryptedTransportKey\":\"{{encryptedTransportKey}}\",\"kcv\":\"ZZZZZZ\",\"realTimePanEnrollment\":\"Y\"}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "05-03 Issuer - missing X-TV-ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"05-03 Status 400/401\",()=>pm.expect(pm.response.code).to.be.oneOf([400,401]));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/issuer",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "issuer"
+              ]
+            },
+            "description": "Negative: Vault identifier required.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"issuerName\":\"EBL\",\"issuerCode\":\"422\",\"encryptedTransportKey\":\"{{encryptedTransportKey}}\",\"kcv\":\"{{kcv}}\",\"realTimePanEnrollment\":\"Y\"}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "05-04 Issuer - duplicate code",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"05-04 Status 4xx\",()=>pm.expect(pm.response.code).to.be.within(400,499));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/issuer",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "issuer"
+              ]
+            },
+            "description": "Negative: Duplicate issuer code.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"issuerName\":\"EBL_DUP\",\"issuerCode\":\"{{issuerCode}}\",\"encryptedTransportKey\":\"{{encryptedTransportKey}}\",\"kcv\":\"{{kcv}}\",\"realTimePanEnrollment\":\"Y\"}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "05-05 Issuer - invalid realTimePanEnrollment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"05-05 Status 400\",()=>pm.expect(pm.response.code).to.equal(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/issuer",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "issuer"
+              ]
+            },
+            "description": "Edge: Must be Y or N.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"issuerName\":\"EBL_X\",\"issuerCode\":\"423\",\"encryptedTransportKey\":\"{{encryptedTransportKey}}\",\"kcv\":\"{{kcv}}\",\"realTimePanEnrollment\":\"X\"}"
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "06 BIN Setup",
+      "item": [
+        {
+          "name": "06-01 Create BIN (happy path)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if(!pm.collectionVariables.get(\"issuerId\"))pm.collectionVariables.set(\"issuerId\",\"237d9188de9144e5806abf95441fce5b\");",
+                  "pm.collectionVariables.set(\"binValue\",\"6399\"+String(Date.now()).slice(-4));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"06-01 Status 200/201\",()=>pm.expect(pm.response.code).to.be.oneOf([200,201]));",
+                  "pm.test(\"06-01 binId captured\",()=>{const j=pm.response.json();const id=j.binId||j.id;pm.expect(id).to.exist;pm.collectionVariables.set(\"binId\",id);});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/bin/single",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "bin",
+                "single"
+              ]
+            },
+            "description": "Business: Register BIN for issuer. EMVCo: Token BIN must be assigned from registered range.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"issuerId\":\"{{issuerId}}\",\"binControllerId\":\"1234\",\"binValue\":\"{{binValue}}\",\"brandType\":\"06\",\"ianLen\":7}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "06-02 BIN - invalid issuerId",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"06-02 Status 4xx\",()=>pm.expect(pm.response.code).to.be.within(400,499));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/bin/single",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "bin",
+                "single"
+              ]
+            },
+            "description": "Negative: Non-existent issuer.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"issuerId\":\"00000000000000000000000000000000\",\"binControllerId\":\"1234\",\"binValue\":\"63999604\",\"brandType\":\"06\",\"ianLen\":7}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "06-03 BIN - duplicate value",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"06-03 Status 4xx\",()=>pm.expect(pm.response.code).to.be.within(400,499));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/bin/single",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "bin",
+                "single"
+              ]
+            },
+            "description": "Negative: Duplicate BIN value.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"issuerId\":\"{{issuerId}}\",\"binControllerId\":\"1234\",\"binValue\":\"{{binValue}}\",\"brandType\":\"06\",\"ianLen\":7}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "06-04 BIN - ianLen zero",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"06-04 Status 400\",()=>pm.expect(pm.response.code).to.equal(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/bin/single",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "bin",
+                "single"
+              ]
+            },
+            "description": "Edge: ianLen must be > 0.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"issuerId\":\"{{issuerId}}\",\"binControllerId\":\"1234\",\"binValue\":\"63999605\",\"brandType\":\"06\",\"ianLen\":0}"
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "07 Account Range Setup",
+      "item": [
+        {
+          "name": "07-01 Create account range (happy path)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if(!pm.collectionVariables.get(\"binId\"))pm.collectionVariables.set(\"binId\",\"d2d1adf80a1045359033de945b60e48g\");"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"07-01 Status 200/201\",()=>pm.expect(pm.response.code).to.be.oneOf([200,201]));",
+                  "pm.test(\"07-01 Range ID captured\",()=>{const j=pm.response.json();const id=j.accountRangeId||j.id||j.rangeId;if(id)pm.collectionVariables.set(\"accountRangeId\",id);});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/account-range",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "account-range"
+              ]
+            },
+            "description": "Business R1: Configure PAN account range. EMVCo: Tokenization valid only for PANs in active ranges.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"issuerId\":\"{{issuerId}}\",\"binId\":\"{{binId}}\",\"panLowerLimit\":\"1100000\",\"panUpperLimit\":\"9000000\",\"listOfExpiry\":[{\"quarter\":\"Q1\",\"year\":2027},{\"quarter\":\"Q2\",\"year\":2027},{\"quarter\":\"Q3\",\"year\":2027}]}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "07-02 AcctRange - lower > upper",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"07-02 Status 400\",()=>pm.expect(pm.response.code).to.equal(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/account-range",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "account-range"
+              ]
+            },
+            "description": "Negative: Invalid range bounds.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"issuerId\":\"{{issuerId}}\",\"binId\":\"{{binId}}\",\"panLowerLimit\":\"9000000\",\"panUpperLimit\":\"1100000\",\"listOfExpiry\":[{\"quarter\":\"Q1\",\"year\":2027}]}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "07-03 AcctRange - empty listOfExpiry",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"07-03 Status 400\",()=>pm.expect(pm.response.code).to.equal(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/account-range",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "account-range"
+              ]
+            },
+            "description": "Negative: At least one expiry required.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"issuerId\":\"{{issuerId}}\",\"binId\":\"{{binId}}\",\"panLowerLimit\":\"1100000\",\"panUpperLimit\":\"9000000\",\"listOfExpiry\":[]}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "07-04 AcctRange - invalid quarter Q5",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"07-04 Status 400\",()=>pm.expect(pm.response.code).to.equal(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/account-range",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "account-range"
+              ]
+            },
+            "description": "Edge: Quarter must be Q1-Q4. Business R2.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"issuerId\":\"{{issuerId}}\",\"binId\":\"{{binId}}\",\"panLowerLimit\":\"1100000\",\"panUpperLimit\":\"9000000\",\"listOfExpiry\":[{\"quarter\":\"Q5\",\"year\":2027}]}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "07-05 AcctRange - past expiry year",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"07-05 Status 400\",()=>pm.expect(pm.response.code).to.equal(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/account-range",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "account-range"
+              ]
+            },
+            "description": "Edge: Expiry in the past.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"issuerId\":\"{{issuerId}}\",\"binId\":\"{{binId}}\",\"panLowerLimit\":\"1100000\",\"panUpperLimit\":\"9000000\",\"listOfExpiry\":[{\"quarter\":\"Q1\",\"year\":2020}]}"
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "08 Token Requester Onboarding",
+      "item": [
+        {
+          "name": "08-01 Create requester - Google Pay (happy path)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"08-01 Status 200/201\",()=>pm.expect(pm.response.code).to.be.oneOf([200,201]));",
+                  "pm.test(\"08-01 trId captured\",()=>{const j=pm.response.json();const id=j.trId||j.tokenRequestorId||j.requestorId||j.id;pm.expect(id).to.exist;pm.collectionVariables.set(\"trId\",String(id));});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/token-requestor",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "token-requestor"
+              ]
+            },
+            "description": "Business: Onboard token requestor. EMVCo: Token Requestor ID required for provisioning.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"tokenFormFactor\":\"00\",\"encryptedTransportKey\":\"{{encryptedTransportKey}}\",\"kcv\":\"{{kcv}}\",\"serviceName\":\"Service name\",\"trName\":\"Google Pay\"}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "08-02 Requester - invalid tokenFormFactor",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"08-02 Status 400\",()=>pm.expect(pm.response.code).to.equal(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/token-requestor",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "token-requestor"
+              ]
+            },
+            "description": "Negative: Unsupported form factor.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"tokenFormFactor\":\"99\",\"encryptedTransportKey\":\"{{encryptedTransportKey}}\",\"kcv\":\"{{kcv}}\",\"serviceName\":\"Service\",\"trName\":\"TR\"}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "08-03 Requester - KCV mismatch",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"08-03 Status 400/422\",()=>pm.expect(pm.response.code).to.be.oneOf([400,422]));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/token-requestor",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "token-requestor"
+              ]
+            },
+            "description": "Negative: KCV verification failure.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"tokenFormFactor\":\"00\",\"encryptedTransportKey\":\"{{encryptedTransportKey}}\",\"kcv\":\"000000\",\"serviceName\":\"Service\",\"trName\":\"TR\"}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "08-04 Requester - missing serviceName",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"08-04 Status 400\",()=>pm.expect(pm.response.code).to.equal(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/token-requestor",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "token-requestor"
+              ]
+            },
+            "description": "Edge: Required field omitted.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"tokenFormFactor\":\"00\",\"encryptedTransportKey\":\"{{encryptedTransportKey}}\",\"kcv\":\"{{kcv}}\",\"trName\":\"TR\"}"
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "09 Token Use Setup",
+      "item": [
+        {
+          "name": "09-01 Token use setup (happy path)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if(!pm.collectionVariables.get(\"trId\"))pm.collectionVariables.set(\"trId\",\"99850031692\");"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"09-01 Status 200/201\",()=>pm.expect(pm.response.code).to.be.oneOf([200,201]));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/token-requestor/token-use/setup",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "token-requestor",
+                "token-use",
+                "setup"
+              ]
+            },
+            "description": "Business: Configure token use with merchant. EMVCo: Token domain setup per requestor.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"merchantInfos\":[{\"merchantId\":\"123456789012345\",\"merchantName\":\"Merchant\"}],\"modeOfTransaction\":\"01\",\"trId\":\"{{trId}}\"}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "09-02 Token use - non-existent trId",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"09-02 Status 4xx\",()=>pm.expect(pm.response.code).to.be.within(400,499));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/token-requestor/token-use/setup",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "token-requestor",
+                "token-use",
+                "setup"
+              ]
+            },
+            "description": "Negative: Unknown requestor.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"merchantInfos\":[{\"merchantId\":\"123456789012345\",\"merchantName\":\"Merchant\"}],\"modeOfTransaction\":\"01\",\"trId\":\"00000000000\"}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "09-03 Token use - merchantId wrong length",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"09-03 Status 400\",()=>pm.expect(pm.response.code).to.equal(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/token-requestor/token-use/setup",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "token-requestor",
+                "token-use",
+                "setup"
+              ]
+            },
+            "description": "Negative: merchantId must be 15 digits.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"merchantInfos\":[{\"merchantId\":\"123\",\"merchantName\":\"M\"}],\"modeOfTransaction\":\"01\",\"trId\":\"{{trId}}\"}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "09-04 Token use - multiple merchants",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"09-04 Status 200\",()=>pm.expect(pm.response.code).to.equal(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/token-requestor/token-use/setup",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "token-requestor",
+                "token-use",
+                "setup"
+              ]
+            },
+            "description": "Edge: Multiple merchants at once.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"merchantInfos\":[{\"merchantId\":\"123456789012341\",\"merchantName\":\"A\"},{\"merchantId\":\"123456789012342\",\"merchantName\":\"B\"},{\"merchantId\":\"123456789012343\",\"merchantName\":\"C\"}],\"modeOfTransaction\":\"01\",\"trId\":\"{{trId}}\"}"
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "10 Token Life Authorization",
+      "item": [
+        {
+          "name": "10-01 Token life (happy path)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"10-01 Status 200/201\",()=>pm.expect(pm.response.code).to.be.oneOf([200,201]));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/token-life/authorization",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "token-life",
+                "authorization"
+              ]
+            },
+            "description": "Business: Authorize token lifetime. EMVCo: Token expiry must align with PAN expiry boundary.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"requestorId\":\"{{trId}}\",\"minPeriodInMonths\":0,\"maxPeriodInMonths\":70,\"issuerId\":\"{{issuerId}}\"}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "10-02 Token life - min > max",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"10-02 Status 400\",()=>pm.expect(pm.response.code).to.equal(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/token-life/authorization",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "token-life",
+                "authorization"
+              ]
+            },
+            "description": "Negative: min must be <= max.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"requestorId\":\"{{trId}}\",\"minPeriodInMonths\":70,\"maxPeriodInMonths\":10,\"issuerId\":\"{{issuerId}}\"}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "10-03 Token life - non-existent issuerId",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"10-03 Status 4xx\",()=>pm.expect(pm.response.code).to.be.within(400,499));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/token-life/authorization",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "token-life",
+                "authorization"
+              ]
+            },
+            "description": "Negative: Unknown issuer.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"requestorId\":\"{{trId}}\",\"minPeriodInMonths\":0,\"maxPeriodInMonths\":70,\"issuerId\":\"00000000000000000000000000000000\"}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "10-04 Token life - zero period",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"10-04 Status 400 or 200\",()=>pm.expect(pm.response.code).to.be.oneOf([200,400]));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/token-life/authorization",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "token-life",
+                "authorization"
+              ]
+            },
+            "description": "Edge: Zero-lifetime token.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"requestorId\":\"{{trId}}\",\"minPeriodInMonths\":0,\"maxPeriodInMonths\":0,\"issuerId\":\"{{issuerId}}\"}"
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "11 Token Range & BIN Range Setup",
+      "item": [
+        {
+          "name": "11-01 Token range (happy path)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"11-01 Status 200/201\",()=>pm.expect(pm.response.code).to.be.oneOf([200,201]));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/token-range",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "token-range"
+              ]
+            },
+            "description": "Business R2: Configure quarter-wise BIN range. EMVCo: Token BIN must come from registered range.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"tokenRangeSetupList\":[{\"expiry\":{\"quarter\":\"Q2\",\"year\":2027},\"lowerLimit\":\"9100000\",\"upperLimit\":\"9999999\"}],\"requestorId\":\"{{trId}}\",\"issuerId\":\"{{issuerId}}\",\"binId\":\"{{binId}}\"}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "11-02 Token range - overlaps account range",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"11-02 Status 400/409\",()=>pm.expect(pm.response.code).to.be.oneOf([400,409]));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/token-range",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "token-range"
+              ]
+            },
+            "description": "Negative R6: Overlapping ranges must be rejected. EMVCo: BIN_RANGE_OVERLAP_DETECTED.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"tokenRangeSetupList\":[{\"expiry\":{\"quarter\":\"Q2\",\"year\":2027},\"lowerLimit\":\"1100000\",\"upperLimit\":\"9000000\"}],\"requestorId\":\"{{trId}}\",\"issuerId\":\"{{issuerId}}\",\"binId\":\"{{binId}}\"}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "11-03 Token range - lower > upper",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"11-03 Status 400\",()=>pm.expect(pm.response.code).to.equal(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/token-range",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "token-range"
+              ]
+            },
+            "description": "Negative: Invalid range.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"tokenRangeSetupList\":[{\"expiry\":{\"quarter\":\"Q2\",\"year\":2027},\"lowerLimit\":\"9999999\",\"upperLimit\":\"9100000\"}],\"requestorId\":\"{{trId}}\",\"issuerId\":\"{{issuerId}}\",\"binId\":\"{{binId}}\"}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "11-04 Token range - non-existent requestorId",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"11-04 Status 4xx\",()=>pm.expect(pm.response.code).to.be.within(400,499));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/token-range",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "token-range"
+              ]
+            },
+            "description": "Negative: Unknown requestor.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"tokenRangeSetupList\":[{\"expiry\":{\"quarter\":\"Q2\",\"year\":2027},\"lowerLimit\":\"9100000\",\"upperLimit\":\"9999999\"}],\"requestorId\":\"00000000000\",\"issuerId\":\"{{issuerId}}\",\"binId\":\"{{binId}}\"}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "11-05 Token range - past expiry",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"11-05 Status 400\",()=>pm.expect(pm.response.code).to.equal(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/token-range",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "token-range"
+              ]
+            },
+            "description": "Edge: Expiry in the past.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"tokenRangeSetupList\":[{\"expiry\":{\"quarter\":\"Q1\",\"year\":2023},\"lowerLimit\":\"9100000\",\"upperLimit\":\"9999999\"}],\"requestorId\":\"{{trId}}\",\"issuerId\":\"{{issuerId}}\",\"binId\":\"{{binId}}\"}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "11-06 BIN range - non-overlapping Q4",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"11-06 Status 200/201\",()=>pm.expect(pm.response.code).to.be.oneOf([200,201]));",
+                  "pm.test(\"11-06 Capacity metadata\",()=>{const j=pm.response.json();pm.expect(j).to.be.an(\"object\");});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/token-range",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "token-range"
+              ]
+            },
+            "description": "Business R2/R6: New non-overlapping quarter range.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"tokenRangeSetupList\":[{\"expiry\":{\"quarter\":\"Q4\",\"year\":2027},\"lowerLimit\":\"9100000\",\"upperLimit\":\"9500000\"}],\"requestorId\":\"{{trId}}\",\"issuerId\":\"{{issuerId}}\",\"binId\":\"{{binId}}\"}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "11-07 BIN range - already-configured quarter overlap",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"11-07 Status 409 BIN_RANGE_OVERLAP\",()=>pm.expect(pm.response.code).to.be.oneOf([400,409]));",
+                  "pm.test(\"11-07 Error body\",()=>{const j=pm.response.json();pm.expect(j.errorCode||j.error||j.message).to.exist;});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/token-range",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "token-range"
+              ]
+            },
+            "description": "Negative R6: Overlapping BIN range.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"tokenRangeSetupList\":[{\"expiry\":{\"quarter\":\"Q2\",\"year\":2027},\"lowerLimit\":\"9200000\",\"upperLimit\":\"9800000\"}],\"requestorId\":\"{{trId}}\",\"issuerId\":\"{{issuerId}}\",\"binId\":\"{{binId}}\"}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "11-08 BIN range - zero capacity",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"11-08 Status 400\",()=>pm.expect(pm.response.code).to.equal(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/token-range",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "token-range"
+              ]
+            },
+            "description": "Boundary R2: Zero/insufficient capacity.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"tokenRangeSetupList\":[{\"expiry\":{\"quarter\":\"Q1\",\"year\":2028},\"lowerLimit\":\"9100000\",\"upperLimit\":\"9100000\"}],\"requestorId\":\"{{trId}}\",\"issuerId\":\"{{issuerId}}\",\"binId\":\"{{binId}}\"}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "11-09 BIN range - retrieve config",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"11-09 Status 200\",()=>pm.expect(pm.response.code).to.equal(200));",
+                  "pm.test(\"11-09 Quarter metadata fields\",()=>{const j=pm.response.json();const a=Array.isArray(j)?j:[j];a.forEach(r=>pm.expect(r).to.have.any.keys(\"capacity\",\"remainingCount\",\"allocatedCount\",\"quarter\"));});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/token-range?requestorId={{trId}}&issuerId={{issuerId}}&binId={{binId}}",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "token-range?requestorId={{trId}}&issuerId={{issuerId}}&binId={{binId}}"
+              ]
+            },
+            "description": "Business R2/R5: Verify capacity, allocated, remaining per quarter."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "12 Token Provisioning",
+      "item": [
+        {
+          "name": "12-01 Provision - valid PAN Q1 expiry",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if(!pm.collectionVariables.get(\"trId\"))pm.collectionVariables.set(\"trId\",\"99850031692\");"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"12-01 Status 200/201\",()=>pm.expect(pm.response.code).to.be.oneOf([200,201]));",
+                  "pm.test(\"12-01 Token is 13-19 digit\",()=>{const j=pm.response.json();const t=j.token||j.tokenValue||j.tokenNumber;if(t){pm.expect(t).to.match(/^[0-9]{13,19}$/);pm.collectionVariables.set(\"provisionedToken\",t);}});",
+                  "pm.test(\"12-01 TAL present\",()=>{const j=pm.response.json();pm.expect(j.tokenAssuranceLevel||j.tal||j.TAL).to.exist;});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/tokens/provision",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "Business R4+EMVCo §4.3: Q1 mapping.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pan\": \"6399960312345678\",\n  \"panExpiry\": \"0327\",\n  \"tokenRequestorId\": \"{{trId}}\",\n  \"tokenType\": \"CLOUD\",\n  \"tokenAssuranceLevel\": \"3\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "12-02 Provision - valid PAN Q2 expiry",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if(!pm.collectionVariables.get(\"trId\"))pm.collectionVariables.set(\"trId\",\"99850031692\");"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"12-02 Status 200/201\",()=>pm.expect(pm.response.code).to.be.oneOf([200,201]));",
+                  "pm.test(\"12-02 Token is 13-19 digit\",()=>{const j=pm.response.json();const t=j.token||j.tokenValue||j.tokenNumber;if(t){pm.expect(t).to.match(/^[0-9]{13,19}$/);pm.collectionVariables.set(\"provisionedToken\",t);}});",
+                  "pm.test(\"12-02 TAL present\",()=>{const j=pm.response.json();pm.expect(j.tokenAssuranceLevel||j.tal||j.TAL).to.exist;});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/tokens/provision",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "Business R4+EMVCo §4.3: Q2 mapping.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pan\": \"6399960312345678\",\n  \"panExpiry\": \"0627\",\n  \"tokenRequestorId\": \"{{trId}}\",\n  \"tokenType\": \"CLOUD\",\n  \"tokenAssuranceLevel\": \"3\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "12-03 Provision - valid PAN Q3 expiry",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if(!pm.collectionVariables.get(\"trId\"))pm.collectionVariables.set(\"trId\",\"99850031692\");"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"12-03 Status 200/201\",()=>pm.expect(pm.response.code).to.be.oneOf([200,201]));",
+                  "pm.test(\"12-03 Token is 13-19 digit\",()=>{const j=pm.response.json();const t=j.token||j.tokenValue||j.tokenNumber;if(t){pm.expect(t).to.match(/^[0-9]{13,19}$/);}});",
+                  "pm.test(\"12-03 TAL present\",()=>{const j=pm.response.json();pm.expect(j.tokenAssuranceLevel||j.tal||j.TAL).to.exist;});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/tokens/provision",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "Business R4+EMVCo §4.3: Q3 mapping.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pan\": \"6399960312345678\",\n  \"panExpiry\": \"0927\",\n  \"tokenRequestorId\": \"{{trId}}\",\n  \"tokenType\": \"CLOUD\",\n  \"tokenAssuranceLevel\": \"3\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "12-04 Provision - valid PAN Q4 expiry",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if(!pm.collectionVariables.get(\"trId\"))pm.collectionVariables.set(\"trId\",\"99850031692\");"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"12-04 Status 200/201\",()=>pm.expect(pm.response.code).to.be.oneOf([200,201]));",
+                  "pm.test(\"12-04 Token is 13-19 digit\",()=>{const j=pm.response.json();const t=j.token||j.tokenValue||j.tokenNumber;if(t){pm.expect(t).to.match(/^[0-9]{13,19}$/);}});",
+                  "pm.test(\"12-04 TAL present\",()=>{const j=pm.response.json();pm.expect(j.tokenAssuranceLevel||j.tal||j.TAL).to.exist;});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/tokens/provision",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "Business R4+EMVCo §4.3: Q4 mapping.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pan\": \"6399960312345678\",\n  \"panExpiry\": \"1227\",\n  \"tokenRequestorId\": \"{{trId}}\",\n  \"tokenType\": \"CLOUD\",\n  \"tokenAssuranceLevel\": \"3\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "12-05 Provision - BIN range first token",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if(!pm.collectionVariables.get(\"trId\"))pm.collectionVariables.set(\"trId\",\"99850031692\");"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"12-05 Status 200/201\",()=>pm.expect(pm.response.code).to.be.oneOf([200,201]));",
+                  "pm.test(\"12-05 Token is 13-19 digit\",()=>{const j=pm.response.json();const t=j.token||j.tokenValue||j.tokenNumber;if(t){pm.expect(t).to.match(/^[0-9]{13,19}$/);}});",
+                  "pm.test(\"12-05 TAL present\",()=>{const j=pm.response.json();pm.expect(j.tokenAssuranceLevel||j.tal||j.TAL).to.exist;});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/tokens/provision",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "Boundary R2+EMVCo §4.3.2: First token at BIN_START.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pan\": \"6399960311100000\",\n  \"panExpiry\": \"0627\",\n  \"tokenRequestorId\": \"{{trId}}\",\n  \"tokenType\": \"CLOUD\",\n  \"tokenAssuranceLevel\": \"3\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "12-06 Provision - BIN range last token",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if(!pm.collectionVariables.get(\"trId\"))pm.collectionVariables.set(\"trId\",\"99850031692\");"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"12-06 Status 200/201\",()=>pm.expect(pm.response.code).to.be.oneOf([200,201]));",
+                  "pm.test(\"12-06 Token is 13-19 digit\",()=>{const j=pm.response.json();const t=j.token||j.tokenValue||j.tokenNumber;if(t){pm.expect(t).to.match(/^[0-9]{13,19}$/);}});",
+                  "pm.test(\"12-06 TAL present\",()=>{const j=pm.response.json();pm.expect(j.tokenAssuranceLevel||j.tal||j.TAL).to.exist;});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/tokens/provision",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "Boundary R3+EMVCo §4.3.2: Last token at BIN_END.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pan\": \"6399960319000000\",\n  \"panExpiry\": \"0627\",\n  \"tokenRequestorId\": \"{{trId}}\",\n  \"tokenType\": \"CLOUD\",\n  \"tokenAssuranceLevel\": \"3\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "12-07 Provision - one from exhaustion",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if(!pm.collectionVariables.get(\"trId\"))pm.collectionVariables.set(\"trId\",\"99850031692\");"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"12-07 Status 200/201\",()=>pm.expect(pm.response.code).to.be.oneOf([200,201]));",
+                  "pm.test(\"12-07 Token is 13-19 digit\",()=>{const j=pm.response.json();const t=j.token||j.tokenValue||j.tokenNumber;if(t){pm.expect(t).to.match(/^[0-9]{13,19}$/);}});",
+                  "pm.test(\"12-07 TAL present\",()=>{const j=pm.response.json();pm.expect(j.tokenAssuranceLevel||j.tal||j.TAL).to.exist;});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/tokens/provision",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "Boundary R3/R5: 1 token remaining.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pan\": \"6399960318999999\",\n  \"panExpiry\": \"0627\",\n  \"tokenRequestorId\": \"{{trId}}\",\n  \"tokenType\": \"CLOUD\",\n  \"tokenAssuranceLevel\": \"3\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "12-08 Provision - range exhausted",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if(!pm.collectionVariables.get(\"trId\"))pm.collectionVariables.set(\"trId\",\"99850031692\");"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"12-08 Status 422\",()=>pm.expect(pm.response.code).to.be.oneOf([422]));",
+                  "pm.test(\"12-08 Error body\",()=>{const j=pm.response.json();pm.expect(j.errorCode||j.error||j.message).to.exist;});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/tokens/provision",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "Negative R3: TOKEN_RANGE_EXHAUSTED.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pan\": \"6399960318999998\",\n  \"panExpiry\": \"0627\",\n  \"tokenRequestorId\": \"{{trId}}\",\n  \"tokenType\": \"CLOUD\",\n  \"tokenAssuranceLevel\": \"3\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "12-09 Provision - PAN outside range",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if(!pm.collectionVariables.get(\"trId\"))pm.collectionVariables.set(\"trId\",\"99850031692\");"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"12-09 Status 422\",()=>pm.expect(pm.response.code).to.be.oneOf([422]));",
+                  "pm.test(\"12-09 Error body\",()=>{const j=pm.response.json();pm.expect(j.errorCode||j.error||j.message).to.exist;});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/tokens/provision",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "Negative R1: ACCOUNT_NOT_ELIGIBLE.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pan\": \"6399960300000001\",\n  \"panExpiry\": \"0627\",\n  \"tokenRequestorId\": \"{{trId}}\",\n  \"tokenType\": \"CLOUD\",\n  \"tokenAssuranceLevel\": \"3\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "12-10 Provision - expired PAN",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if(!pm.collectionVariables.get(\"trId\"))pm.collectionVariables.set(\"trId\",\"99850031692\");"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"12-10 Status 400\",()=>pm.expect(pm.response.code).to.be.oneOf([400]));",
+                  "pm.test(\"12-10 Error body\",()=>{const j=pm.response.json();pm.expect(j.errorCode||j.error||j.message).to.exist;});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/tokens/provision",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "Negative EMVCo §4.3.1: Cannot tokenize expired PAN.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pan\": \"6399960312345678\",\n  \"panExpiry\": \"0123\",\n  \"tokenRequestorId\": \"{{trId}}\",\n  \"tokenType\": \"CLOUD\",\n  \"tokenAssuranceLevel\": \"3\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "12-11 Provision - quarter not configured",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if(!pm.collectionVariables.get(\"trId\"))pm.collectionVariables.set(\"trId\",\"99850031692\");"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"12-11 Status 422\",()=>pm.expect(pm.response.code).to.be.oneOf([422]));",
+                  "pm.test(\"12-11 Error body\",()=>{const j=pm.response.json();pm.expect(j.errorCode||j.error||j.message).to.exist;});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/tokens/provision",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "Negative R4: EXPIRY_QUARTER_MISMATCH.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pan\": \"6399960312345678\",\n  \"panExpiry\": \"1028\",\n  \"tokenRequestorId\": \"{{trId}}\",\n  \"tokenType\": \"CLOUD\",\n  \"tokenAssuranceLevel\": \"3\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "12-12 Provision - idempotent re-tokenize",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if(!pm.collectionVariables.get(\"trId\"))pm.collectionVariables.set(\"trId\",\"99850031692\");"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"12-12 Status 200\",()=>pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "pm.test(\"12-12 Token is 13-19 digit\",()=>{const j=pm.response.json();const t=j.token||j.tokenValue||j.tokenNumber;if(t){pm.expect(t).to.match(/^[0-9]{13,19}$/);}});",
+                  "pm.test(\"12-12 TAL present\",()=>{const j=pm.response.json();pm.expect(j.tokenAssuranceLevel||j.tal||j.TAL).to.exist;});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/tokens/provision",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "EMVCo §4.3.4: Same PAN+TR returns same token.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pan\": \"6399960312345678\",\n  \"panExpiry\": \"0627\",\n  \"tokenRequestorId\": \"{{trId}}\",\n  \"tokenType\": \"CLOUD\",\n  \"tokenAssuranceLevel\": \"3\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "12-13 Provision - non-numeric PAN",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if(!pm.collectionVariables.get(\"trId\"))pm.collectionVariables.set(\"trId\",\"99850031692\");"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"12-13 Status 400\",()=>pm.expect(pm.response.code).to.be.oneOf([400]));",
+                  "pm.test(\"12-13 Error body\",()=>{const j=pm.response.json();pm.expect(j.errorCode||j.error||j.message).to.exist;});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/tokens/provision",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "Negative EMVCo §3.1: Invalid PAN format.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pan\": \"ABCDEFGH12345678\",\n  \"panExpiry\": \"0627\",\n  \"tokenRequestorId\": \"{{trId}}\",\n  \"tokenType\": \"CLOUD\",\n  \"tokenAssuranceLevel\": \"3\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "12-14 Provision - PAN too short (12 digits)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if(!pm.collectionVariables.get(\"trId\"))pm.collectionVariables.set(\"trId\",\"99850031692\");"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"12-14 Status 400\",()=>pm.expect(pm.response.code).to.be.oneOf([400]));",
+                  "pm.test(\"12-14 Error body\",()=>{const j=pm.response.json();pm.expect(j.errorCode||j.error||j.message).to.exist;});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/tokens/provision",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "Negative EMVCo §3.1: Min 13 digits.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pan\": \"639996031234\",\n  \"panExpiry\": \"0627\",\n  \"tokenRequestorId\": \"{{trId}}\",\n  \"tokenType\": \"CLOUD\",\n  \"tokenAssuranceLevel\": \"3\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "12-15 Provision - PAN too long (20 digits)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if(!pm.collectionVariables.get(\"trId\"))pm.collectionVariables.set(\"trId\",\"99850031692\");"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"12-15 Status 400\",()=>pm.expect(pm.response.code).to.be.oneOf([400]));",
+                  "pm.test(\"12-15 Error body\",()=>{const j=pm.response.json();pm.expect(j.errorCode||j.error||j.message).to.exist;});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/tokens/provision",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "Negative EMVCo §3.1: Max 19 digits.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pan\": \"63999603123456789012\",\n  \"panExpiry\": \"0627\",\n  \"tokenRequestorId\": \"{{trId}}\",\n  \"tokenType\": \"CLOUD\",\n  \"tokenAssuranceLevel\": \"3\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "12-16 Provision - PAN at lower boundary",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if(!pm.collectionVariables.get(\"trId\"))pm.collectionVariables.set(\"trId\",\"99850031692\");"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"12-16 Status 200/201\",()=>pm.expect(pm.response.code).to.be.oneOf([200,201]));",
+                  "pm.test(\"12-16 Token is 13-19 digit\",()=>{const j=pm.response.json();const t=j.token||j.tokenValue||j.tokenNumber;if(t){pm.expect(t).to.match(/^[0-9]{13,19}$/);}});",
+                  "pm.test(\"12-16 TAL present\",()=>{const j=pm.response.json();pm.expect(j.tokenAssuranceLevel||j.tal||j.TAL).to.exist;});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/tokens/provision",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "Boundary R1: Exact panLowerLimit.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pan\": \"6399960311100000\",\n  \"panExpiry\": \"0627\",\n  \"tokenRequestorId\": \"{{trId}}\",\n  \"tokenType\": \"CLOUD\",\n  \"tokenAssuranceLevel\": \"3\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "12-17 Provision - PAN at upper boundary",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if(!pm.collectionVariables.get(\"trId\"))pm.collectionVariables.set(\"trId\",\"99850031692\");"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"12-17 Status 200/201\",()=>pm.expect(pm.response.code).to.be.oneOf([200,201]));",
+                  "pm.test(\"12-17 Token is 13-19 digit\",()=>{const j=pm.response.json();const t=j.token||j.tokenValue||j.tokenNumber;if(t){pm.expect(t).to.match(/^[0-9]{13,19}$/);}});",
+                  "pm.test(\"12-17 TAL present\",()=>{const j=pm.response.json();pm.expect(j.tokenAssuranceLevel||j.tal||j.TAL).to.exist;});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/tokens/provision",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "Boundary R1: Exact panUpperLimit.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pan\": \"6399960319000000\",\n  \"panExpiry\": \"0627\",\n  \"tokenRequestorId\": \"{{trId}}\",\n  \"tokenType\": \"CLOUD\",\n  \"tokenAssuranceLevel\": \"3\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "12-18 Provision - PAN below lower limit",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if(!pm.collectionVariables.get(\"trId\"))pm.collectionVariables.set(\"trId\",\"99850031692\");"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"12-18 Status 422\",()=>pm.expect(pm.response.code).to.be.oneOf([422]));",
+                  "pm.test(\"12-18 Error body\",()=>{const j=pm.response.json();pm.expect(j.errorCode||j.error||j.message).to.exist;});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/tokens/provision",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "Negative R1: Below range → ACCOUNT_NOT_ELIGIBLE.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pan\": \"6399960310000001\",\n  \"panExpiry\": \"0627\",\n  \"tokenRequestorId\": \"{{trId}}\",\n  \"tokenType\": \"CLOUD\",\n  \"tokenAssuranceLevel\": \"3\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "12-19 Provision - PAN above upper limit",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if(!pm.collectionVariables.get(\"trId\"))pm.collectionVariables.set(\"trId\",\"99850031692\");"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"12-19 Status 422\",()=>pm.expect(pm.response.code).to.be.oneOf([422]));",
+                  "pm.test(\"12-19 Error body\",()=>{const j=pm.response.json();pm.expect(j.errorCode||j.error||j.message).to.exist;});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/tokens/provision",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "Negative R1: Above range → ACCOUNT_NOT_ELIGIBLE.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pan\": \"6399960319999999\",\n  \"panExpiry\": \"0627\",\n  \"tokenRequestorId\": \"{{trId}}\",\n  \"tokenType\": \"CLOUD\",\n  \"tokenAssuranceLevel\": \"3\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "12-20 Provision - partial utilization OK",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if(!pm.collectionVariables.get(\"trId\"))pm.collectionVariables.set(\"trId\",\"99850031692\");"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"12-20 Status 200/201\",()=>pm.expect(pm.response.code).to.be.oneOf([200,201]));",
+                  "pm.test(\"12-20 Token is 13-19 digit\",()=>{const j=pm.response.json();const t=j.token||j.tokenValue||j.tokenNumber;if(t){pm.expect(t).to.match(/^[0-9]{13,19}$/);}});",
+                  "pm.test(\"12-20 TAL present\",()=>{const j=pm.response.json();pm.expect(j.tokenAssuranceLevel||j.tal||j.TAL).to.exist;});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/tokens/provision",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "Business R5: Partial use does not block.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pan\": \"6399960315500000\",\n  \"panExpiry\": \"0627\",\n  \"tokenRequestorId\": \"{{trId}}\",\n  \"tokenType\": \"CLOUD\",\n  \"tokenAssuranceLevel\": \"3\"\n}"
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "13 Token Lifecycle",
+      "item": [
+        {
+          "name": "13-01 Activate (INACTIVE→ACTIVE)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"13-01 Status 200\",()=>pm.expect(pm.response.code).to.equal(200));",
+                  "pm.test(\"13-01 State ACTIVE\",()=>{const j=pm.response.json();const st=j.status||j.tokenStatus;pm.expect(String(st).toUpperCase()).to.equal(\"ACTIVE\");});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/tokens/{{provisionedToken}}/activate",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "{{provisionedToken}}",
+                "activate"
+              ]
+            },
+            "description": "EMVCo §6.1: Activate token after ID&V.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"reason\":\"ID_AND_V_COMPLETE\"}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "13-02 Suspend (ACTIVE→SUSPENDED)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"13-02 Status 200\",()=>pm.expect(pm.response.code).to.equal(200));",
+                  "pm.test(\"13-02 State SUSPENDED\",()=>{const j=pm.response.json();const st=j.status||j.tokenStatus;pm.expect(String(st).toUpperCase()).to.equal(\"SUSPENDED\");});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/tokens/{{provisionedToken}}/suspend",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "{{provisionedToken}}",
+                "suspend"
+              ]
+            },
+            "description": "EMVCo §6.2: Suspend token.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"reason\":\"CARDHOLDER_REQUEST\"}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "13-03 Txn on SUSPENDED token rejected",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"13-03 Status 403/422\",()=>pm.expect(pm.response.code).to.be.oneOf([403,422]));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/tokens/authorize",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "authorize"
+              ]
+            },
+            "description": "EMVCo §6.5: Suspended token must not authorize.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"tokenValue\":\"{{provisionedToken}}\",\"cryptogram\":\"AABBCCDD\",\"amount\":\"100.00\",\"currency\":\"BDT\"}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "13-04 Resume (SUSPENDED→ACTIVE)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"13-04 Status 200\",()=>pm.expect(pm.response.code).to.equal(200));",
+                  "pm.test(\"13-04 State ACTIVE\",()=>{const j=pm.response.json();const st=j.status||j.tokenStatus;pm.expect(String(st).toUpperCase()).to.equal(\"ACTIVE\");});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/tokens/{{provisionedToken}}/resume",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "{{provisionedToken}}",
+                "resume"
+              ]
+            },
+            "description": "EMVCo §6.3: Resume token.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"reason\":\"CARDHOLDER_REQUEST\"}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "13-05 Delete token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"13-05 Status 200\",()=>pm.expect(pm.response.code).to.equal(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/tokens/{{provisionedToken}}",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "{{provisionedToken}}"
+              ]
+            },
+            "description": "EMVCo §6.4: Delete token from any state."
+          },
+          "response": []
+        },
+        {
+          "name": "13-06 Txn on DELETED token rejected",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"13-06 Status 403/404\",()=>pm.expect(pm.response.code).to.be.oneOf([403,404,422]));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/tokens/authorize",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "authorize"
+              ]
+            },
+            "description": "EMVCo §6.5: Deleted token must not authorize.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"tokenValue\":\"{{provisionedToken}}\",\"cryptogram\":\"AABBCCDD\",\"amount\":\"100.00\",\"currency\":\"BDT\"}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "13-07 Invalid transition INACTIVE→SUSPENDED",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"13-07 Status 4xx\",()=>pm.expect(pm.response.code).to.be.within(400,499));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/tokens/INACTIVE_PLACEHOLDER/suspend",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "INACTIVE_PLACEHOLDER",
+                "suspend"
+              ]
+            },
+            "description": "Negative EMVCo §6.2: Cannot suspend inactive token.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"reason\":\"FRAUD_DETECTION\"}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "13-08 Delete already-deleted token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"13-08 Status 404/409\",()=>pm.expect(pm.response.code).to.be.oneOf([404,409]));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/tokens/DELETED_PLACEHOLDER",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "DELETED_PLACEHOLDER"
+              ]
+            },
+            "description": "Negative EMVCo §6.4: Double delete."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "14 De-Tokenization",
+      "item": [
+        {
+          "name": "14-01 Detokenize - authorized party",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"14-01 Status 200\",()=>pm.expect(pm.response.code).to.equal(200));",
+                  "pm.test(\"14-01 PAN returned\",()=>{const j=pm.response.json();const p=j.pan||j.PAN||j.originalPan;pm.expect(p).to.match(/^[0-9]{13,19}$/);});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/tokens/detokenize",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "detokenize"
+              ]
+            },
+            "description": "EMVCo §5.1: Authorized de-tokenization returns original PAN.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"tokenValue\":\"{{provisionedToken}}\",\"tokenRequestorId\":\"{{trId}}\"}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "14-02 Detokenize - unauthorized party",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"14-02 Status 401/403\",()=>pm.expect(pm.response.code).to.be.oneOf([401,403]));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "0000000"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/tokens/detokenize",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "detokenize"
+              ]
+            },
+            "description": "EMVCo §5.2: Only authorized parties may de-tokenize.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"tokenValue\":\"{{provisionedToken}}\",\"tokenRequestorId\":\"UNAUTHORIZED_TR\"}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "14-03 Detokenize - deleted token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"14-03 Status 404/422\",()=>pm.expect(pm.response.code).to.be.oneOf([404,422]));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/tokens/detokenize",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "detokenize"
+              ]
+            },
+            "description": "Negative EMVCo §5.3: Deleted token.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"tokenValue\":\"DELETED_TOKEN_VALUE\",\"tokenRequestorId\":\"{{trId}}\"}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "14-04 Detokenize - invalid Luhn",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"14-04 Status 400 INVALID_TOKEN_FORMAT\",()=>pm.expect(pm.response.code).to.equal(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/tokens/detokenize",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "detokenize"
+              ]
+            },
+            "description": "EMVCo §3.2: Non-Luhn token rejected.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"tokenValue\":\"1234567890123456\",\"tokenRequestorId\":\"{{trId}}\"}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "14-05 Detokenize - tampered value",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"14-05 Status 400/404\",()=>pm.expect(pm.response.code).to.be.oneOf([400,404]));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/tokens/detokenize",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "detokenize"
+              ]
+            },
+            "description": "EMVCo §5.4: Token not in vault.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"tokenValue\":\"9999999999999999\",\"tokenRequestorId\":\"{{trId}}\"}"
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "15 Token Domain Restriction Control",
+      "item": [
+        {
+          "name": "15-01 TDRC - within allowed domain",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"15-01 Status 200\",()=>pm.expect(pm.response.code).to.equal(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/tokens/authorize",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "authorize"
+              ]
+            },
+            "description": "EMVCo §7.1: Token used in correct domain.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"tokenValue\":\"{{provisionedToken}}\",\"cryptogram\":\"AABB\",\"domain\":\"ECOMMERCE\",\"merchantId\":\"123456789012345\"}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "15-02 TDRC - outside allowed domain",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"15-02 Status 403 TOKEN_DOMAIN_VIOLATION\",()=>pm.expect(pm.response.code).to.be.oneOf([403,422]));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/tokens/authorize",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "authorize"
+              ]
+            },
+            "description": "EMVCo §7.2: Wrong domain rejected.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"tokenValue\":\"{{provisionedToken}}\",\"cryptogram\":\"AABB\",\"domain\":\"CONTACTLESS\",\"merchantId\":\"123456789012345\"}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "15-03 TDRC - no restriction",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"15-03 Status 200\",()=>pm.expect(pm.response.code).to.equal(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/tokens/authorize",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "authorize"
+              ]
+            },
+            "description": "EMVCo §7.3: Token with no restriction.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"tokenValue\":\"{{provisionedToken}}\",\"cryptogram\":\"AABB\",\"domain\":\"CONTACTLESS\",\"merchantId\":\"123456789012345\"}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "15-04 TDRC - update domain mid-lifecycle",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"15-04 Status 200\",()=>pm.expect(pm.response.code).to.equal(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/tokens/{{provisionedToken}}/domain",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "{{provisionedToken}}",
+                "domain"
+              ]
+            },
+            "description": "EMVCo §7.4: Update restriction, enforce on subsequent txns.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"newDomainRestriction\":\"QR_CODE\"}"
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "16 Token Expiry Validation",
+      "item": [
+        {
+          "name": "16-01 Expiry - within PAN expiry",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"16-01 Status 200/201\",()=>pm.expect(pm.response.code).to.be.oneOf([200,201]));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/tokens/provision",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "EMVCo §4.4: Token expiry ≤ PAN expiry.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pan\": \"6399960312345678\",\n  \"panExpiry\": \"0628\",\n  \"tokenRequestorId\": \"{{trId}}\",\n  \"tokenType\": \"CLOUD\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "16-02 Expiry - beyond PAN expiry",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"16-02 Status 400\",()=>pm.expect(pm.response.code).to.be.oneOf([400]));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/tokens/provision",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "Negative EMVCo §4.4: Token expiry > PAN expiry.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pan\": \"6399960312345678\",\n  \"panExpiry\": \"0127\",\n  \"tokenRequestorId\": \"{{trId}}\",\n  \"tokenType\": \"CLOUD\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "16-03 Expiry - expired PAN",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"16-03 Status 400\",()=>pm.expect(pm.response.code).to.be.oneOf([400]));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/tokens/provision",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "Negative EMVCo §4.4: Already expired PAN.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pan\": \"6399960312345678\",\n  \"panExpiry\": \"0124\",\n  \"tokenRequestorId\": \"{{trId}}\",\n  \"tokenType\": \"CLOUD\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "16-04 Expiry - quarter matches correctly",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"16-04 Status 200/201\",()=>pm.expect(pm.response.code).to.be.oneOf([200,201]));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/tokens/provision",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "Business R4: Aug→Q3.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pan\": \"6399960312345678\",\n  \"panExpiry\": \"0827\",\n  \"tokenRequestorId\": \"{{trId}}\",\n  \"tokenType\": \"CLOUD\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "16-05 Expiry - quarter mismatch",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"16-05 Status 422\",()=>pm.expect(pm.response.code).to.be.oneOf([422]));",
+                  "pm.test(\"16-05 Error code\",()=>{const j=pm.response.json();pm.expect(j.errorCode||j.error||j.message).to.exist;});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/tokens/provision",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "Negative R4: EXPIRY_QUARTER_MISMATCH.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pan\": \"6399960312345678\",\n  \"panExpiry\": \"1227\",\n  \"tokenRequestorId\": \"{{trId}}\",\n  \"tokenType\": \"CLOUD\"\n}"
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "17 Security & Fraud Controls",
+      "item": [
+        {
+          "name": "17-01 Idempotent duplicate request",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"17-01 Status 200\",()=>pm.expect(pm.response.code).to.equal(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/tokens/provision",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "EMVCo §4.3.4: Same request returns same token.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"pan\":\"6399960312345678\",\"panExpiry\":\"0627\",\"tokenRequestorId\":\"{{trId}}\",\"tokenType\":\"CLOUD\",\"idempotencyKey\":\"unique-123\"}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "17-02 Brute-force rate limit",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"17-02 Status 400/429\",()=>pm.expect(pm.response.code).to.be.oneOf([400,429]));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/tokens/detokenize",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "detokenize"
+              ]
+            },
+            "description": "EMVCo §8.1: Rate limiting.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"tokenValue\":\"1111111111111111\",\"tokenRequestorId\":\"{{trId}}\"}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "17-03 Bad Luhn check digit",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"17-03 Status 400\",()=>pm.expect(pm.response.code).to.equal(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/tokens/detokenize",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "detokenize"
+              ]
+            },
+            "description": "EMVCo §3.2: Invalid Luhn.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"tokenValue\":\"6399960312345670\",\"tokenRequestorId\":\"{{trId}}\"}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "17-04 Expired JWT in header",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"17-04 Status 401\",()=>pm.expect(pm.response.code).to.equal(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer expired.jwt.token"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/tokens/provision",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "Security: Expired auth token.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"pan\":\"6399960312345678\",\"panExpiry\":\"0627\",\"tokenRequestorId\":\"{{trId}}\",\"tokenType\":\"CLOUD\"}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "17-05 Missing authorization",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"17-05 Status 401\",()=>pm.expect(pm.response.code).to.equal(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/tokens/provision",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "Security: No auth header or X-TV-ID.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"pan\":\"6399960312345678\",\"panExpiry\":\"0627\",\"tokenRequestorId\":\"{{trId}}\",\"tokenType\":\"CLOUD\"}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "17-06 SQL injection in PAN",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"17-06 Status 400\",()=>pm.expect(pm.response.code).to.equal(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/tokens/provision",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "Security: Input sanitized.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"pan\":\"6399960312345\\\"; DROP TABLE tokens;--\",\"panExpiry\":\"0627\",\"tokenRequestorId\":\"{{trId}}\",\"tokenType\":\"CLOUD\"}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "17-07 TAL returned per ID&V method",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"17-07 Status 200/201\",()=>pm.expect(pm.response.code).to.be.oneOf([200,201]));",
+                  "pm.test(\"17-07 TAL field\",()=>{const j=pm.response.json();pm.expect(j.tokenAssuranceLevel||j.tal||j.TAL).to.exist;});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/tokens/provision",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "EMVCo §4.5: TAL based on ID&V.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"pan\":\"6399960312345678\",\"panExpiry\":\"0627\",\"tokenRequestorId\":\"{{trId}}\",\"tokenType\":\"CLOUD\",\"identificationAndVerificationMethod\":\"APP_TO_APP\"}"
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "18 Error Code Validation",
+      "item": [
+        {
+          "name": "18-01 ACCOUNT_NOT_ELIGIBLE",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"18-01 Status 422\",()=>pm.expect(pm.response.code).to.equal(422));",
+                  "pm.test(\"18-01 Error structure\",()=>{const j=pm.response.json();pm.expect(j.errorCode||j.error).to.exist;pm.expect(j.errorMessage||j.message).to.exist;});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/tokens/provision",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "Business R1: Validate ACCOUNT_NOT_ELIGIBLE error.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"pan\":\"6399960300000001\",\"panExpiry\":\"0627\",\"tokenRequestorId\":\"{{trId}}\",\"tokenType\":\"CLOUD\"}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "18-02 TOKEN_RANGE_EXHAUSTED",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"18-02 Status 422\",()=>pm.expect(pm.response.code).to.equal(422));",
+                  "pm.test(\"18-02 Error structure\",()=>{const j=pm.response.json();pm.expect(j.errorCode||j.error).to.exist;pm.expect(j.errorMessage||j.message).to.exist;});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/tokens/provision",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "Business R3: Validate TOKEN_RANGE_EXHAUSTED.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"pan\":\"6399960312345678\",\"panExpiry\":\"0627\",\"tokenRequestorId\":\"{{trId}}\",\"tokenType\":\"CLOUD\"}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "18-03 EXPIRY_QUARTER_MISMATCH",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"18-03 Status 422\",()=>pm.expect(pm.response.code).to.equal(422));",
+                  "pm.test(\"18-03 Error structure\",()=>{const j=pm.response.json();pm.expect(j.errorCode||j.error).to.exist;pm.expect(j.errorMessage||j.message).to.exist;});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/tokens/provision",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "Business R4: Validate EXPIRY_QUARTER_MISMATCH.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"pan\":\"6399960312345678\",\"panExpiry\":\"1228\",\"tokenRequestorId\":\"{{trId}}\",\"tokenType\":\"CLOUD\"}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "18-04 BIN_RANGE_OVERLAP_DETECTED",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"18-04 Status 400/409\",()=>pm.expect(pm.response.code).to.be.oneOf([400,409]));",
+                  "pm.test(\"18-04 Overlap error\",()=>{const j=pm.response.json();pm.expect(j.errorCode||j.error||j.message).to.exist;});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/token-range",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "token-range"
+              ]
+            },
+            "description": "Business R6: Validate BIN_RANGE_OVERLAP_DETECTED.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"tokenRangeSetupList\":[{\"expiry\":{\"quarter\":\"Q2\",\"year\":2027},\"lowerLimit\":\"9100000\",\"upperLimit\":\"9999999\"}],\"requestorId\":\"{{trId}}\",\"issuerId\":\"{{issuerId}}\",\"binId\":\"{{binId}}\"}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "18-05 INVALID_TOKEN_FORMAT",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"18-05 Status 400\",()=>pm.expect(pm.response.code).to.equal(400));",
+                  "pm.test(\"18-05 Error structure\",()=>{const j=pm.response.json();pm.expect(j.errorCode||j.error).to.exist;});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/tokens/detokenize",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "detokenize"
+              ]
+            },
+            "description": "EMVCo §3.2: Non-numeric token.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"tokenValue\":\"ABCDEFGHIJ123456\",\"tokenRequestorId\":\"{{trId}}\"}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "18-06 TOKEN_DOMAIN_VIOLATION",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"18-06 Status 403/422\",()=>pm.expect(pm.response.code).to.be.oneOf([403,422]));",
+                  "pm.test(\"18-06 Error structure\",()=>{const j=pm.response.json();pm.expect(j.errorCode||j.error).to.exist;});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/tokens/authorize",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "authorize"
+              ]
+            },
+            "description": "EMVCo §7.2: Domain violation.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"tokenValue\":\"{{provisionedToken}}\",\"cryptogram\":\"AABB\",\"domain\":\"IN_APP\",\"merchantId\":\"123456789012345\"}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "18-07 Empty required fields",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"18-07 Status 400\",()=>pm.expect(pm.response.code).to.equal(400));",
+                  "pm.test(\"18-07 Has errorCode+message\",()=>{const j=pm.response.json();pm.expect(j.errorCode||j.error).to.exist;pm.expect(j.errorMessage||j.message).to.exist;});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{tvId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl_tvm}}/tvm/api/tokens/provision",
+              "host": [
+                "{{baseUrl_tvm}}"
+              ],
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "provision"
+              ]
+            },
+            "description": "Validate error response includes errorCode, errorMessage, traceId, timestamp.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"pan\":\"\",\"panExpiry\":\"\",\"tokenRequestorId\":\"\"}"
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

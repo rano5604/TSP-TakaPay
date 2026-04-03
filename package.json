@@ -13,7 +13,10 @@
     "test:html-report": "newman run TSP_TestCases_postman_collection.json -r htmlextra --reporter-htmlextra-export reports/test-report.html",
     "generate": "node scripts/generate-test-cases.js",
     "generate:automated": "node scripts/generate-automated-collection.js",
-    "generate:combined": "node scripts/generate-combined-collection.js"
+    "generate:combined": "node scripts/generate-combined-collection.js",
+    "generate:final": "node scripts/generate-final-collection.js",
+    "test:final": "newman run TSP_Final_Automated_postman_collection.json -e TSP_TakaPay_environment.json",
+    "test:final:report": "newman run TSP_Final_Automated_postman_collection.json -e TSP_TakaPay_environment.json -r htmlextra --reporter-htmlextra-export reports/final-report.html"
   },
   "repository": {
     "type": "git",

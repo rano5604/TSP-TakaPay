@@ -1,0 +1,319 @@
+ID,Title,Section,Type,Priority,Preconditions,Steps,Expected Result,EMVCo Reference,Business Rule,API Endpoint,Expected HTTP,pm.test Count
+01-01,01-01 Create Vault (happy path),01 Vault Creation,Functional,High,Full setup flow completed (steps 01-11). Vault creation with valid TSP code.,"1. POST {{baseUrl_rgm}}/rgm/api/vaults
+2. Verify HTTP 200,201
+3. Run 3 pm.test() assertions","HTTP 200,201, all assertions pass",,,POST {{baseUrl_rgm}}/rgm/api/vaults,"200,201",3
+01-02,01-02 Vault - missing tspCode,01 Vault Creation,Negative,High,Full setup flow completed (steps 01-11). tspCode omitted.,"1. POST {{baseUrl_rgm}}/rgm/api/vaults
+2. Verify HTTP 400
+3. Run 2 pm.test() assertions","HTTP 400, all assertions pass",,,POST {{baseUrl_rgm}}/rgm/api/vaults,400,2
+01-03,01-03 Vault - empty custodianIdList,01 Vault Creation,Negative,High,Full setup flow completed (steps 01-11). At least one custodian required.,"1. POST {{baseUrl_rgm}}/rgm/api/vaults
+2. Verify HTTP 400
+3. Run 1 pm.test() assertions","HTTP 400, all assertions pass",,,POST {{baseUrl_rgm}}/rgm/api/vaults,400,1
+01-04,01-04 Vault - duplicate creation,01 Vault Creation,Negative,High,Full setup flow completed (steps 01-11). Duplicate tspCode should conflict.,"1. POST {{baseUrl_rgm}}/rgm/api/vaults
+2. Verify HTTP 400-499
+3. Run 1 pm.test() assertions","HTTP 400-499, all assertions pass",,,POST {{baseUrl_rgm}}/rgm/api/vaults,400-499,1
+01-05,01-05 Vault - invalid tspCode format,01 Vault Creation,Negative,High,Full setup flow completed (steps 01-11). Special characters in tspCode.,"1. POST {{baseUrl_rgm}}/rgm/api/vaults
+2. Verify HTTP 400
+3. Run 1 pm.test() assertions","HTTP 400, all assertions pass",,,POST {{baseUrl_rgm}}/rgm/api/vaults,400,1
+02-01,02-01 Generate key (happy path),02 Transport Key Generation,Functional,High,Full setup flow completed (steps 01-11). Generate transport key for issuer onboarding.,"1. GET {{baseUrl_crypto}}/api/generate-transport-key
+2. Verify HTTP 200
+3. Run 3 pm.test() assertions","HTTP 200, all assertions pass",,,GET {{baseUrl_crypto}}/api/generate-transport-key,200,3
+02-02,02-02 Key uniqueness check (call 1),02 Transport Key Generation,Functional,Medium,Full setup flow completed (steps 01-11). Key uniqueness — store first key.,"1. GET {{baseUrl_crypto}}/api/generate-transport-key
+2. Verify HTTP 200
+3. Run 1 pm.test() assertions","HTTP 200, all assertions pass",,,GET {{baseUrl_crypto}}/api/generate-transport-key,200,1
+02-03,02-03 Key uniqueness check (call 2),02 Transport Key Generation,Functional,Medium,Full setup flow completed (steps 01-11). Verify two generated keys are never identical.,"1. GET {{baseUrl_crypto}}/api/generate-transport-key
+2. Verify HTTP 200
+3. Run 2 pm.test() assertions","HTTP 200, all assertions pass",,,GET {{baseUrl_crypto}}/api/generate-transport-key,200,2
+03-01,03-01 Get certificate (happy path),03 Certificate Retrieval,Functional,High,Full setup flow completed (steps 01-11). Retrieve vault certificate for key encryption.,"1. GET {{baseUrl_tvm}}/tvm/api/vault/certificate
+2. Verify HTTP 200
+3. Run 2 pm.test() assertions","HTTP 200, all assertions pass",,,GET {{baseUrl_tvm}}/tvm/api/vault/certificate,200,2
+03-02,03-02 Certificate - missing X-TV-ID,03 Certificate Retrieval,Negative,High,Full setup flow completed (steps 01-11). Vault identifier required.,"1. GET {{baseUrl_tvm}}/tvm/api/vault/certificate
+2. Verify HTTP 400,401
+3. Run 1 pm.test() assertions","HTTP 400,401, all assertions pass",,,GET {{baseUrl_tvm}}/tvm/api/vault/certificate,"400,401",1
+03-03,03-03 Certificate - non-existent vault,03 Certificate Retrieval,Negative,High,Full setup flow completed (steps 01-11). Unknown vault ID.,"1. GET {{baseUrl_tvm}}/tvm/api/vault/certificate
+2. Verify HTTP 404
+3. Run 1 pm.test() assertions","HTTP 404, all assertions pass",,,GET {{baseUrl_tvm}}/tvm/api/vault/certificate,404,1
+04-01,04-01 Encrypt key (happy path),04 Key Encryption,Functional,High,Full setup flow completed (steps 01-11). Encrypt transport key with vault certificate.,"1. POST {{baseUrl_crypto}}/api/v1/encrypt/transport-key
+2. Verify HTTP 200
+3. Run 2 pm.test() assertions","HTTP 200, all assertions pass",,,POST {{baseUrl_crypto}}/api/v1/encrypt/transport-key,200,2
+04-02,04-02 Encrypt - missing certificate,04 Key Encryption,Negative,High,Full setup flow completed (steps 01-11). Certificate file required.,"1. POST {{baseUrl_crypto}}/api/v1/encrypt/transport-key
+2. Verify HTTP 400
+3. Run 1 pm.test() assertions","HTTP 400, all assertions pass",,,POST {{baseUrl_crypto}}/api/v1/encrypt/transport-key,400,1
+04-03,04-03 Encrypt - invalid certificate,04 Key Encryption,Negative,High,Full setup flow completed (steps 01-11). Malformed certificate.,"1. POST {{baseUrl_crypto}}/api/v1/encrypt/transport-key
+2. Verify HTTP 400,422
+3. Run 1 pm.test() assertions","HTTP 400,422, all assertions pass",,,POST {{baseUrl_crypto}}/api/v1/encrypt/transport-key,"400,422",1
+04-04,04-04 Encrypt - plainData wrong length,04 Key Encryption,Negative,High,Full setup flow completed (steps 01-11). plainData not 64-char hex.,"1. POST {{baseUrl_crypto}}/api/v1/encrypt/transport-key
+2. Verify HTTP 400
+3. Run 1 pm.test() assertions","HTTP 400, all assertions pass",,,POST {{baseUrl_crypto}}/api/v1/encrypt/transport-key,400,1
+05-01,05-01 Create issuer (happy path),05 Issuer Onboarding,Functional,High,Full setup flow completed (steps 01-11). Register card issuer with encrypted transport key.,"1. POST {{baseUrl_tvm}}/tvm/api/issuer
+2. Verify HTTP 200,201
+3. Run 2 pm.test() assertions","HTTP 200,201, all assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/issuer,"200,201",2
+05-02,05-02 Issuer - invalid KCV,05 Issuer Onboarding,Negative,High,Full setup flow completed (steps 01-11). KCV does not match transport key.,"1. POST {{baseUrl_tvm}}/tvm/api/issuer
+2. Verify HTTP 400,422
+3. Run 1 pm.test() assertions","HTTP 400,422, all assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/issuer,"400,422",1
+05-03,05-03 Issuer - missing X-TV-ID,05 Issuer Onboarding,Negative,High,Full setup flow completed (steps 01-11). Vault identifier required.,"1. POST {{baseUrl_tvm}}/tvm/api/issuer
+2. Verify HTTP 400,401
+3. Run 1 pm.test() assertions","HTTP 400,401, all assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/issuer,"400,401",1
+05-04,05-04 Issuer - duplicate code,05 Issuer Onboarding,Negative,High,Full setup flow completed (steps 01-11). Duplicate issuer code.,"1. POST {{baseUrl_tvm}}/tvm/api/issuer
+2. Verify HTTP 400-499
+3. Run 1 pm.test() assertions","HTTP 400-499, all assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/issuer,400-499,1
+05-05,05-05 Issuer - invalid realTimePanEnrollment,05 Issuer Onboarding,Negative,High,Full setup flow completed (steps 01-11). Must be Y or N.,"1. POST {{baseUrl_tvm}}/tvm/api/issuer
+2. Verify HTTP 400
+3. Run 1 pm.test() assertions","HTTP 400, all assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/issuer,400,1
+06-01,06-01 Create BIN (happy path),06 BIN Setup,Functional,High,Full setup flow completed (steps 01-11). Register BIN for issuer.,"1. POST {{baseUrl_tvm}}/tvm/api/bin/single
+2. Verify HTTP 200,201
+3. Run 2 pm.test() assertions","HTTP 200,201, all assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/bin/single,"200,201",2
+06-02,06-02 BIN - invalid issuerId,06 BIN Setup,Negative,High,Full setup flow completed (steps 01-11). Non-existent issuer.,"1. POST {{baseUrl_tvm}}/tvm/api/bin/single
+2. Verify HTTP 400-499
+3. Run 1 pm.test() assertions","HTTP 400-499, all assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/bin/single,400-499,1
+06-03,06-03 BIN - duplicate value,06 BIN Setup,Negative,High,Full setup flow completed (steps 01-11). Duplicate BIN value.,"1. POST {{baseUrl_tvm}}/tvm/api/bin/single
+2. Verify HTTP 400-499
+3. Run 1 pm.test() assertions","HTTP 400-499, all assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/bin/single,400-499,1
+06-04,06-04 BIN - ianLen zero,06 BIN Setup,Boundary,High,Full setup flow completed (steps 01-11). ianLen must be > 0.,"1. POST {{baseUrl_tvm}}/tvm/api/bin/single
+2. Verify HTTP 400
+3. Run 1 pm.test() assertions","HTTP 400, all assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/bin/single,400,1
+07-01,07-01 Create account range (happy path),07 Account Range Setup,Functional,High,Full setup flow completed (steps 01-11). Configure PAN account range.,"1. POST {{baseUrl_tvm}}/tvm/api/account-range
+2. Verify HTTP 200,201
+3. Run 2 pm.test() assertions","HTTP 200,201, all assertions pass",,R1,POST {{baseUrl_tvm}}/tvm/api/account-range,"200,201",2
+07-02,07-02 AcctRange - lower > upper,07 Account Range Setup,Functional,Medium,Full setup flow completed (steps 01-11). Invalid range bounds.,"1. POST {{baseUrl_tvm}}/tvm/api/account-range
+2. Verify HTTP 400
+3. Run 1 pm.test() assertions","HTTP 400, all assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/account-range,400,1
+07-03,07-03 AcctRange - empty listOfExpiry,07 Account Range Setup,Negative,High,Full setup flow completed (steps 01-11). At least one expiry required.,"1. POST {{baseUrl_tvm}}/tvm/api/account-range
+2. Verify HTTP 400
+3. Run 1 pm.test() assertions","HTTP 400, all assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/account-range,400,1
+07-04,07-04 AcctRange - invalid quarter Q5,07 Account Range Setup,Negative,High,Full setup flow completed (steps 01-11). Quarter must be Q1-Q4.,"1. POST {{baseUrl_tvm}}/tvm/api/account-range
+2. Verify HTTP 400
+3. Run 1 pm.test() assertions","HTTP 400, all assertions pass",,R2,POST {{baseUrl_tvm}}/tvm/api/account-range,400,1
+07-05,07-05 AcctRange - past expiry year,07 Account Range Setup,Functional,Medium,Full setup flow completed (steps 01-11). Expiry in the past.,"1. POST {{baseUrl_tvm}}/tvm/api/account-range
+2. Verify HTTP 400
+3. Run 1 pm.test() assertions","HTTP 400, all assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/account-range,400,1
+08-01,08-01 Create requester - Google Pay (happy path),08 Token Requester Onboarding,Functional,High,Full setup flow completed (steps 01-11). Onboard token requestor.,"1. POST {{baseUrl_tvm}}/tvm/api/token-requestor
+2. Verify HTTP 200,201
+3. Run 2 pm.test() assertions","HTTP 200,201, all assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/token-requestor,"200,201",2
+08-02,08-02 Requester - invalid tokenFormFactor,08 Token Requester Onboarding,Negative,High,Full setup flow completed (steps 01-11). Unsupported form factor.,"1. POST {{baseUrl_tvm}}/tvm/api/token-requestor
+2. Verify HTTP 400
+3. Run 1 pm.test() assertions","HTTP 400, all assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/token-requestor,400,1
+08-03,08-03 Requester - KCV mismatch,08 Token Requester Onboarding,Negative,High,Full setup flow completed (steps 01-11). KCV verification failure.,"1. POST {{baseUrl_tvm}}/tvm/api/token-requestor
+2. Verify HTTP 400,422
+3. Run 1 pm.test() assertions","HTTP 400,422, all assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/token-requestor,"400,422",1
+08-04,08-04 Requester - missing serviceName,08 Token Requester Onboarding,Negative,High,Full setup flow completed (steps 01-11). Required field omitted.,"1. POST {{baseUrl_tvm}}/tvm/api/token-requestor
+2. Verify HTTP 400
+3. Run 1 pm.test() assertions","HTTP 400, all assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/token-requestor,400,1
+09-01,09-01 Token use setup (happy path),09 Token Use Setup,Functional,High,Full setup flow completed (steps 01-11). Configure token use with merchant.,"1. POST {{baseUrl_tvm}}/tvm/api/token-requestor/token-use/setup
+2. Verify HTTP 200,201
+3. Run 1 pm.test() assertions","HTTP 200,201, all assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/token-requestor/token-use/setup,"200,201",1
+09-02,09-02 Token use - non-existent trId,09 Token Use Setup,Negative,High,Full setup flow completed (steps 01-11). Unknown requestor.,"1. POST {{baseUrl_tvm}}/tvm/api/token-requestor/token-use/setup
+2. Verify HTTP 400-499
+3. Run 1 pm.test() assertions","HTTP 400-499, all assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/token-requestor/token-use/setup,400-499,1
+09-03,09-03 Token use - merchantId wrong length,09 Token Use Setup,Negative,High,Full setup flow completed (steps 01-11). merchantId must be 15 digits.,"1. POST {{baseUrl_tvm}}/tvm/api/token-requestor/token-use/setup
+2. Verify HTTP 400
+3. Run 1 pm.test() assertions","HTTP 400, all assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/token-requestor/token-use/setup,400,1
+09-04,09-04 Token use - multiple merchants,09 Token Use Setup,Functional,Medium,Full setup flow completed (steps 01-11). Multiple merchants at once.,"1. POST {{baseUrl_tvm}}/tvm/api/token-requestor/token-use/setup
+2. Verify HTTP 200
+3. Run 1 pm.test() assertions","HTTP 200, all assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/token-requestor/token-use/setup,200,1
+10-01,10-01 Token life (happy path),10 Token Life Authorization,Security,High,Full setup flow completed (steps 01-11). Authorize token lifetime.,"1. POST {{baseUrl_tvm}}/tvm/api/token-life/authorization
+2. Verify HTTP 200,201
+3. Run 1 pm.test() assertions","HTTP 200,201, all assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/token-life/authorization,"200,201",1
+10-02,10-02 Token life - min > max,10 Token Life Authorization,Security,Medium,Full setup flow completed (steps 01-11). min must be <= max.,"1. POST {{baseUrl_tvm}}/tvm/api/token-life/authorization
+2. Verify HTTP 400
+3. Run 1 pm.test() assertions","HTTP 400, all assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/token-life/authorization,400,1
+10-03,10-03 Token life - non-existent issuerId,10 Token Life Authorization,Security,Medium,Full setup flow completed (steps 01-11). Unknown issuer.,"1. POST {{baseUrl_tvm}}/tvm/api/token-life/authorization
+2. Verify HTTP 400-499
+3. Run 1 pm.test() assertions","HTTP 400-499, all assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/token-life/authorization,400-499,1
+10-04,10-04 Token life - zero period,10 Token Life Authorization,Security,Medium,Full setup flow completed (steps 01-11). Zero-lifetime token.,"1. POST {{baseUrl_tvm}}/tvm/api/token-life/authorization
+2. Verify HTTP 200,400
+3. Run 1 pm.test() assertions","HTTP 200,400, all assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/token-life/authorization,"200,400",1
+11-01,11-01 Token range (happy path),11 Token Range & BIN Range Setup,Functional,High,Full setup flow completed (steps 01-11). Configure quarter-wise BIN range.,"1. POST {{baseUrl_tvm}}/tvm/api/token-range
+2. Verify HTTP 200,201
+3. Run 1 pm.test() assertions","HTTP 200,201, all assertions pass",,R2,POST {{baseUrl_tvm}}/tvm/api/token-range,"200,201",1
+11-02,11-02 Token range - overlaps account range,11 Token Range & BIN Range Setup,Functional,Medium,Full setup flow completed (steps 01-11). Overlapping ranges must be rejected.,"1. POST {{baseUrl_tvm}}/tvm/api/token-range
+2. Verify HTTP 400,409
+3. Run 1 pm.test() assertions","HTTP 400,409, all assertions pass",,R6,POST {{baseUrl_tvm}}/tvm/api/token-range,"400,409",1
+11-03,11-03 Token range - lower > upper,11 Token Range & BIN Range Setup,Functional,Medium,Full setup flow completed (steps 01-11). Invalid range.,"1. POST {{baseUrl_tvm}}/tvm/api/token-range
+2. Verify HTTP 400
+3. Run 1 pm.test() assertions","HTTP 400, all assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/token-range,400,1
+11-04,11-04 Token range - non-existent requestorId,11 Token Range & BIN Range Setup,Negative,High,Full setup flow completed (steps 01-11). Unknown requestor.,"1. POST {{baseUrl_tvm}}/tvm/api/token-range
+2. Verify HTTP 400-499
+3. Run 1 pm.test() assertions","HTTP 400-499, all assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/token-range,400-499,1
+11-05,11-05 Token range - past expiry,11 Token Range & BIN Range Setup,Functional,Medium,Full setup flow completed (steps 01-11). Expiry in the past.,"1. POST {{baseUrl_tvm}}/tvm/api/token-range
+2. Verify HTTP 400
+3. Run 1 pm.test() assertions","HTTP 400, all assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/token-range,400,1
+11-06,11-06 BIN range - non-overlapping Q4,11 Token Range & BIN Range Setup,Functional,Medium,Full setup flow completed (steps 01-11). New non-overlapping quarter range.,"1. POST {{baseUrl_tvm}}/tvm/api/token-range
+2. Verify HTTP 200,201
+3. Run 2 pm.test() assertions","HTTP 200,201, all assertions pass",,"R2, R6",POST {{baseUrl_tvm}}/tvm/api/token-range,"200,201",2
+11-07,11-07 BIN range - already-configured quarter overlap,11 Token Range & BIN Range Setup,Functional,Medium,Full setup flow completed (steps 01-11). Overlapping BIN range.,"1. POST {{baseUrl_tvm}}/tvm/api/token-range
+2. Verify HTTP 400,409
+3. Run 2 pm.test() assertions","HTTP 400,409, all assertions pass",,R6,POST {{baseUrl_tvm}}/tvm/api/token-range,"400,409",2
+11-08,11-08 BIN range - zero capacity,11 Token Range & BIN Range Setup,Boundary,High,Full setup flow completed (steps 01-11). Zero/insufficient capacity.,"1. POST {{baseUrl_tvm}}/tvm/api/token-range
+2. Verify HTTP 400
+3. Run 1 pm.test() assertions","HTTP 400, all assertions pass",,R2,POST {{baseUrl_tvm}}/tvm/api/token-range,400,1
+11-09,11-09 BIN range - retrieve config,11 Token Range & BIN Range Setup,Functional,Medium,"Full setup flow completed (steps 01-11). Verify capacity, allocated, remaining per quarter.","1. GET {{baseUrl_tvm}}/tvm/api/token-range?requestorId={{trId}}&issuerId={{issuerId}}&binId={{binId}}
+2. Verify HTTP 200
+3. Run 2 pm.test() assertions","HTTP 200, all assertions pass",,"R2, R5",GET {{baseUrl_tvm}}/tvm/api/token-range?requestorId={{trId}}&issuerId={{issuerId}}&binId={{binId}},200,2
+12-01,12-01 Provision - valid PAN Q1 expiry,12 Token Provisioning,Functional,High,Full setup flow completed (steps 01-11). Q1 mapping.,"1. POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 200,201
+3. Run 3 pm.test() assertions","HTTP 200,201, all assertions pass",Section 4.3,R4,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,"200,201",3
+12-02,12-02 Provision - valid PAN Q2 expiry,12 Token Provisioning,Functional,High,Full setup flow completed (steps 01-11). Q2 mapping.,"1. POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 200,201
+3. Run 3 pm.test() assertions","HTTP 200,201, all assertions pass",Section 4.3,R4,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,"200,201",3
+12-03,12-03 Provision - valid PAN Q3 expiry,12 Token Provisioning,Functional,High,Full setup flow completed (steps 01-11). Q3 mapping.,"1. POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 200,201
+3. Run 3 pm.test() assertions","HTTP 200,201, all assertions pass",Section 4.3,R4,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,"200,201",3
+12-04,12-04 Provision - valid PAN Q4 expiry,12 Token Provisioning,Functional,High,Full setup flow completed (steps 01-11). Q4 mapping.,"1. POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 200,201
+3. Run 3 pm.test() assertions","HTTP 200,201, all assertions pass",Section 4.3,R4,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,"200,201",3
+12-05,12-05 Provision - BIN range first token,12 Token Provisioning,Boundary,High,Full setup flow completed (steps 01-11). First token at BIN_START.,"1. POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 200,201
+3. Run 3 pm.test() assertions","HTTP 200,201, all assertions pass",Section 4.3.2,R2,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,"200,201",3
+12-06,12-06 Provision - BIN range last token,12 Token Provisioning,Boundary,High,Full setup flow completed (steps 01-11). Last token at BIN_END.,"1. POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 200,201
+3. Run 3 pm.test() assertions","HTTP 200,201, all assertions pass",Section 4.3.2,R3,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,"200,201",3
+12-07,12-07 Provision - one from exhaustion,12 Token Provisioning,Boundary,High,Full setup flow completed (steps 01-11). 1 token remaining.,"1. POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 200,201
+3. Run 3 pm.test() assertions","HTTP 200,201, all assertions pass",,"R3, R5",POST {{baseUrl_tvm}}/tvm/api/tokens/provision,"200,201",3
+12-08,12-08 Provision - range exhausted,12 Token Provisioning,Functional,Medium,Full setup flow completed (steps 01-11). TOKEN_RANGE_EXHAUSTED.,"1. POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 422
+3. Run 2 pm.test() assertions","HTTP 422, all assertions pass",,R3,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,422,2
+12-09,12-09 Provision - PAN outside range,12 Token Provisioning,Functional,Medium,Full setup flow completed (steps 01-11). ACCOUNT_NOT_ELIGIBLE.,"1. POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 422
+3. Run 2 pm.test() assertions","HTTP 422, all assertions pass",,R1,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,422,2
+12-10,12-10 Provision - expired PAN,12 Token Provisioning,Functional,Medium,Full setup flow completed (steps 01-11). Cannot tokenize expired PAN.,"1. POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 400
+3. Run 2 pm.test() assertions","HTTP 400, all assertions pass",Section 4.3.1,,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,400,2
+12-11,12-11 Provision - quarter not configured,12 Token Provisioning,Functional,Medium,Full setup flow completed (steps 01-11). EXPIRY_QUARTER_MISMATCH.,"1. POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 422
+3. Run 2 pm.test() assertions","HTTP 422, all assertions pass",,R4,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,422,2
+12-12,12-12 Provision - idempotent re-tokenize,12 Token Provisioning,Functional,Medium,Full setup flow completed (steps 01-11). Same PAN+TR returns same token.,"1. POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 200
+3. Run 3 pm.test() assertions","HTTP 200, all assertions pass",Section 4.3.4,,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,200,3
+12-13,12-13 Provision - non-numeric PAN,12 Token Provisioning,Functional,Medium,Full setup flow completed (steps 01-11). Invalid PAN format.,"1. POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 400
+3. Run 2 pm.test() assertions","HTTP 400, all assertions pass",Section 3.1,,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,400,2
+12-14,12-14 Provision - PAN too short (12 digits),12 Token Provisioning,Functional,Medium,Full setup flow completed (steps 01-11). Min 13 digits.,"1. POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 400
+3. Run 2 pm.test() assertions","HTTP 400, all assertions pass",Section 3.1,,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,400,2
+12-15,12-15 Provision - PAN too long (20 digits),12 Token Provisioning,Functional,Medium,Full setup flow completed (steps 01-11). Max 19 digits.,"1. POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 400
+3. Run 2 pm.test() assertions","HTTP 400, all assertions pass",Section 3.1,,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,400,2
+12-16,12-16 Provision - PAN at lower boundary,12 Token Provisioning,Boundary,High,Full setup flow completed (steps 01-11). Exact panLowerLimit.,"1. POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 200,201
+3. Run 3 pm.test() assertions","HTTP 200,201, all assertions pass",,R1,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,"200,201",3
+12-17,12-17 Provision - PAN at upper boundary,12 Token Provisioning,Boundary,High,Full setup flow completed (steps 01-11). Exact panUpperLimit.,"1. POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 200,201
+3. Run 3 pm.test() assertions","HTTP 200,201, all assertions pass",,R1,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,"200,201",3
+12-18,12-18 Provision - PAN below lower limit,12 Token Provisioning,Functional,Medium,Full setup flow completed (steps 01-11). Below range → ACCOUNT_NOT_ELIGIBLE.,"1. POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 422
+3. Run 2 pm.test() assertions","HTTP 422, all assertions pass",,R1,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,422,2
+12-19,12-19 Provision - PAN above upper limit,12 Token Provisioning,Functional,Medium,Full setup flow completed (steps 01-11). Above range → ACCOUNT_NOT_ELIGIBLE.,"1. POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 422
+3. Run 2 pm.test() assertions","HTTP 422, all assertions pass",,R1,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,422,2
+12-20,12-20 Provision - partial utilization OK,12 Token Provisioning,Functional,Medium,Full setup flow completed (steps 01-11). Partial use does not block.,"1. POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 200,201
+3. Run 3 pm.test() assertions","HTTP 200,201, all assertions pass",,R5,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,"200,201",3
+13-01,13-01 Activate (INACTIVE→ACTIVE),13 Token Lifecycle,Functional,Medium,Full setup flow completed (steps 01-11). Activate token after ID&V.,"1. PUT {{baseUrl_tvm}}/tvm/api/tokens/{{provisionedToken}}/activate
+2. Verify HTTP 200
+3. Run 2 pm.test() assertions","HTTP 200, all assertions pass",Section 6.1,,PUT {{baseUrl_tvm}}/tvm/api/tokens/{{provisionedToken}}/activate,200,2
+13-02,13-02 Suspend (ACTIVE→SUSPENDED),13 Token Lifecycle,Functional,Medium,Full setup flow completed (steps 01-11). Suspend token.,"1. PUT {{baseUrl_tvm}}/tvm/api/tokens/{{provisionedToken}}/suspend
+2. Verify HTTP 200
+3. Run 2 pm.test() assertions","HTTP 200, all assertions pass",Section 6.2,,PUT {{baseUrl_tvm}}/tvm/api/tokens/{{provisionedToken}}/suspend,200,2
+13-03,13-03 Txn on SUSPENDED token rejected,13 Token Lifecycle,Functional,Medium,Full setup flow completed (steps 01-11). Suspended token must not authorize.,"1. POST {{baseUrl_tvm}}/tvm/api/tokens/authorize
+2. Verify HTTP 403,422
+3. Run 1 pm.test() assertions","HTTP 403,422, all assertions pass",Section 6.5,,POST {{baseUrl_tvm}}/tvm/api/tokens/authorize,"403,422",1
+13-04,13-04 Resume (SUSPENDED→ACTIVE),13 Token Lifecycle,Functional,Medium,Full setup flow completed (steps 01-11). Resume token.,"1. PUT {{baseUrl_tvm}}/tvm/api/tokens/{{provisionedToken}}/resume
+2. Verify HTTP 200
+3. Run 2 pm.test() assertions","HTTP 200, all assertions pass",Section 6.3,,PUT {{baseUrl_tvm}}/tvm/api/tokens/{{provisionedToken}}/resume,200,2
+13-05,13-05 Delete token,13 Token Lifecycle,Functional,Medium,Full setup flow completed (steps 01-11). Delete token from any state.,"1. DELETE {{baseUrl_tvm}}/tvm/api/tokens/{{provisionedToken}}
+2. Verify HTTP 200
+3. Run 1 pm.test() assertions","HTTP 200, all assertions pass",Section 6.4,,DELETE {{baseUrl_tvm}}/tvm/api/tokens/{{provisionedToken}},200,1
+13-06,13-06 Txn on DELETED token rejected,13 Token Lifecycle,Functional,Medium,Full setup flow completed (steps 01-11). Deleted token must not authorize.,"1. POST {{baseUrl_tvm}}/tvm/api/tokens/authorize
+2. Verify HTTP 403,404,422
+3. Run 1 pm.test() assertions","HTTP 403,404,422, all assertions pass",Section 6.5,,POST {{baseUrl_tvm}}/tvm/api/tokens/authorize,"403,404,422",1
+13-07,13-07 Invalid transition INACTIVE→SUSPENDED,13 Token Lifecycle,Negative,High,Full setup flow completed (steps 01-11). Cannot suspend inactive token.,"1. PUT {{baseUrl_tvm}}/tvm/api/tokens/INACTIVE_PLACEHOLDER/suspend
+2. Verify HTTP 400-499
+3. Run 1 pm.test() assertions","HTTP 400-499, all assertions pass",Section 6.2,,PUT {{baseUrl_tvm}}/tvm/api/tokens/INACTIVE_PLACEHOLDER/suspend,400-499,1
+13-08,13-08 Delete already-deleted token,13 Token Lifecycle,Functional,Medium,Full setup flow completed (steps 01-11). Double delete.,"1. DELETE {{baseUrl_tvm}}/tvm/api/tokens/DELETED_PLACEHOLDER
+2. Verify HTTP 404,409
+3. Run 1 pm.test() assertions","HTTP 404,409, all assertions pass",Section 6.4,,DELETE {{baseUrl_tvm}}/tvm/api/tokens/DELETED_PLACEHOLDER,"404,409",1
+14-01,14-01 Detokenize - authorized party,14 De-Tokenization,Security,Medium,Full setup flow completed (steps 01-11). Authorized de-tokenization returns original PAN.,"1. POST {{baseUrl_tvm}}/tvm/api/tokens/detokenize
+2. Verify HTTP 200
+3. Run 2 pm.test() assertions","HTTP 200, all assertions pass",Section 5.1,,POST {{baseUrl_tvm}}/tvm/api/tokens/detokenize,200,2
+14-02,14-02 Detokenize - unauthorized party,14 De-Tokenization,Security,Critical,Full setup flow completed (steps 01-11). Only authorized parties may de-tokenize.,"1. POST {{baseUrl_tvm}}/tvm/api/tokens/detokenize
+2. Verify HTTP 401,403
+3. Run 1 pm.test() assertions","HTTP 401,403, all assertions pass",Section 5.2,,POST {{baseUrl_tvm}}/tvm/api/tokens/detokenize,"401,403",1
+14-03,14-03 Detokenize - deleted token,14 De-Tokenization,Functional,Medium,Full setup flow completed (steps 01-11). Deleted token.,"1. POST {{baseUrl_tvm}}/tvm/api/tokens/detokenize
+2. Verify HTTP 404,422
+3. Run 1 pm.test() assertions","HTTP 404,422, all assertions pass",Section 5.3,,POST {{baseUrl_tvm}}/tvm/api/tokens/detokenize,"404,422",1
+14-04,14-04 Detokenize - invalid Luhn,14 De-Tokenization,Negative,High,Full setup flow completed (steps 01-11). Non-Luhn token rejected.,"1. POST {{baseUrl_tvm}}/tvm/api/tokens/detokenize
+2. Verify HTTP 400
+3. Run 1 pm.test() assertions","HTTP 400, all assertions pass",Section 3.2,,POST {{baseUrl_tvm}}/tvm/api/tokens/detokenize,400,1
+14-05,14-05 Detokenize - tampered value,14 De-Tokenization,Functional,Medium,Full setup flow completed (steps 01-11). Token not in vault.,"1. POST {{baseUrl_tvm}}/tvm/api/tokens/detokenize
+2. Verify HTTP 400,404
+3. Run 1 pm.test() assertions","HTTP 400,404, all assertions pass",Section 5.4,,POST {{baseUrl_tvm}}/tvm/api/tokens/detokenize,"400,404",1
+15-01,15-01 TDRC - within allowed domain,15 Token Domain Restriction Control,Functional,Medium,Full setup flow completed (steps 01-11). Token used in correct domain.,"1. POST {{baseUrl_tvm}}/tvm/api/tokens/authorize
+2. Verify HTTP 200
+3. Run 1 pm.test() assertions","HTTP 200, all assertions pass",Section 7.1,,POST {{baseUrl_tvm}}/tvm/api/tokens/authorize,200,1
+15-02,15-02 TDRC - outside allowed domain,15 Token Domain Restriction Control,Functional,Medium,Full setup flow completed (steps 01-11). Wrong domain rejected.,"1. POST {{baseUrl_tvm}}/tvm/api/tokens/authorize
+2. Verify HTTP 403,422
+3. Run 1 pm.test() assertions","HTTP 403,422, all assertions pass",Section 7.2,,POST {{baseUrl_tvm}}/tvm/api/tokens/authorize,"403,422",1
+15-03,15-03 TDRC - no restriction,15 Token Domain Restriction Control,Functional,Medium,Full setup flow completed (steps 01-11). Token with no restriction.,"1. POST {{baseUrl_tvm}}/tvm/api/tokens/authorize
+2. Verify HTTP 200
+3. Run 1 pm.test() assertions","HTTP 200, all assertions pass",Section 7.3,,POST {{baseUrl_tvm}}/tvm/api/tokens/authorize,200,1
+15-04,15-04 TDRC - update domain mid-lifecycle,15 Token Domain Restriction Control,Functional,Medium,"Full setup flow completed (steps 01-11). Update restriction, enforce on subsequent txns.","1. PUT {{baseUrl_tvm}}/tvm/api/tokens/{{provisionedToken}}/domain
+2. Verify HTTP 200
+3. Run 1 pm.test() assertions","HTTP 200, all assertions pass",Section 7.4,,PUT {{baseUrl_tvm}}/tvm/api/tokens/{{provisionedToken}}/domain,200,1
+16-01,16-01 Expiry - within PAN expiry,16 Token Expiry Validation,Functional,Medium,Full setup flow completed (steps 01-11). Token expiry ≤ PAN expiry.,"1. POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 200,201
+3. Run 1 pm.test() assertions","HTTP 200,201, all assertions pass",Section 4.4,,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,"200,201",1
+16-02,16-02 Expiry - beyond PAN expiry,16 Token Expiry Validation,Functional,Medium,Full setup flow completed (steps 01-11). Token expiry > PAN expiry.,"1. POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 400
+3. Run 1 pm.test() assertions","HTTP 400, all assertions pass",Section 4.4,,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,400,1
+16-03,16-03 Expiry - expired PAN,16 Token Expiry Validation,Functional,Medium,Full setup flow completed (steps 01-11). Already expired PAN.,"1. POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 400
+3. Run 1 pm.test() assertions","HTTP 400, all assertions pass",Section 4.4,,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,400,1
+16-04,16-04 Expiry - quarter matches correctly,16 Token Expiry Validation,Functional,Medium,Full setup flow completed (steps 01-11). Aug→Q3.,"1. POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 200,201
+3. Run 1 pm.test() assertions","HTTP 200,201, all assertions pass",,R4,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,"200,201",1
+16-05,16-05 Expiry - quarter mismatch,16 Token Expiry Validation,Negative,High,Full setup flow completed (steps 01-11). EXPIRY_QUARTER_MISMATCH.,"1. POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 422
+3. Run 2 pm.test() assertions","HTTP 422, all assertions pass",,R4,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,422,2
+17-01,17-01 Idempotent duplicate request,17 Security & Fraud Controls,Security,Critical,Full setup flow completed (steps 01-11). Same request returns same token.,"1. POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 200
+3. Run 1 pm.test() assertions","HTTP 200, all assertions pass",Section 4.3.4,,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,200,1
+17-02,17-02 Brute-force rate limit,17 Security & Fraud Controls,Security,Critical,Full setup flow completed (steps 01-11). Rate limiting.,"1. POST {{baseUrl_tvm}}/tvm/api/tokens/detokenize
+2. Verify HTTP 400,429
+3. Run 1 pm.test() assertions","HTTP 400,429, all assertions pass",Section 8.1,,POST {{baseUrl_tvm}}/tvm/api/tokens/detokenize,"400,429",1
+17-03,17-03 Bad Luhn check digit,17 Security & Fraud Controls,Security,Critical,Full setup flow completed (steps 01-11). Invalid Luhn.,"1. POST {{baseUrl_tvm}}/tvm/api/tokens/detokenize
+2. Verify HTTP 400
+3. Run 1 pm.test() assertions","HTTP 400, all assertions pass",Section 3.2,,POST {{baseUrl_tvm}}/tvm/api/tokens/detokenize,400,1
+17-04,17-04 Expired JWT in header,17 Security & Fraud Controls,Security,Critical,Full setup flow completed (steps 01-11). Expired auth token.,"1. POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 401
+3. Run 1 pm.test() assertions","HTTP 401, all assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,401,1
+17-05,17-05 Missing authorization,17 Security & Fraud Controls,Security,Critical,Full setup flow completed (steps 01-11). No auth header or X-TV-ID.,"1. POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 401
+3. Run 1 pm.test() assertions","HTTP 401, all assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,401,1
+17-06,17-06 SQL injection in PAN,17 Security & Fraud Controls,Security,Critical,Full setup flow completed (steps 01-11). Input sanitized.,"1. POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 400
+3. Run 1 pm.test() assertions","HTTP 400, all assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,400,1
+17-07,17-07 TAL returned per ID&V method,17 Security & Fraud Controls,Security,Critical,Full setup flow completed (steps 01-11). TAL based on ID&V.,"1. POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 200,201
+3. Run 2 pm.test() assertions","HTTP 200,201, all assertions pass",Section 4.5,,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,"200,201",2
+18-01,18-01 ACCOUNT_NOT_ELIGIBLE,18 Error Code Validation,Functional,Medium,Full setup flow completed (steps 01-11). Validate ACCOUNT_NOT_ELIGIBLE error.,"1. POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 422
+3. Run 2 pm.test() assertions","HTTP 422, all assertions pass",,R1,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,422,2
+18-02,18-02 TOKEN_RANGE_EXHAUSTED,18 Error Code Validation,Functional,Medium,Full setup flow completed (steps 01-11). Validate TOKEN_RANGE_EXHAUSTED.,"1. POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 422
+3. Run 2 pm.test() assertions","HTTP 422, all assertions pass",,R3,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,422,2
+18-03,18-03 EXPIRY_QUARTER_MISMATCH,18 Error Code Validation,Negative,High,Full setup flow completed (steps 01-11). Validate EXPIRY_QUARTER_MISMATCH.,"1. POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 422
+3. Run 2 pm.test() assertions","HTTP 422, all assertions pass",,R4,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,422,2
+18-04,18-04 BIN_RANGE_OVERLAP_DETECTED,18 Error Code Validation,Functional,Medium,Full setup flow completed (steps 01-11). Validate BIN_RANGE_OVERLAP_DETECTED.,"1. POST {{baseUrl_tvm}}/tvm/api/token-range
+2. Verify HTTP 400,409
+3. Run 2 pm.test() assertions","HTTP 400,409, all assertions pass",,R6,POST {{baseUrl_tvm}}/tvm/api/token-range,"400,409",2
+18-05,18-05 INVALID_TOKEN_FORMAT,18 Error Code Validation,Negative,High,Full setup flow completed (steps 01-11). Non-numeric token.,"1. POST {{baseUrl_tvm}}/tvm/api/tokens/detokenize
+2. Verify HTTP 400
+3. Run 2 pm.test() assertions","HTTP 400, all assertions pass",Section 3.2,,POST {{baseUrl_tvm}}/tvm/api/tokens/detokenize,400,2
+18-06,18-06 TOKEN_DOMAIN_VIOLATION,18 Error Code Validation,Functional,Medium,Full setup flow completed (steps 01-11). Domain violation.,"1. POST {{baseUrl_tvm}}/tvm/api/tokens/authorize
+2. Verify HTTP 403,422
+3. Run 2 pm.test() assertions","HTTP 403,422, all assertions pass",Section 7.2,,POST {{baseUrl_tvm}}/tvm/api/tokens/authorize,"403,422",2
+18-07,18-07 Empty required fields,18 Error Code Validation,Negative,High,"Full setup flow completed (steps 01-11). Validate error response includes errorCode, errorMessage, traceId, timestamp.","1. POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 400
+3. Run 2 pm.test() assertions","HTTP 400, all assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,400,2
