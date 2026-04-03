@@ -1,6 +1,6 @@
 {
-  "id": "tsp-takapay-env-001",
-  "name": "TSP TakaPay Environment",
+  "id": "tsp-combined-env-001",
+  "name": "TSP TakaPay Combined Environment",
   "values": [
     {
       "key": "baseUrl_rgm",
@@ -74,6 +74,11 @@
     },
     {
       "key": "testRunId",
+      "value": "",
+      "enabled": true
+    },
+    {
+      "key": "provisionedToken",
       "value": "",
       "enabled": true
     }

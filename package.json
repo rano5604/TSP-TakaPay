@@ -8,9 +8,12 @@
     "test:emvco": "newman run TSP_EMVCo_TestCases_postman_collection.json --bail",
     "test:automated": "newman run TSP_Automated_TestSuite_postman_collection.json -e TSP_TakaPay_environment.json",
     "test:automated:report": "newman run TSP_Automated_TestSuite_postman_collection.json -e TSP_TakaPay_environment.json -r htmlextra --reporter-htmlextra-export reports/automated-report.html",
+    "test:combined": "newman run TSP_Combined_Automated_postman_collection.json -e TSP_TakaPay_environment.json",
+    "test:combined:report": "newman run TSP_Combined_Automated_postman_collection.json -e TSP_TakaPay_environment.json -r htmlextra --reporter-htmlextra-export reports/combined-report.html",
     "test:html-report": "newman run TSP_TestCases_postman_collection.json -r htmlextra --reporter-htmlextra-export reports/test-report.html",
     "generate": "node scripts/generate-test-cases.js",
-    "generate:automated": "node scripts/generate-automated-collection.js"
+    "generate:automated": "node scripts/generate-automated-collection.js",
+    "generate:combined": "node scripts/generate-combined-collection.js"
   },
   "repository": {
     "type": "git",

@@ -1,0 +1,346 @@
+ID,Title,Section,Type,Priority,Preconditions,Steps,Expected Result,EMVCo Reference,Business Rule,API Endpoint,Expected HTTP,pm.test Count
+TC-01-01,TC-01-01 Happy Path - Valid vault creation,TC-01 Vault Creation,Functional,High,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_rgm}}/rgm/api/vaults
+2. Verify HTTP 200,201
+3. Run 3 pm.test() assertions","HTTP 200,201, assertions pass",,,POST {{baseUrl_rgm}}/rgm/api/vaults,"200,201",3
+TC-01-02,TC-01-02 Negative - Missing tspCode,TC-01 Vault Creation,Negative,High,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_rgm}}/rgm/api/vaults
+2. Verify HTTP 400
+3. Run 2 pm.test() assertions","HTTP 400, assertions pass",,,POST {{baseUrl_rgm}}/rgm/api/vaults,400,2
+TC-01-03,TC-01-03 Negative - Empty custodianIdList,TC-01 Vault Creation,Negative,High,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_rgm}}/rgm/api/vaults
+2. Verify HTTP 400
+3. Run 1 pm.test() assertions","HTTP 400, assertions pass",,,POST {{baseUrl_rgm}}/rgm/api/vaults,400,1
+TC-01-04,TC-01-04 Negative - Duplicate vault creation,TC-01 Vault Creation,Negative,High,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_rgm}}/rgm/api/vaults
+2. Verify HTTP 400-499
+3. Run 1 pm.test() assertions","HTTP 400-499, assertions pass",,,POST {{baseUrl_rgm}}/rgm/api/vaults,400-499,1
+TC-01-05,TC-01-05 Edge - Invalid tspCode format,TC-01 Vault Creation,Boundary,Medium,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_rgm}}/rgm/api/vaults
+2. Verify HTTP 400
+3. Run 1 pm.test() assertions","HTTP 400, assertions pass",,,POST {{baseUrl_rgm}}/rgm/api/vaults,400,1
+TC-02-01,TC-02-01 Happy Path - Key generation,TC-02 Generate Transport Key,Functional,High,Vault setup flow completed (TC-01 through TC-11).,"1. Send GET {{baseUrl_crypto}}/api/generate-transport-key
+2. Verify HTTP 200
+3. Run 3 pm.test() assertions","HTTP 200, assertions pass",,,GET {{baseUrl_crypto}}/api/generate-transport-key,200,3
+TC-02-02,TC-02-02 Edge - Key uniqueness (1/2),TC-02 Generate Transport Key,Boundary,Medium,Vault setup flow completed (TC-01 through TC-11).,"1. Send GET {{baseUrl_crypto}}/api/generate-transport-key
+2. Verify HTTP 200
+3. Run 2 pm.test() assertions","HTTP 200, assertions pass",,,GET {{baseUrl_crypto}}/api/generate-transport-key,200,2
+TC-02-02b,TC-02-02b Edge - Key uniqueness (2/2),TC-02 Generate Transport Key,Boundary,Medium,Vault setup flow completed (TC-01 through TC-11).,"1. Send GET {{baseUrl_crypto}}/api/generate-transport-key
+2. Verify HTTP 200
+3. Run 2 pm.test() assertions","HTTP 200, assertions pass",,,GET {{baseUrl_crypto}}/api/generate-transport-key,200,2
+TC-03-01,TC-03-01 Happy Path - Valid X-TV-ID,TC-03 Get Certificate,Functional,High,Vault setup flow completed (TC-01 through TC-11).,"1. Send GET {{baseUrl_tvm}}/tvm/api/vault/certificate
+2. Verify HTTP 200
+3. Run 2 pm.test() assertions","HTTP 200, assertions pass",,,GET {{baseUrl_tvm}}/tvm/api/vault/certificate,200,2
+TC-03-02,TC-03-02 Negative - Missing X-TV-ID,TC-03 Get Certificate,Negative,High,Vault setup flow completed (TC-01 through TC-11).,"1. Send GET {{baseUrl_tvm}}/tvm/api/vault/certificate
+2. Verify HTTP 400,401
+3. Run 1 pm.test() assertions","HTTP 400,401, assertions pass",,,GET {{baseUrl_tvm}}/tvm/api/vault/certificate,"400,401",1
+TC-03-03,TC-03-03 Negative - Non-existent vault,TC-03 Get Certificate,Negative,High,Vault setup flow completed (TC-01 through TC-11).,"1. Send GET {{baseUrl_tvm}}/tvm/api/vault/certificate
+2. Verify HTTP 404
+3. Run 1 pm.test() assertions","HTTP 404, assertions pass",,,GET {{baseUrl_tvm}}/tvm/api/vault/certificate,404,1
+TC-04-01,TC-04-01 Happy Path - Valid cert and plainData,TC-04 Encrypt The Key,Functional,High,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_crypto}}/api/v1/encrypt/transport-key
+2. Verify HTTP 200
+3. Run 2 pm.test() assertions","HTTP 200, assertions pass",,,POST {{baseUrl_crypto}}/api/v1/encrypt/transport-key,200,2
+TC-04-02,TC-04-02 Negative - Missing certificate,TC-04 Encrypt The Key,Negative,High,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_crypto}}/api/v1/encrypt/transport-key
+2. Verify HTTP 400
+3. Run 1 pm.test() assertions","HTTP 400, assertions pass",,,POST {{baseUrl_crypto}}/api/v1/encrypt/transport-key,400,1
+TC-04-03,TC-04-03 Negative - Invalid certificate,TC-04 Encrypt The Key,Negative,High,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_crypto}}/api/v1/encrypt/transport-key
+2. Verify HTTP 400,422
+3. Run 1 pm.test() assertions","HTTP 400,422, assertions pass",,,POST {{baseUrl_crypto}}/api/v1/encrypt/transport-key,"400,422",1
+TC-04-04,TC-04-04 Edge - plainData wrong length,TC-04 Encrypt The Key,Boundary,Medium,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_crypto}}/api/v1/encrypt/transport-key
+2. Verify HTTP 400
+3. Run 1 pm.test() assertions","HTTP 400, assertions pass",,,POST {{baseUrl_crypto}}/api/v1/encrypt/transport-key,400,1
+TC-05-01,TC-05-01 Happy Path - Valid issuer,TC-05 Issuer Creation,Functional,High,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/issuer
+2. Verify HTTP 200,201
+3. Run 2 pm.test() assertions","HTTP 200,201, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/issuer,"200,201",2
+TC-05-02,TC-05-02 Negative - Invalid KCV,TC-05 Issuer Creation,Negative,High,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/issuer
+2. Verify HTTP 400,422
+3. Run 1 pm.test() assertions","HTTP 400,422, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/issuer,"400,422",1
+TC-05-03,TC-05-03 Negative - Missing X-TV-ID,TC-05 Issuer Creation,Negative,High,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/issuer
+2. Verify HTTP 400,401
+3. Run 1 pm.test() assertions","HTTP 400,401, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/issuer,"400,401",1
+TC-05-04,TC-05-04 Negative - Duplicate issuer,TC-05 Issuer Creation,Negative,High,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/issuer
+2. Verify HTTP 400-499
+3. Run 1 pm.test() assertions","HTTP 400-499, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/issuer,400-499,1
+TC-05-05,TC-05-05 Edge - Invalid realTimePanEnrollment,TC-05 Issuer Creation,Boundary,Medium,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/issuer
+2. Verify HTTP 400
+3. Run 1 pm.test() assertions","HTTP 400, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/issuer,400,1
+TC-06-01,TC-06-01 Happy Path - Valid BIN,TC-06 BIN Creation,Functional,High,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/bin/single
+2. Verify HTTP 200,201
+3. Run 2 pm.test() assertions","HTTP 200,201, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/bin/single,"200,201",2
+TC-06-02,TC-06-02 Negative - Invalid issuerId,TC-06 BIN Creation,Negative,High,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/bin/single
+2. Verify HTTP 400-499
+3. Run 1 pm.test() assertions","HTTP 400-499, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/bin/single,400-499,1
+TC-06-03,TC-06-03 Negative - Duplicate BIN,TC-06 BIN Creation,Negative,High,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/bin/single
+2. Verify HTTP 400-499
+3. Run 1 pm.test() assertions","HTTP 400-499, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/bin/single,400-499,1
+TC-06-04,TC-06-04 Edge - ianLen zero,TC-06 BIN Creation,Boundary,Medium,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/bin/single
+2. Verify HTTP 400
+3. Run 1 pm.test() assertions","HTTP 400, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/bin/single,400,1
+TC-07-01,TC-07-01 Happy Path - Valid account range,TC-07 Account Range Creation,Functional,High,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/account-range
+2. Verify HTTP 200,201
+3. Run 2 pm.test() assertions","HTTP 200,201, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/account-range,"200,201",2
+TC-07-02,TC-07-02 Negative - Lower > upper,TC-07 Account Range Creation,Negative,High,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/account-range
+2. Verify HTTP 400
+3. Run 1 pm.test() assertions","HTTP 400, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/account-range,400,1
+TC-07-03,TC-07-03 Negative - Empty listOfExpiry,TC-07 Account Range Creation,Negative,High,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/account-range
+2. Verify HTTP 400
+3. Run 1 pm.test() assertions","HTTP 400, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/account-range,400,1
+TC-07-04,TC-07-04 Edge - Invalid quarter Q5,TC-07 Account Range Creation,Boundary,Medium,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/account-range
+2. Verify HTTP 400
+3. Run 1 pm.test() assertions","HTTP 400, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/account-range,400,1
+TC-07-05,TC-07-05 Edge - Past expiry year,TC-07 Account Range Creation,Boundary,Medium,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/account-range
+2. Verify HTTP 400
+3. Run 1 pm.test() assertions","HTTP 400, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/account-range,400,1
+TC-08-01,TC-08-01 Happy Path - Google Pay,TC-08 Token Requester Creation,Functional,High,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/token-requestor
+2. Verify HTTP 200,201
+3. Run 2 pm.test() assertions","HTTP 200,201, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/token-requestor,"200,201",2
+TC-08-02,TC-08-02 Negative - Invalid tokenFormFactor,TC-08 Token Requester Creation,Negative,High,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/token-requestor
+2. Verify HTTP 400
+3. Run 1 pm.test() assertions","HTTP 400, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/token-requestor,400,1
+TC-08-03,TC-08-03 Negative - KCV mismatch,TC-08 Token Requester Creation,Negative,High,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/token-requestor
+2. Verify HTTP 400,422
+3. Run 1 pm.test() assertions","HTTP 400,422, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/token-requestor,"400,422",1
+TC-08-04,TC-08-04 Edge - Missing serviceName,TC-08 Token Requester Creation,Boundary,Medium,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/token-requestor
+2. Verify HTTP 400
+3. Run 1 pm.test() assertions","HTTP 400, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/token-requestor,400,1
+TC-09-01,TC-09-01 Happy Path - Valid setup,TC-09 Token Use Setup,Functional,High,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/token-requestor/token-use/setup
+2. Verify HTTP 200,201
+3. Run 1 pm.test() assertions","HTTP 200,201, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/token-requestor/token-use/setup,"200,201",1
+TC-09-02,TC-09-02 Negative - Non-existent trId,TC-09 Token Use Setup,Negative,High,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/token-requestor/token-use/setup
+2. Verify HTTP 400-499
+3. Run 1 pm.test() assertions","HTTP 400-499, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/token-requestor/token-use/setup,400-499,1
+TC-09-03,TC-09-03 Negative - merchantId wrong length,TC-09 Token Use Setup,Negative,High,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/token-requestor/token-use/setup
+2. Verify HTTP 400
+3. Run 1 pm.test() assertions","HTTP 400, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/token-requestor/token-use/setup,400,1
+TC-09-04,TC-09-04 Edge - Multiple merchants,TC-09 Token Use Setup,Boundary,Medium,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/token-requestor/token-use/setup
+2. Verify HTTP 200
+3. Run 1 pm.test() assertions","HTTP 200, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/token-requestor/token-use/setup,200,1
+TC-10-01,TC-10-01 Happy Path - Valid life range,TC-10 Token Life Setup,Functional,High,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/token-life/authorization
+2. Verify HTTP 200,201
+3. Run 1 pm.test() assertions","HTTP 200,201, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/token-life/authorization,"200,201",1
+TC-10-02,TC-10-02 Negative - Min > max,TC-10 Token Life Setup,Negative,High,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/token-life/authorization
+2. Verify HTTP 400
+3. Run 1 pm.test() assertions","HTTP 400, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/token-life/authorization,400,1
+TC-10-03,TC-10-03 Negative - Non-existent issuerId,TC-10 Token Life Setup,Negative,High,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/token-life/authorization
+2. Verify HTTP 400-499
+3. Run 1 pm.test() assertions","HTTP 400-499, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/token-life/authorization,400-499,1
+TC-10-04,TC-10-04 Edge - maxPeriod=0,TC-10 Token Life Setup,Boundary,Medium,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/token-life/authorization
+2. Verify HTTP 200,400
+3. Run 1 pm.test() assertions","HTTP 200,400, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/token-life/authorization,"200,400",1
+TC-11-01,TC-11-01 Happy Path - Valid token range,TC-11 Token Range Setup,Functional,High,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/token-range
+2. Verify HTTP 200,201
+3. Run 1 pm.test() assertions","HTTP 200,201, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/token-range,"200,201",1
+TC-11-02,TC-11-02 Negative - Overlaps account range,TC-11 Token Range Setup,Negative,High,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/token-range
+2. Verify HTTP 400,409
+3. Run 1 pm.test() assertions","HTTP 400,409, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/token-range,"400,409",1
+TC-11-03,TC-11-03 Negative - Lower > upper,TC-11 Token Range Setup,Negative,High,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/token-range
+2. Verify HTTP 400
+3. Run 1 pm.test() assertions","HTTP 400, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/token-range,400,1
+TC-11-04,TC-11-04 Negative - Non-existent requestorId,TC-11 Token Range Setup,Negative,High,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/token-range
+2. Verify HTTP 400-499
+3. Run 1 pm.test() assertions","HTTP 400-499, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/token-range,400-499,1
+TC-11-05,TC-11-05 Edge - Expiry in the past,TC-11 Token Range Setup,Boundary,Medium,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/token-range
+2. Verify HTTP 400
+3. Run 1 pm.test() assertions","HTTP 400, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/token-range,400,1
+TC-TVT-001,TC-TVT-001 Provision - Valid PAN Q1,TC-A Token Provisioning (EMVCo),Functional,High,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 200,201
+3. Run 3 pm.test() assertions","HTTP 200,201, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,"200,201",3
+TC-TVT-002,TC-TVT-002 Provision - Valid PAN Q2,TC-A Token Provisioning (EMVCo),Functional,High,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 200,201
+3. Run 3 pm.test() assertions","HTTP 200,201, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,"200,201",3
+TC-TVT-003,TC-TVT-003 Provision - Valid PAN Q3,TC-A Token Provisioning (EMVCo),Functional,High,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 200,201
+3. Run 3 pm.test() assertions","HTTP 200,201, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,"200,201",3
+TC-TVT-004,TC-TVT-004 Provision - Valid PAN Q4,TC-A Token Provisioning (EMVCo),Functional,High,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 200,201
+3. Run 3 pm.test() assertions","HTTP 200,201, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,"200,201",3
+TC-TVT-005,TC-TVT-005 Provision - BIN range first token,TC-A Token Provisioning (EMVCo),Functional,Medium,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 200,201
+3. Run 3 pm.test() assertions","HTTP 200,201, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,"200,201",3
+TC-TVT-006,TC-TVT-006 Provision - BIN range last token,TC-A Token Provisioning (EMVCo),Functional,Medium,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 200,201
+3. Run 3 pm.test() assertions","HTTP 200,201, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,"200,201",3
+TC-TVT-007,TC-TVT-007 Provision - One away from exhaustion,TC-A Token Provisioning (EMVCo),Functional,Medium,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 200,201
+3. Run 3 pm.test() assertions","HTTP 200,201, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,"200,201",3
+TC-TVT-008,TC-TVT-008 Provision - Range exhausted,TC-A Token Provisioning (EMVCo),Negative,Medium,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 422
+3. Run 2 pm.test() assertions","HTTP 422, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,422,2
+TC-TVT-009,TC-TVT-009 Provision - PAN outside account range,TC-A Token Provisioning (EMVCo),Negative,Medium,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 422
+3. Run 2 pm.test() assertions","HTTP 422, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,422,2
+TC-TVT-010,TC-TVT-010 Provision - Expired PAN,TC-A Token Provisioning (EMVCo),Negative,Medium,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 400
+3. Run 2 pm.test() assertions","HTTP 400, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,400,2
+TC-TVT-011,TC-TVT-011 Provision - Quarter not configured,TC-A Token Provisioning (EMVCo),Negative,Medium,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 422
+3. Run 2 pm.test() assertions","HTTP 422, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,422,2
+TC-TVT-012,TC-TVT-012 Provision - Idempotent re-tokenize,TC-A Token Provisioning (EMVCo),Functional,Medium,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 200
+3. Run 3 pm.test() assertions","HTTP 200, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,200,3
+TC-TVT-013,TC-TVT-013 Provision - Non-numeric PAN,TC-A Token Provisioning (EMVCo),Negative,Medium,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 400
+3. Run 2 pm.test() assertions","HTTP 400, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,400,2
+TC-TVT-014,TC-TVT-014 Provision - PAN too short,TC-A Token Provisioning (EMVCo),Negative,Medium,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 400
+3. Run 2 pm.test() assertions","HTTP 400, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,400,2
+TC-TVT-015,TC-TVT-015 Provision - PAN too long,TC-A Token Provisioning (EMVCo),Negative,Medium,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 400
+3. Run 2 pm.test() assertions","HTTP 400, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,400,2
+TC-TVT-016,TC-TVT-016 AcctRange - PAN within range,TC-B Account Range Validation (EMVCo),Functional,Medium,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 200,201
+3. Run 1 pm.test() assertions","HTTP 200,201, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,"200,201",1
+TC-TVT-017,TC-TVT-017 AcctRange - PAN at lower boundary,TC-B Account Range Validation (EMVCo),Functional,High,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 200,201
+3. Run 1 pm.test() assertions","HTTP 200,201, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,"200,201",1
+TC-TVT-018,TC-TVT-018 AcctRange - PAN at upper boundary,TC-B Account Range Validation (EMVCo),Functional,High,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 200,201
+3. Run 1 pm.test() assertions","HTTP 200,201, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,"200,201",1
+TC-TVT-019,TC-TVT-019 AcctRange - PAN below lower,TC-B Account Range Validation (EMVCo),Negative,Medium,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 422
+3. Run 2 pm.test() assertions","HTTP 422, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,422,2
+TC-TVT-020,TC-TVT-020 AcctRange - PAN above upper,TC-B Account Range Validation (EMVCo),Negative,Medium,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 422
+3. Run 2 pm.test() assertions","HTTP 422, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,422,2
+TC-TVT-021,TC-TVT-021 AcctRange - Deactivated range,TC-B Account Range Validation (EMVCo),Negative,Medium,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 422
+3. Run 2 pm.test() assertions","HTTP 422, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,422,2
+TC-TVT-022,TC-TVT-022 BINRange - Non-overlapping Q4,TC-C Quarter BIN Range Setup (EMVCo),Functional,Medium,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/token-range
+2. Verify HTTP 200,201
+3. Run 2 pm.test() assertions","HTTP 200,201, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/token-range,"200,201",2
+TC-TVT-023,TC-TVT-023 BINRange - Overlapping rejected,TC-C Quarter BIN Range Setup (EMVCo),Negative,Medium,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/token-range
+2. Verify HTTP 400,409
+3. Run 2 pm.test() assertions","HTTP 400,409, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/token-range,"400,409",2
+TC-TVT-024,TC-TVT-024 BINRange - Already-configured quarter,TC-C Quarter BIN Range Setup (EMVCo),Negative,Medium,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/token-range
+2. Verify HTTP 400-499
+3. Run 1 pm.test() assertions","HTTP 400-499, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/token-range,400-499,1
+TC-TVT-025,TC-TVT-025 BINRange - Start > End,TC-C Quarter BIN Range Setup (EMVCo),Negative,Medium,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/token-range
+2. Verify HTTP 400
+3. Run 1 pm.test() assertions","HTTP 400, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/token-range,400,1
+TC-TVT-026,TC-TVT-026 BINRange - Zero capacity,TC-C Quarter BIN Range Setup (EMVCo),Negative,Medium,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/token-range
+2. Verify HTTP 400
+3. Run 1 pm.test() assertions","HTTP 400, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/token-range,400,1
+TC-TVT-027,TC-TVT-027 BINRange - Retrieve config,TC-C Quarter BIN Range Setup (EMVCo),Functional,Medium,Vault setup flow completed (TC-01 through TC-11).,"1. Send GET {{baseUrl_tvm}}/tvm/api/token-range?requestorId={{trId}}&issuerId={{issuerId}}&binId={{binId}}
+2. Verify HTTP 200
+3. Run 2 pm.test() assertions","HTTP 200, assertions pass",,,GET {{baseUrl_tvm}}/tvm/api/token-range?requestorId={{trId}}&issuerId={{issuerId}}&binId={{binId}},200,2
+TC-TVT-028,TC-TVT-028 Lifecycle - Activate (INACTIVE→ACTIVE),TC-D Token Lifecycle (EMVCo),Functional,Medium,Vault setup flow completed (TC-01 through TC-11).,"1. Send PUT {{baseUrl_tvm}}/tvm/api/tokens/{{provisionedToken}}/activate
+2. Verify HTTP 200
+3. Run 2 pm.test() assertions","HTTP 200, assertions pass",,,PUT {{baseUrl_tvm}}/tvm/api/tokens/{{provisionedToken}}/activate,200,2
+TC-TVT-029,TC-TVT-029 Lifecycle - Suspend (ACTIVE→SUSPENDED),TC-D Token Lifecycle (EMVCo),Functional,Medium,Vault setup flow completed (TC-01 through TC-11).,"1. Send PUT {{baseUrl_tvm}}/tvm/api/tokens/{{provisionedToken}}/suspend
+2. Verify HTTP 200
+3. Run 2 pm.test() assertions","HTTP 200, assertions pass",,,PUT {{baseUrl_tvm}}/tvm/api/tokens/{{provisionedToken}}/suspend,200,2
+TC-TVT-030,TC-TVT-030 Lifecycle - Resume (SUSPENDED→ACTIVE),TC-D Token Lifecycle (EMVCo),Functional,Medium,Vault setup flow completed (TC-01 through TC-11).,"1. Send PUT {{baseUrl_tvm}}/tvm/api/tokens/{{provisionedToken}}/resume
+2. Verify HTTP 200
+3. Run 2 pm.test() assertions","HTTP 200, assertions pass",,,PUT {{baseUrl_tvm}}/tvm/api/tokens/{{provisionedToken}}/resume,200,2
+TC-TVT-031,TC-TVT-031 Lifecycle - Delete token,TC-D Token Lifecycle (EMVCo),Functional,Medium,Vault setup flow completed (TC-01 through TC-11).,"1. Send DELETE {{baseUrl_tvm}}/tvm/api/tokens/{{provisionedToken}}
+2. Verify HTTP 200
+3. Run 1 pm.test() assertions","HTTP 200, assertions pass",,,DELETE {{baseUrl_tvm}}/tvm/api/tokens/{{provisionedToken}},200,1
+TC-TVT-032,TC-TVT-032 Lifecycle - Txn on SUSPENDED rejected,TC-D Token Lifecycle (EMVCo),Negative,Medium,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/tokens/authorize
+2. Verify HTTP 403,422
+3. Run 1 pm.test() assertions","HTTP 403,422, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/tokens/authorize,"403,422",1
+TC-TVT-033,TC-TVT-033 Lifecycle - Txn on DELETED rejected,TC-D Token Lifecycle (EMVCo),Negative,Medium,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/tokens/authorize
+2. Verify HTTP 403,404,422
+3. Run 1 pm.test() assertions","HTTP 403,404,422, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/tokens/authorize,"403,404,422",1
+TC-TVT-034,TC-TVT-034 Lifecycle - Invalid transition INACTIVE→SUSPENDED,TC-D Token Lifecycle (EMVCo),Negative,Medium,Vault setup flow completed (TC-01 through TC-11).,"1. Send PUT {{baseUrl_tvm}}/tvm/api/tokens/INACTIVE_TOKEN_PLACEHOLDER/suspend
+2. Verify HTTP 400-499
+3. Run 1 pm.test() assertions","HTTP 400-499, assertions pass",,,PUT {{baseUrl_tvm}}/tvm/api/tokens/INACTIVE_TOKEN_PLACEHOLDER/suspend,400-499,1
+TC-TVT-035,TC-TVT-035 Lifecycle - Delete already deleted,TC-D Token Lifecycle (EMVCo),Negative,Medium,Vault setup flow completed (TC-01 through TC-11).,"1. Send DELETE {{baseUrl_tvm}}/tvm/api/tokens/DELETED_TOKEN_PLACEHOLDER
+2. Verify HTTP 404,409
+3. Run 1 pm.test() assertions","HTTP 404,409, assertions pass",,,DELETE {{baseUrl_tvm}}/tvm/api/tokens/DELETED_TOKEN_PLACEHOLDER,"404,409",1
+TC-TVT-036,TC-TVT-036 Expiry - Within PAN expiry,TC-E Token Expiry Validation (EMVCo),Functional,Medium,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 200,201
+3. Run 1 pm.test() assertions","HTTP 200,201, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,"200,201",1
+TC-TVT-037,TC-TVT-037 Expiry - Beyond PAN expiry,TC-E Token Expiry Validation (EMVCo),Negative,Medium,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 400
+3. Run 1 pm.test() assertions","HTTP 400, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,400,1
+TC-TVT-038,TC-TVT-038 Expiry - Already expired PAN,TC-E Token Expiry Validation (EMVCo),Negative,Medium,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 400
+3. Run 1 pm.test() assertions","HTTP 400, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,400,1
+TC-TVT-039,TC-TVT-039 Expiry - Quarter matches correctly,TC-E Token Expiry Validation (EMVCo),Functional,Medium,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 200,201
+3. Run 1 pm.test() assertions","HTTP 200,201, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,"200,201",1
+TC-TVT-040,TC-TVT-040 Expiry - Quarter mismatch,TC-E Token Expiry Validation (EMVCo),Negative,Medium,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 422
+3. Run 2 pm.test() assertions","HTTP 422, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,422,2
+TC-TVT-041,TC-TVT-041 Detokenize - Authorized valid token,TC-F De-Tokenization (EMVCo),Functional,Medium,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/tokens/detokenize
+2. Verify HTTP 200
+3. Run 2 pm.test() assertions","HTTP 200, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/tokens/detokenize,200,2
+TC-TVT-042,TC-TVT-042 Detokenize - Unauthorized party,TC-F De-Tokenization (EMVCo),Negative,Critical,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/tokens/detokenize
+2. Verify HTTP 401,403
+3. Run 1 pm.test() assertions","HTTP 401,403, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/tokens/detokenize,"401,403",1
+TC-TVT-043,TC-TVT-043 Detokenize - Deleted token,TC-F De-Tokenization (EMVCo),Negative,Medium,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/tokens/detokenize
+2. Verify HTTP 404,422
+3. Run 1 pm.test() assertions","HTTP 404,422, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/tokens/detokenize,"404,422",1
+TC-TVT-044,TC-TVT-044 Detokenize - Invalid Luhn,TC-F De-Tokenization (EMVCo),Negative,Medium,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/tokens/detokenize
+2. Verify HTTP 400
+3. Run 1 pm.test() assertions","HTTP 400, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/tokens/detokenize,400,1
+TC-TVT-045,TC-TVT-045 Detokenize - Tampered token,TC-F De-Tokenization (EMVCo),Negative,Medium,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/tokens/detokenize
+2. Verify HTTP 400,404
+3. Run 1 pm.test() assertions","HTTP 400,404, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/tokens/detokenize,"400,404",1
+TC-TVT-046,TC-TVT-046 TDRC - Within allowed domain,TC-G Token Domain Restriction (EMVCo),Functional,Medium,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/tokens/authorize
+2. Verify HTTP 200
+3. Run 1 pm.test() assertions","HTTP 200, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/tokens/authorize,200,1
+TC-TVT-047,TC-TVT-047 TDRC - Outside allowed domain,TC-G Token Domain Restriction (EMVCo),Negative,Medium,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/tokens/authorize
+2. Verify HTTP 403,422
+3. Run 1 pm.test() assertions","HTTP 403,422, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/tokens/authorize,"403,422",1
+TC-TVT-048,TC-TVT-048 TDRC - No domain restriction,TC-G Token Domain Restriction (EMVCo),Functional,Medium,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/tokens/authorize
+2. Verify HTTP 200
+3. Run 1 pm.test() assertions","HTTP 200, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/tokens/authorize,200,1
+TC-TVT-049,TC-TVT-049 TDRC - Update domain mid-lifecycle,TC-G Token Domain Restriction (EMVCo),Functional,Medium,Vault setup flow completed (TC-01 through TC-11).,"1. Send PUT {{baseUrl_tvm}}/tvm/api/tokens/{{provisionedToken}}/domain
+2. Verify HTTP 200
+3. Run 1 pm.test() assertions","HTTP 200, assertions pass",,,PUT {{baseUrl_tvm}}/tvm/api/tokens/{{provisionedToken}}/domain,200,1
+TC-TVT-050,TC-TVT-050 Security - Idempotent duplicate request,TC-H Security & Fraud Controls (EMVCo),Security,Critical,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 200
+3. Run 1 pm.test() assertions","HTTP 200, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,200,1
+TC-TVT-051,TC-TVT-051 Security - Brute-force rate limit,TC-H Security & Fraud Controls (EMVCo),Security,Critical,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/tokens/detokenize
+2. Verify HTTP 400,429
+3. Run 1 pm.test() assertions","HTTP 400,429, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/tokens/detokenize,"400,429",1
+TC-TVT-052,TC-TVT-052 Security - Bad Luhn check,TC-H Security & Fraud Controls (EMVCo),Security,Critical,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/tokens/detokenize
+2. Verify HTTP 400
+3. Run 1 pm.test() assertions","HTTP 400, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/tokens/detokenize,400,1
+TC-TVT-053,TC-TVT-053 Security - Expired JWT,TC-H Security & Fraud Controls (EMVCo),Security,Critical,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 401
+3. Run 1 pm.test() assertions","HTTP 401, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,401,1
+TC-TVT-054,TC-TVT-054 Security - Missing auth header,TC-H Security & Fraud Controls (EMVCo),Security,Critical,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 401
+3. Run 1 pm.test() assertions","HTTP 401, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,401,1
+TC-TVT-055,TC-TVT-055 Security - SQL injection in PAN,TC-H Security & Fraud Controls (EMVCo),Security,Critical,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 400
+3. Run 1 pm.test() assertions","HTTP 400, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,400,1
+TC-TVT-056,TC-TVT-056 Security - TAL returned per ID&V,TC-H Security & Fraud Controls (EMVCo),Security,Critical,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 200,201
+3. Run 2 pm.test() assertions","HTTP 200,201, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,"200,201",2
+TC-TVT-057,TC-TVT-057 Boundary - First token of quarter,TC-I Boundary & Capacity (EMVCo),Boundary,High,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 200,201
+3. Run 1 pm.test() assertions","HTTP 200,201, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,"200,201",1
+TC-TVT-058,TC-TVT-058 Boundary - Last token of quarter,TC-I Boundary & Capacity (EMVCo),Boundary,High,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 200,201
+3. Run 1 pm.test() assertions","HTTP 200,201, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,"200,201",1
+TC-TVT-059,TC-TVT-059 Boundary - Allocated=capacity,TC-I Boundary & Capacity (EMVCo),Boundary,High,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 422
+3. Run 1 pm.test() assertions","HTTP 422, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,422,1
+TC-TVT-060,TC-TVT-060 Boundary - Concurrent at boundary,TC-I Boundary & Capacity (EMVCo),Boundary,High,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 200,201,422
+3. Run 1 pm.test() assertions","HTTP 200,201,422, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,"200,201,422",1
+TC-TVT-061,TC-TVT-061 Boundary - Remaining capacity,TC-I Boundary & Capacity (EMVCo),Boundary,High,Vault setup flow completed (TC-01 through TC-11).,"1. Send GET {{baseUrl_tvm}}/tvm/api/token-range?requestorId={{trId}}&issuerId={{issuerId}}&binId={{binId}}
+2. Verify HTTP 200
+3. Run 2 pm.test() assertions","HTTP 200, assertions pass",,,GET {{baseUrl_tvm}}/tvm/api/token-range?requestorId={{trId}}&issuerId={{issuerId}}&binId={{binId}},200,2
+TC-TVT-062,TC-TVT-062 Boundary - Partial utilization OK,TC-I Boundary & Capacity (EMVCo),Boundary,High,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 200,201
+3. Run 1 pm.test() assertions","HTTP 200,201, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,"200,201",1
+TC-TVT-063,TC-TVT-063 Error - ACCOUNT_NOT_ELIGIBLE,TC-J Error Handling (EMVCo),Negative,Medium,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 422
+3. Run 2 pm.test() assertions","HTTP 422, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,422,2
+TC-TVT-064,TC-TVT-064 Error - TOKEN_RANGE_EXHAUSTED,TC-J Error Handling (EMVCo),Negative,Medium,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 422
+3. Run 2 pm.test() assertions","HTTP 422, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,422,2
+TC-TVT-065,TC-TVT-065 Error - EXPIRY_QUARTER_MISMATCH,TC-J Error Handling (EMVCo),Negative,Medium,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 422
+3. Run 2 pm.test() assertions","HTTP 422, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,422,2
+TC-TVT-066,TC-TVT-066 Error - BIN_RANGE_OVERLAP_DETECTED,TC-J Error Handling (EMVCo),Negative,Medium,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/token-range
+2. Verify HTTP 400,409
+3. Run 2 pm.test() assertions","HTTP 400,409, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/token-range,"400,409",2
+TC-TVT-067,TC-TVT-067 Error - INVALID_TOKEN_FORMAT,TC-J Error Handling (EMVCo),Negative,Medium,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/tokens/detokenize
+2. Verify HTTP 400
+3. Run 2 pm.test() assertions","HTTP 400, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/tokens/detokenize,400,2
+TC-TVT-068,TC-TVT-068 Error - TOKEN_DOMAIN_VIOLATION,TC-J Error Handling (EMVCo),Negative,Medium,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/tokens/authorize
+2. Verify HTTP 403,422
+3. Run 2 pm.test() assertions","HTTP 403,422, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/tokens/authorize,"403,422",2
+TC-TVT-069,TC-TVT-069 Error - Empty required fields,TC-J Error Handling (EMVCo),Negative,Medium,Vault setup flow completed (TC-01 through TC-11).,"1. Send POST {{baseUrl_tvm}}/tvm/api/tokens/provision
+2. Verify HTTP 400
+3. Run 2 pm.test() assertions","HTTP 400, assertions pass",,,POST {{baseUrl_tvm}}/tvm/api/tokens/provision,400,2
