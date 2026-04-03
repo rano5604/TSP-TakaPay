@@ -1,0 +1,444 @@
+{
+	"info": {
+		"_postman_id": "87e4ca29-e902-49fa-8abc-d5e9a480167c",
+		"name": "TSP",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Valut Creation",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "accept",
+						"value": "*/*"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"tspCode\": \"998\",\n  \"tokenVaultName\": \"My Token Vault\",\n  \"custodianIdList\": [\n    \"custodian007\",\n    \"custodian008\"\n  ]\n}"
+				},
+				"url": {
+					"raw": "http://10.88.250.40:40010/rgm/api/vaults",
+					"protocol": "http",
+					"host": [
+						"10",
+						"88",
+						"250",
+						"40"
+					],
+					"port": "40010",
+					"path": [
+						"rgm",
+						"api",
+						"vaults"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Generate Transport Key",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "accept",
+						"value": "*/*"
+					}
+				],
+				"url": {
+					"raw": "http://10.88.250.40:40029/api/generate-transport-key",
+					"protocol": "http",
+					"host": [
+						"10",
+						"88",
+						"250",
+						"40"
+					],
+					"port": "40029",
+					"path": [
+						"api",
+						"generate-transport-key"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Certificate",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "accept",
+						"value": "*/*"
+					},
+					{
+						"key": "X-TV-ID",
+						"value": "9985003"
+					}
+				],
+				"url": {
+					"raw": "http://10.88.250.40:40020/tvm/api/vault/certificate",
+					"protocol": "http",
+					"host": [
+						"10",
+						"88",
+						"250",
+						"40"
+					],
+					"port": "40020",
+					"path": [
+						"tvm",
+						"api",
+						"vault",
+						"certificate"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Encrypt The Key",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "accept",
+						"value": "*/*"
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "publicKeyCertificate",
+							"type": "file",
+							"src": "self_signed_certificate.cert"
+						},
+						{
+							"key": "plainData",
+							"value": "224189fef0d02c5ac6e6ab88c91508b34ff7137a3569de5e79d4db1ba307264c",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://10.88.250.40:40029/api/v1/encrypt/transport-key",
+					"protocol": "http",
+					"host": [
+						"10",
+						"88",
+						"250",
+						"40"
+					],
+					"port": "40029",
+					"path": [
+						"api",
+						"v1",
+						"encrypt",
+						"transport-key"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Issuer Creation",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "accept",
+						"value": "*/*"
+					},
+					{
+						"key": "X-TV-ID",
+						"value": "9985003"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"issuerName\": \"EBL\",\n  \"issuerCode\": \"420\",\n  \"encryptedTransportKey\": \"8EA89A35C83D66FBB5DE2A97F74392C272BCBF521AA93EF072399382E32B05900F8D9C3EDF0D7EE3367E3D9E903CA1B9D5E9F5323ED8089DF353A9EF8CF08E178D9D85D84A871A4960AB1E74CFD148C5FFC4BDF0CE3F0B6B36ABC751E270DEAEFC2FAD959957AE7D662AE489AFDDEE5363DFDFD2B51AB49CA154972FE1EC1389\",\n  \"kcv\": \"AC6BCC\",\n  \"realTimePanEnrollment\": \"Y\"\n}"
+				},
+				"url": {
+					"raw": "http://10.88.250.40:40020/tvm/api/issuer",
+					"protocol": "http",
+					"host": [
+						"10",
+						"88",
+						"250",
+						"40"
+					],
+					"port": "40020",
+					"path": [
+						"tvm",
+						"api",
+						"issuer"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "BIN Creation",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "accept",
+						"value": "*/*"
+					},
+					{
+						"key": "X-TV-ID",
+						"value": "9985003"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"issuerId\": \"237d9188de9144e5806abf95441fce5b\",\n  \"binControllerId\": \"1234\",\n  \"binValue\": \"63999603\",\n  \"brandType\": \"06\",\n  \"ianLen\": 7\n}"
+				},
+				"url": {
+					"raw": "http://10.88.250.40:40020/tvm/api/bin/single",
+					"protocol": "http",
+					"host": [
+						"10",
+						"88",
+						"250",
+						"40"
+					],
+					"port": "40020",
+					"path": [
+						"tvm",
+						"api",
+						"bin",
+						"single"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Account Range Creation",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "accept",
+						"value": "*/*"
+					},
+					{
+						"key": "X-TV-ID",
+						"value": "9985003"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"issuerId\": \"982094e9868d4f37b7954c7e5e765f4f\",\n  \"binId\": \"d2d1adf80a1045359033de945b60e48g\",\n  \"panLowerLimit\": \"1100000\",\n  \"panUpperLimit\": \"9000000\",\n  \"listOfExpiry\": [\n    {\n      \"quarter\": \"Q1\",\n      \"year\": 2027\n    },\n{\n      \"quarter\": \"Q2\",\n      \"year\": 2027\n    },\n{\n      \"quarter\": \"Q3\",\n      \"year\": 2027\n    }\n\n  ]\n}"
+				},
+				"url": {
+					"raw": "http://10.88.250.40:40020/tvm/api/account-range",
+					"protocol": "http",
+					"host": [
+						"10",
+						"88",
+						"250",
+						"40"
+					],
+					"port": "40020",
+					"path": [
+						"tvm",
+						"api",
+						"account-range"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Token Requester Creation",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "accept",
+						"value": "*/*"
+					},
+					{
+						"key": "X-TV-ID",
+						"value": "9985003"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"tokenFormFactor\": \"00\",\n  \"encryptedTransportKey\": \"8EA89A35C83D66FBB5DE2A97F74392C272BCBF521AA93EF072399382E32B05900F8D9C3EDF0D7EE3367E3D9E903CA1B9D5E9F5323ED8089DF353A9EF8CF08E178D9D85D84A871A4960AB1E74CFD148C5FFC4BDF0CE3F0B6B36ABC751E270DEAEFC2FAD959957AE7D662AE489AFDDEE5363DFDFD2B51AB49CA154972FE1EC1389\",\n  \"kcv\": \"AC6BCC\",\n  \"serviceName\": \"Service name\",\n  \"trName\": \"Google Pay\"\n}"
+				},
+				"url": {
+					"raw": "http://10.88.250.40:40020/tvm/api/token-requestor",
+					"protocol": "http",
+					"host": [
+						"10",
+						"88",
+						"250",
+						"40"
+					],
+					"port": "40020",
+					"path": [
+						"tvm",
+						"api",
+						"token-requestor"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Token Use Set-up",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "accept",
+						"value": "*/*"
+					},
+					{
+						"key": "X-TV-ID",
+						"value": "9985003"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"merchantInfos\": [\n    {\n      \"merchantId\": \"123456789012345\",\n      \"merchantName\": \"Merchant\"\n    }\n  ],\n  \"modeOfTransaction\": \"01\",\n  \"trId\": \"99850031692\"\n}"
+				},
+				"url": {
+					"raw": "http://10.88.250.40:40020/tvm/api/token-requestor/token-use/setup",
+					"protocol": "http",
+					"host": [
+						"10",
+						"88",
+						"250",
+						"40"
+					],
+					"port": "40020",
+					"path": [
+						"tvm",
+						"api",
+						"token-requestor",
+						"token-use",
+						"setup"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Token Life Set-Up",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "accept",
+						"value": "*/*"
+					},
+					{
+						"key": "X-TV-ID",
+						"value": "9985003"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"requestorId\": \"99850031692\",\n  \"minPeriodInMonths\": 0,\n  \"maxPeriodInMonths\": 70,\n  \"issuerId\": \"237d9188de9144e5806abf95441fce5c\"\n}"
+				},
+				"url": {
+					"raw": "http://10.88.250.40:40020/tvm/api/token-life/authorization",
+					"protocol": "http",
+					"host": [
+						"10",
+						"88",
+						"250",
+						"40"
+					],
+					"port": "40020",
+					"path": [
+						"tvm",
+						"api",
+						"token-life",
+						"authorization"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Token Range Set-Up",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "accept",
+						"value": "*/*"
+					},
+					{
+						"key": "X-TV-ID",
+						"value": "9985003"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"tokenRangeSetupList\": [\n    {\n      \"expiry\": {\n        \"quarter\": \"Q2\",\n        \"year\": 2027\n      },\n      \"lowerLimit\": \"9100000\",\n      \"upperLimit\": \"9999999\"\n    }\n  ],\n  \"requestorId\": \"99850031692\",\n  \"issuerId\": \"237d9188de9144e5806abf95441fce5b\",\n  \"binId\": \"d2d1adf80a1045359033de945b60e48g\"\n}"
+				},
+				"url": {
+					"raw": "http://10.88.250.40:40020/tvm/api/token-range",
+					"protocol": "http",
+					"host": [
+						"10",
+						"88",
+						"250",
+						"40"
+					],
+					"port": "40020",
+					"path": [
+						"tvm",
+						"api",
+						"token-range"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

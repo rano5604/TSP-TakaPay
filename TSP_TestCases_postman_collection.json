@@ -1,0 +1,1160 @@
+{
+  "info": {
+    "_postman_id": "tc-tsp-vault-setup-001",
+    "name": "TSP - Test Cases",
+    "description": "Comprehensive test cases for TSP vault setup flow including positive, negative, and edge case scenarios.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "TC-01 Vault Creation",
+      "item": [
+        {
+          "name": "TC-01-01 Happy Path - Valid vault creation",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "accept", "value": "*/*" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tspCode\": \"998\",\n  \"tokenVaultName\": \"My Token Vault\",\n  \"custodianIdList\": [\n    \"custodian007\",\n    \"custodian008\"\n  ]\n}"
+            },
+            "url": {
+              "raw": "http://10.88.250.40:40010/rgm/api/vaults",
+              "protocol": "http",
+              "host": ["10", "88", "250", "40"],
+              "port": "40010",
+              "path": ["rgm", "api", "vaults"]
+            },
+            "description": "POSITIVE: Valid vault creation with all required fields. Expected: HTTP 200/201, vaultId returned in response."
+          },
+          "response": []
+        },
+        {
+          "name": "TC-01-02 Negative - Missing tspCode",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "accept", "value": "*/*" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tokenVaultName\": \"My Token Vault\",\n  \"custodianIdList\": [\n    \"custodian007\",\n    \"custodian008\"\n  ]\n}"
+            },
+            "url": {
+              "raw": "http://10.88.250.40:40010/rgm/api/vaults",
+              "protocol": "http",
+              "host": ["10", "88", "250", "40"],
+              "port": "40010",
+              "path": ["rgm", "api", "vaults"]
+            },
+            "description": "NEGATIVE: tspCode field omitted. Expected: HTTP 400, validation error indicating tspCode is required."
+          },
+          "response": []
+        },
+        {
+          "name": "TC-01-03 Negative - Empty custodianIdList",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "accept", "value": "*/*" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tspCode\": \"998\",\n  \"tokenVaultName\": \"My Token Vault\",\n  \"custodianIdList\": []\n}"
+            },
+            "url": {
+              "raw": "http://10.88.250.40:40010/rgm/api/vaults",
+              "protocol": "http",
+              "host": ["10", "88", "250", "40"],
+              "port": "40010",
+              "path": ["rgm", "api", "vaults"]
+            },
+            "description": "NEGATIVE: Empty custodianIdList. Expected: HTTP 400, error: at least one custodian required."
+          },
+          "response": []
+        },
+        {
+          "name": "TC-01-04 Negative - Duplicate vault creation",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "accept", "value": "*/*" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tspCode\": \"998\",\n  \"tokenVaultName\": \"My Token Vault\",\n  \"custodianIdList\": [\n    \"custodian007\",\n    \"custodian008\"\n  ]\n}"
+            },
+            "url": {
+              "raw": "http://10.88.250.40:40010/rgm/api/vaults",
+              "protocol": "http",
+              "host": ["10", "88", "250", "40"],
+              "port": "40010",
+              "path": ["rgm", "api", "vaults"]
+            },
+            "description": "NEGATIVE: Run after TC-01-01. Same tspCode used again. Expected: HTTP 409 Conflict or appropriate duplicate error."
+          },
+          "response": []
+        },
+        {
+          "name": "TC-01-05 Edge Case - Invalid tspCode format",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "accept", "value": "*/*" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tspCode\": \"ABC!@#\",\n  \"tokenVaultName\": \"My Token Vault\",\n  \"custodianIdList\": [\n    \"custodian007\"\n  ]\n}"
+            },
+            "url": {
+              "raw": "http://10.88.250.40:40010/rgm/api/vaults",
+              "protocol": "http",
+              "host": ["10", "88", "250", "40"],
+              "port": "40010",
+              "path": ["rgm", "api", "vaults"]
+            },
+            "description": "EDGE CASE: tspCode with special characters. Expected: HTTP 400, validation error on tspCode format."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "TC-02 Generate Transport Key",
+      "item": [
+        {
+          "name": "TC-02-01 Happy Path - Key generation",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "accept", "value": "*/*" }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40029/api/generate-transport-key",
+              "protocol": "http",
+              "host": ["10", "88", "250", "40"],
+              "port": "40029",
+              "path": ["api", "generate-transport-key"]
+            },
+            "description": "POSITIVE: Valid GET call. Expected: HTTP 200, transport key (hex string) returned, KCV value present."
+          },
+          "response": []
+        },
+        {
+          "name": "TC-02-02 Edge Case - Key uniqueness (call 1 of 2)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "accept", "value": "*/*" }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40029/api/generate-transport-key",
+              "protocol": "http",
+              "host": ["10", "88", "250", "40"],
+              "port": "40029",
+              "path": ["api", "generate-transport-key"]
+            },
+            "description": "EDGE CASE: First call of two to verify key uniqueness. Compare response with TC-02-02b. Expected: Distinct key values across both calls."
+          },
+          "response": []
+        },
+        {
+          "name": "TC-02-02b Edge Case - Key uniqueness (call 2 of 2)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "accept", "value": "*/*" }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40029/api/generate-transport-key",
+              "protocol": "http",
+              "host": ["10", "88", "250", "40"],
+              "port": "40029",
+              "path": ["api", "generate-transport-key"]
+            },
+            "description": "EDGE CASE: Second call to verify key uniqueness. Compare with TC-02-02. Expected: Key must differ from first call."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "TC-03 Get Certificate",
+      "item": [
+        {
+          "name": "TC-03-01 Happy Path - Valid X-TV-ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "accept", "value": "*/*" },
+              { "key": "X-TV-ID", "value": "9985003" }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/vault/certificate",
+              "protocol": "http",
+              "host": ["10", "88", "250", "40"],
+              "port": "40020",
+              "path": ["tvm", "api", "vault", "certificate"]
+            },
+            "description": "POSITIVE: Valid X-TV-ID header. Expected: HTTP 200, PEM/DER certificate returned."
+          },
+          "response": []
+        },
+        {
+          "name": "TC-03-02 Negative - Missing X-TV-ID header",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "accept", "value": "*/*" }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/vault/certificate",
+              "protocol": "http",
+              "host": ["10", "88", "250", "40"],
+              "port": "40020",
+              "path": ["tvm", "api", "vault", "certificate"]
+            },
+            "description": "NEGATIVE: X-TV-ID header omitted. Expected: HTTP 400 or 401, error: missing vault identifier."
+          },
+          "response": []
+        },
+        {
+          "name": "TC-03-03 Negative - Non-existent vault ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "accept", "value": "*/*" },
+              { "key": "X-TV-ID", "value": "0000000" }
+            ],
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/vault/certificate",
+              "protocol": "http",
+              "host": ["10", "88", "250", "40"],
+              "port": "40020",
+              "path": ["tvm", "api", "vault", "certificate"]
+            },
+            "description": "NEGATIVE: Unknown vault ID in X-TV-ID. Expected: HTTP 404, vault not found."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "TC-04 Encrypt The Key",
+      "item": [
+        {
+          "name": "TC-04-01 Happy Path - Valid cert and plainData",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "accept", "value": "*/*" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "publicKeyCertificate",
+                  "type": "file",
+                  "src": "self_signed_certificate.cert"
+                },
+                {
+                  "key": "plainData",
+                  "value": "224189fef0d02c5ac6e6ab88c91508b34ff7137a3569de5e79d4db1ba307264c",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "http://10.88.250.40:40029/api/v1/encrypt/transport-key",
+              "protocol": "http",
+              "host": ["10", "88", "250", "40"],
+              "port": "40029",
+              "path": ["api", "v1", "encrypt", "transport-key"]
+            },
+            "description": "POSITIVE: Valid certificate file and 64-char hex plainData. Expected: HTTP 200, encryptedTransportKey hex string returned."
+          },
+          "response": []
+        },
+        {
+          "name": "TC-04-02 Negative - Missing certificate file",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "accept", "value": "*/*" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "plainData",
+                  "value": "224189fef0d02c5ac6e6ab88c91508b34ff7137a3569de5e79d4db1ba307264c",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "http://10.88.250.40:40029/api/v1/encrypt/transport-key",
+              "protocol": "http",
+              "host": ["10", "88", "250", "40"],
+              "port": "40029",
+              "path": ["api", "v1", "encrypt", "transport-key"]
+            },
+            "description": "NEGATIVE: publicKeyCertificate field omitted. Expected: HTTP 400, error: certificate required."
+          },
+          "response": []
+        },
+        {
+          "name": "TC-04-03 Negative - Invalid certificate format",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "accept", "value": "*/*" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "publicKeyCertificate",
+                  "value": "INVALID_CERT_CONTENT_NOT_A_REAL_CERT",
+                  "type": "text"
+                },
+                {
+                  "key": "plainData",
+                  "value": "224189fef0d02c5ac6e6ab88c91508b34ff7137a3569de5e79d4db1ba307264c",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "http://10.88.250.40:40029/api/v1/encrypt/transport-key",
+              "protocol": "http",
+              "host": ["10", "88", "250", "40"],
+              "port": "40029",
+              "path": ["api", "v1", "encrypt", "transport-key"]
+            },
+            "description": "NEGATIVE: Malformed certificate content. Expected: HTTP 400/422, certificate parse error."
+          },
+          "response": []
+        },
+        {
+          "name": "TC-04-04 Edge Case - plainData wrong length",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "accept", "value": "*/*" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "publicKeyCertificate",
+                  "type": "file",
+                  "src": "self_signed_certificate.cert"
+                },
+                {
+                  "key": "plainData",
+                  "value": "1234567890",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "http://10.88.250.40:40029/api/v1/encrypt/transport-key",
+              "protocol": "http",
+              "host": ["10", "88", "250", "40"],
+              "port": "40029",
+              "path": ["api", "v1", "encrypt", "transport-key"]
+            },
+            "description": "EDGE CASE: plainData is 10 chars instead of required 64-char hex. Expected: HTTP 400, invalid plainData length or format."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "TC-05 Issuer Creation",
+      "item": [
+        {
+          "name": "TC-05-01 Happy Path - Valid issuer",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "accept", "value": "*/*" },
+              { "key": "X-TV-ID", "value": "9985003" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"issuerName\": \"EBL\",\n  \"issuerCode\": \"420\",\n  \"encryptedTransportKey\": \"8EA89A35C83D66FBB5DE2A97F74392C272BCBF521AA93EF072399382E32B05900F8D9C3EDF0D7EE3367E3D9E903CA1B9D5E9F5323ED8089DF353A9EF8CF08E178D9D85D84A871A4960AB1E74CFD148C5FFC4BDF0CE3F0B6B36ABC751E270DEAEFC2FAD959957AE7D662AE489AFDDEE5363DFDFD2B51AB49CA154972FE1EC1389\",\n  \"kcv\": \"AC6BCC\",\n  \"realTimePanEnrollment\": \"Y\"\n}"
+            },
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/issuer",
+              "protocol": "http",
+              "host": ["10", "88", "250", "40"],
+              "port": "40020",
+              "path": ["tvm", "api", "issuer"]
+            },
+            "description": "POSITIVE: Valid issuer with all required fields. Expected: HTTP 200/201, issuerId (UUID) returned."
+          },
+          "response": []
+        },
+        {
+          "name": "TC-05-02 Negative - Invalid KCV",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "accept", "value": "*/*" },
+              { "key": "X-TV-ID", "value": "9985003" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"issuerName\": \"EBL\",\n  \"issuerCode\": \"421\",\n  \"encryptedTransportKey\": \"8EA89A35C83D66FBB5DE2A97F74392C272BCBF521AA93EF072399382E32B05900F8D9C3EDF0D7EE3367E3D9E903CA1B9D5E9F5323ED8089DF353A9EF8CF08E178D9D85D84A871A4960AB1E74CFD148C5FFC4BDF0CE3F0B6B36ABC751E270DEAEFC2FAD959957AE7D662AE489AFDDEE5363DFDFD2B51AB49CA154972FE1EC1389\",\n  \"kcv\": \"ZZZZZZ\",\n  \"realTimePanEnrollment\": \"Y\"\n}"
+            },
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/issuer",
+              "protocol": "http",
+              "host": ["10", "88", "250", "40"],
+              "port": "40020",
+              "path": ["tvm", "api", "issuer"]
+            },
+            "description": "NEGATIVE: KCV does not match the transport key. Expected: HTTP 400/422, KCV verification failure."
+          },
+          "response": []
+        },
+        {
+          "name": "TC-05-03 Negative - Missing X-TV-ID header",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "accept", "value": "*/*" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"issuerName\": \"EBL\",\n  \"issuerCode\": \"422\",\n  \"encryptedTransportKey\": \"8EA89A35C83D66FBB5DE2A97F74392C272BCBF521AA93EF072399382E32B05900F8D9C3EDF0D7EE3367E3D9E903CA1B9D5E9F5323ED8089DF353A9EF8CF08E178D9D85D84A871A4960AB1E74CFD148C5FFC4BDF0CE3F0B6B36ABC751E270DEAEFC2FAD959957AE7D662AE489AFDDEE5363DFDFD2B51AB49CA154972FE1EC1389\",\n  \"kcv\": \"AC6BCC\",\n  \"realTimePanEnrollment\": \"Y\"\n}"
+            },
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/issuer",
+              "protocol": "http",
+              "host": ["10", "88", "250", "40"],
+              "port": "40020",
+              "path": ["tvm", "api", "issuer"]
+            },
+            "description": "NEGATIVE: X-TV-ID header omitted. Expected: HTTP 400 or 401."
+          },
+          "response": []
+        },
+        {
+          "name": "TC-05-04 Negative - Duplicate issuer code",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "accept", "value": "*/*" },
+              { "key": "X-TV-ID", "value": "9985003" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"issuerName\": \"EBL_DUPLICATE\",\n  \"issuerCode\": \"420\",\n  \"encryptedTransportKey\": \"8EA89A35C83D66FBB5DE2A97F74392C272BCBF521AA93EF072399382E32B05900F8D9C3EDF0D7EE3367E3D9E903CA1B9D5E9F5323ED8089DF353A9EF8CF08E178D9D85D84A871A4960AB1E74CFD148C5FFC4BDF0CE3F0B6B36ABC751E270DEAEFC2FAD959957AE7D662AE489AFDDEE5363DFDFD2B51AB49CA154972FE1EC1389\",\n  \"kcv\": \"AC6BCC\",\n  \"realTimePanEnrollment\": \"Y\"\n}"
+            },
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/issuer",
+              "protocol": "http",
+              "host": ["10", "88", "250", "40"],
+              "port": "40020",
+              "path": ["tvm", "api", "issuer"]
+            },
+            "description": "NEGATIVE: Run after TC-05-01. issuerCode 420 re-used for same vault. Expected: HTTP 409 Conflict."
+          },
+          "response": []
+        },
+        {
+          "name": "TC-05-05 Edge Case - Invalid realTimePanEnrollment value",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "accept", "value": "*/*" },
+              { "key": "X-TV-ID", "value": "9985003" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"issuerName\": \"EBL_TEST\",\n  \"issuerCode\": \"423\",\n  \"encryptedTransportKey\": \"8EA89A35C83D66FBB5DE2A97F74392C272BCBF521AA93EF072399382E32B05900F8D9C3EDF0D7EE3367E3D9E903CA1B9D5E9F5323ED8089DF353A9EF8CF08E178D9D85D84A871A4960AB1E74CFD148C5FFC4BDF0CE3F0B6B36ABC751E270DEAEFC2FAD959957AE7D662AE489AFDDEE5363DFDFD2B51AB49CA154972FE1EC1389\",\n  \"kcv\": \"AC6BCC\",\n  \"realTimePanEnrollment\": \"X\"\n}"
+            },
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/issuer",
+              "protocol": "http",
+              "host": ["10", "88", "250", "40"],
+              "port": "40020",
+              "path": ["tvm", "api", "issuer"]
+            },
+            "description": "EDGE CASE: realTimePanEnrollment set to 'X' instead of Y/N. Expected: HTTP 400, validation error on enum field."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "TC-06 BIN Creation",
+      "item": [
+        {
+          "name": "TC-06-01 Happy Path - Valid BIN",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "accept", "value": "*/*" },
+              { "key": "X-TV-ID", "value": "9985003" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"issuerId\": \"237d9188de9144e5806abf95441fce5b\",\n  \"binControllerId\": \"1234\",\n  \"binValue\": \"63999603\",\n  \"brandType\": \"06\",\n  \"ianLen\": 7\n}"
+            },
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/bin/single",
+              "protocol": "http",
+              "host": ["10", "88", "250", "40"],
+              "port": "40020",
+              "path": ["tvm", "api", "bin", "single"]
+            },
+            "description": "POSITIVE: Valid BIN creation. Replace issuerId with actual value from TC-05-01. Expected: HTTP 200/201, binId returned."
+          },
+          "response": []
+        },
+        {
+          "name": "TC-06-02 Negative - Invalid issuerId",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "accept", "value": "*/*" },
+              { "key": "X-TV-ID", "value": "9985003" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"issuerId\": \"00000000000000000000000000000000\",\n  \"binControllerId\": \"1234\",\n  \"binValue\": \"63999604\",\n  \"brandType\": \"06\",\n  \"ianLen\": 7\n}"
+            },
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/bin/single",
+              "protocol": "http",
+              "host": ["10", "88", "250", "40"],
+              "port": "40020",
+              "path": ["tvm", "api", "bin", "single"]
+            },
+            "description": "NEGATIVE: Non-existent issuerId. Expected: HTTP 404, issuer not found."
+          },
+          "response": []
+        },
+        {
+          "name": "TC-06-03 Negative - Duplicate BIN value",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "accept", "value": "*/*" },
+              { "key": "X-TV-ID", "value": "9985003" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"issuerId\": \"237d9188de9144e5806abf95441fce5b\",\n  \"binControllerId\": \"1234\",\n  \"binValue\": \"63999603\",\n  \"brandType\": \"06\",\n  \"ianLen\": 7\n}"
+            },
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/bin/single",
+              "protocol": "http",
+              "host": ["10", "88", "250", "40"],
+              "port": "40020",
+              "path": ["tvm", "api", "bin", "single"]
+            },
+            "description": "NEGATIVE: Run after TC-06-01. Same binValue for same issuer. Expected: HTTP 409 Conflict."
+          },
+          "response": []
+        },
+        {
+          "name": "TC-06-04 Edge Case - ianLen out of range",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "accept", "value": "*/*" },
+              { "key": "X-TV-ID", "value": "9985003" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"issuerId\": \"237d9188de9144e5806abf95441fce5b\",\n  \"binControllerId\": \"1234\",\n  \"binValue\": \"63999605\",\n  \"brandType\": \"06\",\n  \"ianLen\": 0\n}"
+            },
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/bin/single",
+              "protocol": "http",
+              "host": ["10", "88", "250", "40"],
+              "port": "40020",
+              "path": ["tvm", "api", "bin", "single"]
+            },
+            "description": "EDGE CASE: ianLen set to 0 (invalid). Expected: HTTP 400, validation error on ianLen."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "TC-07 Account Range Creation",
+      "item": [
+        {
+          "name": "TC-07-01 Happy Path - Valid account range",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "accept", "value": "*/*" },
+              { "key": "X-TV-ID", "value": "9985003" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"issuerId\": \"982094e9868d4f37b7954c7e5e765f4f\",\n  \"binId\": \"d2d1adf80a1045359033de945b60e48g\",\n  \"panLowerLimit\": \"1100000\",\n  \"panUpperLimit\": \"9000000\",\n  \"listOfExpiry\": [\n    { \"quarter\": \"Q1\", \"year\": 2027 },\n    { \"quarter\": \"Q2\", \"year\": 2027 },\n    { \"quarter\": \"Q3\", \"year\": 2027 }\n  ]\n}"
+            },
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/account-range",
+              "protocol": "http",
+              "host": ["10", "88", "250", "40"],
+              "port": "40020",
+              "path": ["tvm", "api", "account-range"]
+            },
+            "description": "POSITIVE: Valid account range. Replace issuerId and binId with actual values. Expected: HTTP 200/201, account range ID returned."
+          },
+          "response": []
+        },
+        {
+          "name": "TC-07-02 Negative - Lower limit > upper limit",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "accept", "value": "*/*" },
+              { "key": "X-TV-ID", "value": "9985003" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"issuerId\": \"982094e9868d4f37b7954c7e5e765f4f\",\n  \"binId\": \"d2d1adf80a1045359033de945b60e48g\",\n  \"panLowerLimit\": \"9000000\",\n  \"panUpperLimit\": \"1100000\",\n  \"listOfExpiry\": [\n    { \"quarter\": \"Q1\", \"year\": 2027 }\n  ]\n}"
+            },
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/account-range",
+              "protocol": "http",
+              "host": ["10", "88", "250", "40"],
+              "port": "40020",
+              "path": ["tvm", "api", "account-range"]
+            },
+            "description": "NEGATIVE: panLowerLimit > panUpperLimit. Expected: HTTP 400, invalid range: lower > upper."
+          },
+          "response": []
+        },
+        {
+          "name": "TC-07-03 Negative - Empty listOfExpiry",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "accept", "value": "*/*" },
+              { "key": "X-TV-ID", "value": "9985003" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"issuerId\": \"982094e9868d4f37b7954c7e5e765f4f\",\n  \"binId\": \"d2d1adf80a1045359033de945b60e48g\",\n  \"panLowerLimit\": \"1100000\",\n  \"panUpperLimit\": \"9000000\",\n  \"listOfExpiry\": []\n}"
+            },
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/account-range",
+              "protocol": "http",
+              "host": ["10", "88", "250", "40"],
+              "port": "40020",
+              "path": ["tvm", "api", "account-range"]
+            },
+            "description": "NEGATIVE: Empty listOfExpiry. Expected: HTTP 400, at least one expiry required."
+          },
+          "response": []
+        },
+        {
+          "name": "TC-07-04 Edge Case - Invalid quarter value",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "accept", "value": "*/*" },
+              { "key": "X-TV-ID", "value": "9985003" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"issuerId\": \"982094e9868d4f37b7954c7e5e765f4f\",\n  \"binId\": \"d2d1adf80a1045359033de945b60e48g\",\n  \"panLowerLimit\": \"1100000\",\n  \"panUpperLimit\": \"9000000\",\n  \"listOfExpiry\": [\n    { \"quarter\": \"Q5\", \"year\": 2027 }\n  ]\n}"
+            },
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/account-range",
+              "protocol": "http",
+              "host": ["10", "88", "250", "40"],
+              "port": "40020",
+              "path": ["tvm", "api", "account-range"]
+            },
+            "description": "EDGE CASE: Quarter value Q5 is invalid (must be Q1-Q4). Expected: HTTP 400, quarter must be Q1-Q4."
+          },
+          "response": []
+        },
+        {
+          "name": "TC-07-05 Edge Case - Past expiry year",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "accept", "value": "*/*" },
+              { "key": "X-TV-ID", "value": "9985003" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"issuerId\": \"982094e9868d4f37b7954c7e5e765f4f\",\n  \"binId\": \"d2d1adf80a1045359033de945b60e48g\",\n  \"panLowerLimit\": \"1100000\",\n  \"panUpperLimit\": \"9000000\",\n  \"listOfExpiry\": [\n    { \"quarter\": \"Q1\", \"year\": 2020 }\n  ]\n}"
+            },
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/account-range",
+              "protocol": "http",
+              "host": ["10", "88", "250", "40"],
+              "port": "40020",
+              "path": ["tvm", "api", "account-range"]
+            },
+            "description": "EDGE CASE: Expiry year 2020 is already in the past. Expected: HTTP 400 or warning: expiry date in the past."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "TC-08 Token Requester Creation",
+      "item": [
+        {
+          "name": "TC-08-01 Happy Path - Google Pay requester",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "accept", "value": "*/*" },
+              { "key": "X-TV-ID", "value": "9985003" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tokenFormFactor\": \"00\",\n  \"encryptedTransportKey\": \"8EA89A35C83D66FBB5DE2A97F74392C272BCBF521AA93EF072399382E32B05900F8D9C3EDF0D7EE3367E3D9E903CA1B9D5E9F5323ED8089DF353A9EF8CF08E178D9D85D84A871A4960AB1E74CFD148C5FFC4BDF0CE3F0B6B36ABC751E270DEAEFC2FAD959957AE7D662AE489AFDDEE5363DFDFD2B51AB49CA154972FE1EC1389\",\n  \"kcv\": \"AC6BCC\",\n  \"serviceName\": \"Service name\",\n  \"trName\": \"Google Pay\"\n}"
+            },
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/token-requestor",
+              "protocol": "http",
+              "host": ["10", "88", "250", "40"],
+              "port": "40020",
+              "path": ["tvm", "api", "token-requestor"]
+            },
+            "description": "POSITIVE: Valid token requestor creation. Expected: HTTP 200/201, token requestor ID (trId) returned."
+          },
+          "response": []
+        },
+        {
+          "name": "TC-08-02 Negative - Invalid tokenFormFactor",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "accept", "value": "*/*" },
+              { "key": "X-TV-ID", "value": "9985003" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tokenFormFactor\": \"99\",\n  \"encryptedTransportKey\": \"8EA89A35C83D66FBB5DE2A97F74392C272BCBF521AA93EF072399382E32B05900F8D9C3EDF0D7EE3367E3D9E903CA1B9D5E9F5323ED8089DF353A9EF8CF08E178D9D85D84A871A4960AB1E74CFD148C5FFC4BDF0CE3F0B6B36ABC751E270DEAEFC2FAD959957AE7D662AE489AFDDEE5363DFDFD2B51AB49CA154972FE1EC1389\",\n  \"kcv\": \"AC6BCC\",\n  \"serviceName\": \"Service name\",\n  \"trName\": \"Test TR\"\n}"
+            },
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/token-requestor",
+              "protocol": "http",
+              "host": ["10", "88", "250", "40"],
+              "port": "40020",
+              "path": ["tvm", "api", "token-requestor"]
+            },
+            "description": "NEGATIVE: tokenFormFactor '99' is not a supported value. Expected: HTTP 400, unsupported form factor."
+          },
+          "response": []
+        },
+        {
+          "name": "TC-08-03 Negative - KCV mismatch",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "accept", "value": "*/*" },
+              { "key": "X-TV-ID", "value": "9985003" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tokenFormFactor\": \"00\",\n  \"encryptedTransportKey\": \"8EA89A35C83D66FBB5DE2A97F74392C272BCBF521AA93EF072399382E32B05900F8D9C3EDF0D7EE3367E3D9E903CA1B9D5E9F5323ED8089DF353A9EF8CF08E178D9D85D84A871A4960AB1E74CFD148C5FFC4BDF0CE3F0B6B36ABC751E270DEAEFC2FAD959957AE7D662AE489AFDDEE5363DFDFD2B51AB49CA154972FE1EC1389\",\n  \"kcv\": \"000000\",\n  \"serviceName\": \"Service name\",\n  \"trName\": \"Test TR\"\n}"
+            },
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/token-requestor",
+              "protocol": "http",
+              "host": ["10", "88", "250", "40"],
+              "port": "40020",
+              "path": ["tvm", "api", "token-requestor"]
+            },
+            "description": "NEGATIVE: KCV '000000' does not match transport key. Expected: HTTP 400/422, KCV verification failure."
+          },
+          "response": []
+        },
+        {
+          "name": "TC-08-04 Edge Case - Missing serviceName",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "accept", "value": "*/*" },
+              { "key": "X-TV-ID", "value": "9985003" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tokenFormFactor\": \"00\",\n  \"encryptedTransportKey\": \"8EA89A35C83D66FBB5DE2A97F74392C272BCBF521AA93EF072399382E32B05900F8D9C3EDF0D7EE3367E3D9E903CA1B9D5E9F5323ED8089DF353A9EF8CF08E178D9D85D84A871A4960AB1E74CFD148C5FFC4BDF0CE3F0B6B36ABC751E270DEAEFC2FAD959957AE7D662AE489AFDDEE5363DFDFD2B51AB49CA154972FE1EC1389\",\n  \"kcv\": \"AC6BCC\",\n  \"trName\": \"Test TR\"\n}"
+            },
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/token-requestor",
+              "protocol": "http",
+              "host": ["10", "88", "250", "40"],
+              "port": "40020",
+              "path": ["tvm", "api", "token-requestor"]
+            },
+            "description": "EDGE CASE: serviceName field omitted. Expected: HTTP 400, required field missing."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "TC-09 Token Use Setup",
+      "item": [
+        {
+          "name": "TC-09-01 Happy Path - Valid token use setup",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "accept", "value": "*/*" },
+              { "key": "X-TV-ID", "value": "9985003" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"merchantInfos\": [\n    {\n      \"merchantId\": \"123456789012345\",\n      \"merchantName\": \"Merchant\"\n    }\n  ],\n  \"modeOfTransaction\": \"01\",\n  \"trId\": \"99850031692\"\n}"
+            },
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/token-requestor/token-use/setup",
+              "protocol": "http",
+              "host": ["10", "88", "250", "40"],
+              "port": "40020",
+              "path": ["tvm", "api", "token-requestor", "token-use", "setup"]
+            },
+            "description": "POSITIVE: Valid token use setup. Expected: HTTP 200/201, token use configuration confirmed."
+          },
+          "response": []
+        },
+        {
+          "name": "TC-09-02 Negative - Non-existent trId",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "accept", "value": "*/*" },
+              { "key": "X-TV-ID", "value": "9985003" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"merchantInfos\": [\n    {\n      \"merchantId\": \"123456789012345\",\n      \"merchantName\": \"Merchant\"\n    }\n  ],\n  \"modeOfTransaction\": \"01\",\n  \"trId\": \"00000000000\"\n}"
+            },
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/token-requestor/token-use/setup",
+              "protocol": "http",
+              "host": ["10", "88", "250", "40"],
+              "port": "40020",
+              "path": ["tvm", "api", "token-requestor", "token-use", "setup"]
+            },
+            "description": "NEGATIVE: trId '00000000000' does not exist. Expected: HTTP 404, token requestor not found."
+          },
+          "response": []
+        },
+        {
+          "name": "TC-09-03 Negative - merchantId wrong length",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "accept", "value": "*/*" },
+              { "key": "X-TV-ID", "value": "9985003" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"merchantInfos\": [\n    {\n      \"merchantId\": \"123\",\n      \"merchantName\": \"Merchant\"\n    }\n  ],\n  \"modeOfTransaction\": \"01\",\n  \"trId\": \"99850031692\"\n}"
+            },
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/token-requestor/token-use/setup",
+              "protocol": "http",
+              "host": ["10", "88", "250", "40"],
+              "port": "40020",
+              "path": ["tvm", "api", "token-requestor", "token-use", "setup"]
+            },
+            "description": "NEGATIVE: merchantId '123' is too short (should be 15 digits). Expected: HTTP 400, invalid merchantId format."
+          },
+          "response": []
+        },
+        {
+          "name": "TC-09-04 Edge Case - Multiple merchants",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "accept", "value": "*/*" },
+              { "key": "X-TV-ID", "value": "9985003" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"merchantInfos\": [\n    { \"merchantId\": \"123456789012341\", \"merchantName\": \"Merchant A\" },\n    { \"merchantId\": \"123456789012342\", \"merchantName\": \"Merchant B\" },\n    { \"merchantId\": \"123456789012343\", \"merchantName\": \"Merchant C\" }\n  ],\n  \"modeOfTransaction\": \"01\",\n  \"trId\": \"99850031692\"\n}"
+            },
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/token-requestor/token-use/setup",
+              "protocol": "http",
+              "host": ["10", "88", "250", "40"],
+              "port": "40020",
+              "path": ["tvm", "api", "token-requestor", "token-use", "setup"]
+            },
+            "description": "EDGE CASE: Multiple merchants in merchantInfos list. Expected: HTTP 200, all merchants configured successfully."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "TC-10 Token Life Setup",
+      "item": [
+        {
+          "name": "TC-10-01 Happy Path - Valid life range",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "accept", "value": "*/*" },
+              { "key": "X-TV-ID", "value": "9985003" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"requestorId\": \"99850031692\",\n  \"minPeriodInMonths\": 0,\n  \"maxPeriodInMonths\": 70,\n  \"issuerId\": \"237d9188de9144e5806abf95441fce5c\"\n}"
+            },
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/token-life/authorization",
+              "protocol": "http",
+              "host": ["10", "88", "250", "40"],
+              "port": "40020",
+              "path": ["tvm", "api", "token-life", "authorization"]
+            },
+            "description": "POSITIVE: Valid token life authorization setup. Expected: HTTP 200/201, token life authorization saved."
+          },
+          "response": []
+        },
+        {
+          "name": "TC-10-02 Negative - Min > max period",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "accept", "value": "*/*" },
+              { "key": "X-TV-ID", "value": "9985003" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"requestorId\": \"99850031692\",\n  \"minPeriodInMonths\": 70,\n  \"maxPeriodInMonths\": 10,\n  \"issuerId\": \"237d9188de9144e5806abf95441fce5c\"\n}"
+            },
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/token-life/authorization",
+              "protocol": "http",
+              "host": ["10", "88", "250", "40"],
+              "port": "40020",
+              "path": ["tvm", "api", "token-life", "authorization"]
+            },
+            "description": "NEGATIVE: minPeriodInMonths (70) > maxPeriodInMonths (10). Expected: HTTP 400, min must be <= max."
+          },
+          "response": []
+        },
+        {
+          "name": "TC-10-03 Negative - Non-existent issuerId",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "accept", "value": "*/*" },
+              { "key": "X-TV-ID", "value": "9985003" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"requestorId\": \"99850031692\",\n  \"minPeriodInMonths\": 0,\n  \"maxPeriodInMonths\": 70,\n  \"issuerId\": \"00000000000000000000000000000000\"\n}"
+            },
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/token-life/authorization",
+              "protocol": "http",
+              "host": ["10", "88", "250", "40"],
+              "port": "40020",
+              "path": ["tvm", "api", "token-life", "authorization"]
+            },
+            "description": "NEGATIVE: issuerId does not exist in the system. Expected: HTTP 404, issuer not found."
+          },
+          "response": []
+        },
+        {
+          "name": "TC-10-04 Edge Case - maxPeriodInMonths = 0",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "accept", "value": "*/*" },
+              { "key": "X-TV-ID", "value": "9985003" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"requestorId\": \"99850031692\",\n  \"minPeriodInMonths\": 0,\n  \"maxPeriodInMonths\": 0,\n  \"issuerId\": \"237d9188de9144e5806abf95441fce5c\"\n}"
+            },
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/token-life/authorization",
+              "protocol": "http",
+              "host": ["10", "88", "250", "40"],
+              "port": "40020",
+              "path": ["tvm", "api", "token-life", "authorization"]
+            },
+            "description": "EDGE CASE: Both min and max set to 0 (zero-lifetime token). Expected: HTTP 400 or 200 depending on business rule."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "TC-11 Token Range Setup",
+      "item": [
+        {
+          "name": "TC-11-01 Happy Path - Valid token range",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "accept", "value": "*/*" },
+              { "key": "X-TV-ID", "value": "9985003" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tokenRangeSetupList\": [\n    {\n      \"expiry\": { \"quarter\": \"Q2\", \"year\": 2027 },\n      \"lowerLimit\": \"9100000\",\n      \"upperLimit\": \"9999999\"\n    }\n  ],\n  \"requestorId\": \"99850031692\",\n  \"issuerId\": \"237d9188de9144e5806abf95441fce5b\",\n  \"binId\": \"d2d1adf80a1045359033de945b60e48g\"\n}"
+            },
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/token-range",
+              "protocol": "http",
+              "host": ["10", "88", "250", "40"],
+              "port": "40020",
+              "path": ["tvm", "api", "token-range"]
+            },
+            "description": "POSITIVE: Valid token range (9100000-9999999, outside PAN account range). Expected: HTTP 200/201, token range assigned."
+          },
+          "response": []
+        },
+        {
+          "name": "TC-11-02 Negative - Token range overlaps account range",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "accept", "value": "*/*" },
+              { "key": "X-TV-ID", "value": "9985003" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tokenRangeSetupList\": [\n    {\n      \"expiry\": { \"quarter\": \"Q2\", \"year\": 2027 },\n      \"lowerLimit\": \"1100000\",\n      \"upperLimit\": \"9000000\"\n    }\n  ],\n  \"requestorId\": \"99850031692\",\n  \"issuerId\": \"237d9188de9144e5806abf95441fce5b\",\n  \"binId\": \"d2d1adf80a1045359033de945b60e48g\"\n}"
+            },
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/token-range",
+              "protocol": "http",
+              "host": ["10", "88", "250", "40"],
+              "port": "40020",
+              "path": ["tvm", "api", "token-range"]
+            },
+            "description": "NEGATIVE: Token range (1100000-9000000) overlaps existing PAN account range. Expected: HTTP 400/409, range conflict."
+          },
+          "response": []
+        },
+        {
+          "name": "TC-11-03 Negative - Lower > upper limit",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "accept", "value": "*/*" },
+              { "key": "X-TV-ID", "value": "9985003" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tokenRangeSetupList\": [\n    {\n      \"expiry\": { \"quarter\": \"Q2\", \"year\": 2027 },\n      \"lowerLimit\": \"9999999\",\n      \"upperLimit\": \"9100000\"\n    }\n  ],\n  \"requestorId\": \"99850031692\",\n  \"issuerId\": \"237d9188de9144e5806abf95441fce5b\",\n  \"binId\": \"d2d1adf80a1045359033de945b60e48g\"\n}"
+            },
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/token-range",
+              "protocol": "http",
+              "host": ["10", "88", "250", "40"],
+              "port": "40020",
+              "path": ["tvm", "api", "token-range"]
+            },
+            "description": "NEGATIVE: lowerLimit > upperLimit. Expected: HTTP 400, invalid range."
+          },
+          "response": []
+        },
+        {
+          "name": "TC-11-04 Negative - Non-existent requestorId",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "accept", "value": "*/*" },
+              { "key": "X-TV-ID", "value": "9985003" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tokenRangeSetupList\": [\n    {\n      \"expiry\": { \"quarter\": \"Q2\", \"year\": 2027 },\n      \"lowerLimit\": \"9100000\",\n      \"upperLimit\": \"9999999\"\n    }\n  ],\n  \"requestorId\": \"00000000000\",\n  \"issuerId\": \"237d9188de9144e5806abf95441fce5b\",\n  \"binId\": \"d2d1adf80a1045359033de945b60e48g\"\n}"
+            },
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/token-range",
+              "protocol": "http",
+              "host": ["10", "88", "250", "40"],
+              "port": "40020",
+              "path": ["tvm", "api", "token-range"]
+            },
+            "description": "NEGATIVE: requestorId does not exist. Expected: HTTP 404, token requestor not found."
+          },
+          "response": []
+        },
+        {
+          "name": "TC-11-05 Edge Case - Expiry in the past",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "accept", "value": "*/*" },
+              { "key": "X-TV-ID", "value": "9985003" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tokenRangeSetupList\": [\n    {\n      \"expiry\": { \"quarter\": \"Q1\", \"year\": 2023 },\n      \"lowerLimit\": \"9100000\",\n      \"upperLimit\": \"9999999\"\n    }\n  ],\n  \"requestorId\": \"99850031692\",\n  \"issuerId\": \"237d9188de9144e5806abf95441fce5b\",\n  \"binId\": \"d2d1adf80a1045359033de945b60e48g\"\n}"
+            },
+            "url": {
+              "raw": "http://10.88.250.40:40020/tvm/api/token-range",
+              "protocol": "http",
+              "host": ["10", "88", "250", "40"],
+              "port": "40020",
+              "path": ["tvm", "api", "token-range"]
+            },
+            "description": "EDGE CASE: Expiry Q1 2023 is in the past. Expected: HTTP 400, expiry must be in the future."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
