@@ -1,0 +1,192 @@
+Suite,Section,Title,Type,Priority,Business Rule,API Endpoint,Preconditions,Steps,Expected Result,Custom Fields Error Code
+TSP Token Vault,01 Vault Creation,Vault Creation  Happy Path,Functional,Critical,Pre-requisite,POST /rgm/api/vaults,No vault exists for tspCode=998. Service is running on port 40010.,"1. Send POST /rgm/api/vaults with body: {""tspCode"":""998"",""tokenVaultName"":""My Token Vault"",""custodianIdList"":[""custodian009"",""custodian010""]}
+2. Verify HTTP response code
+3. Extract and store vaultId from response
+4. Verify Content-Type header is application/json","HTTP 200 or 201. Response contains vaultId (string, non-empty). tokenVaultName is reflected. tspCode matches request value. vaultId stored as environment variable for downstream chaining.",N/A
+TSP Token Vault,01 Vault Creation,Vault Creation  Missing tspCode (Negative),Negative,High,Pre-requisite,POST /rgm/api/vaults,Service is running. No tspCode supplied in request body.,"1. Send POST /rgm/api/vaults with body: {""tokenVaultName"":""Vault Without TSP Code"",""custodianIdList"":[""custodian009""]}
+2. Verify HTTP response code
+3. Verify error body structure",HTTP 400 or 422. Response body contains errorCode or message field. No vaultId issued.,MISSING_FIELD
+TSP Token Vault,01 Vault Creation,Vault Creation  Empty custodianIdList (Negative),Negative,Medium,Pre-requisite,POST /rgm/api/vaults,Service is running.,"1. Send POST /rgm/api/vaults with body: {""tspCode"":""998"",""tokenVaultName"":""Empty Custodian Vault"",""custodianIdList"":[]}
+2. Verify HTTP response code
+3. Verify response is valid JSON",HTTP 400 or 422. Response is valid JSON. No vault created.,MISSING_FIELD
+TSP Token Vault,02 Generate Transport Key,Generate Transport Key  Happy Path,Functional,Critical,Pre-requisite,GET /api/generate-transport-key,Mocker service running on port 40029.,"1. Send GET /api/generate-transport-key
+2. Verify HTTP response code
+3. Extract transportKey from response and store as environment variable generatedTransportKey
+4. Verify key length > 10 characters","HTTP 200. Response contains transportKey (string, length > 10). Key stored in environment variable for downstream use. Response time < 2000ms.",N/A
+TSP Token Vault,02 Generate Transport Key,Generate Transport Key  Uniqueness per Call (Security),Security,High,Pre-requisite,GET /api/generate-transport-key,TC-TRK-001 completed. generatedTransportKey stored in environment.,"1. Send second GET /api/generate-transport-key
+2. Compare returned key with key from TC-TRK-001
+3. Verify keys differ",HTTP 200. New transport key differs from the key returned in TC-TRK-001. Each invocation produces a unique key (no replay reuse).,N/A
+TSP Token Vault,03 Get Certificate,Get Certificate  Valid X-TV-ID,Functional,Critical,Pre-requisite,GET /tvm/api/vault/certificate,TC-TVT-001 completed. vaultId stored in environment. TVM service running on port 40020.,"1. Send GET /tvm/api/vault/certificate with header X-TV-ID: {{vaultId}}
+2. Verify HTTP response code
+3. Store full response body as vaultCertificate
+4. Verify response body length > 50 characters",HTTP 200. Response body is non-empty (length > 50). Certificate stored in vaultCertificate environment variable for use in Encrypt-Key step.,N/A
+TSP Token Vault,03 Get Certificate,Get Certificate  Missing X-TV-ID Header (Negative),Security,High,Pre-requisite,GET /tvm/api/vault/certificate,TVM service running.,"1. Send GET /tvm/api/vault/certificate with NO X-TV-ID header
+2. Verify HTTP response code","HTTP 400, 401, or 403. Request rejected due to missing identity header.",MISSING_HEADER
+TSP Token Vault,03 Get Certificate,Get Certificate  Invalid X-TV-ID (Negative),Negative,Medium,Pre-requisite,GET /tvm/api/vault/certificate,TVM service running.,"1. Send GET /tvm/api/vault/certificate with header X-TV-ID: INVALID_VAULT_00000
+2. Verify HTTP response code",HTTP 400 or 404. Non-existent vault ID returns appropriate error.,VAULT_NOT_FOUND
+TSP Token Vault,04 Encrypt The Key,Encrypt Transport Key  Happy Path,Functional,Critical,Pre-requisite,POST /api/v1/encrypt/transport-key,TC-CERT-001 completed (vaultCertificate available). Plain transport key available. Mocker running on port 40029.,"1. Send POST /api/v1/encrypt/transport-key as multipart/form-data with: publicKeyCertificate={{vaultCertificate}}, plainData={{plain_transport_key}}
+2. Verify HTTP response code
+3. Extract encryptedTransportKey and store in environment
+4. Extract kcv and store in environment","HTTP 200. Response contains encryptedTransportKey (string, length > 20) and kcv (string, length > 4). Both stored in environment for Issuer Creation step.",N/A
+TSP Token Vault,04 Encrypt The Key,Encrypt Transport Key  Missing plainData (Negative),Negative,Medium,Pre-requisite,POST /api/v1/encrypt/transport-key,Mocker running.,"1. Send POST /api/v1/encrypt/transport-key with ONLY publicKeyCertificate in form-data (omit plainData)
+2. Verify HTTP response code",HTTP 400 or 422. Request rejected due to missing plainData field.,MISSING_FIELD
+TSP Token Vault,05 Issuer Creation,Issuer Creation  Happy Path,Functional,Critical,Pre-requisite,POST /tvm/api/issuer,"TC-ENC-001 completed (encryptedTransportKey, kcv available). vaultId available. TVM running on port 40020.","1. Send POST /tvm/api/issuer with header X-TV-ID: {{vaultId}} and body: {""issuerName"":""DBBL"",""issuerCode"":""0421"",""encryptedTransportKey"":""{{encryptedTransportKey}}"",""kcv"":""{{kcv}}"",""realTimePanEnrollment"":""Y""}
+2. Verify HTTP response code
+3. Extract and store issuerId","HTTP 200 or 201. Response contains issuerId (string, length > 4). issuerCode matches 0421 in response. issuerId stored for downstream BIN and Account Range steps.",N/A
+TSP Token Vault,05 Issuer Creation,Issuer Creation  Duplicate issuerCode (Negative),Negative,High,Pre-requisite,POST /tvm/api/issuer,TC-ISS-001 completed. issuerCode 0421 already exists.,"1. Send identical POST /tvm/api/issuer request with issuerCode: 0421 again
+2. Verify HTTP response code
+3. Verify error body","HTTP 409, 400, or 422. Error body contains errorCode, message, or error field indicating conflict or duplication.",DUPLICATE_ISSUER
+TSP Token Vault,05 Issuer Creation,Issuer Creation  Invalid KCV Format (Negative),Negative,Medium,Pre-requisite,POST /tvm/api/issuer,TVM running. encryptedTransportKey available.,"1. Send POST /tvm/api/issuer with kcv set to ""ZZZZZZ"" (non-hex value) and issuerCode: 0422
+2. Verify HTTP response code",HTTP 400 or 422. Malformed KCV rejected.,INVALID_KCV
+TSP Token Vault,05 Issuer Creation,Issuer Creation  Missing X-TV-ID Header (Security),Security,High,Pre-requisite,POST /tvm/api/issuer,TVM running.,"1. Send POST /tvm/api/issuer with NO X-TV-ID header
+2. Verify HTTP response code","HTTP 400, 401, or 403. Request rejected due to missing X-TV-ID.",MISSING_HEADER
+TSP Token Vault,06 BIN Creation,BIN Creation  Happy Path,Functional,Critical,Rule 1,POST /tvm/api/bin/single,TC-ISS-001 completed (issuerId available). vaultId available. TVM running.,"1. Send POST /tvm/api/bin/single with header X-TV-ID: {{vaultId}} and body: {""issuerId"":""{{issuerId}}"",""binControllerId"":""1234"",""binValue"":""63999603"",""brandType"":""06"",""ianLen"":7}
+2. Verify HTTP response code
+3. Extract and store binId",HTTP 200 or 201. Response contains binId. binValue 63999603 reflected in response. binId stored for downstream use.,N/A
+TSP Token Vault,06 BIN Creation,BIN Creation  Duplicate binValue (Negative),Negative,High,Rule 6,POST /tvm/api/bin/single,TC-BIN-001 completed. binValue 63999603 already registered.,"1. Send identical POST /tvm/api/bin/single with binValue: 63999603 again
+2. Verify HTTP response code
+3. Verify error body contains OVERLAP or DUPLICATE or CONFLICT","HTTP 400, 409, or 422. Error message contains OVERLAP, DUPLICATE, or CONFLICT indicator.",BIN_RANGE_OVERLAP_DETECTED
+TSP Token Vault,06 BIN Creation,BIN Creation  Invalid issuerId (Negative),Negative,Medium,Rule 1,POST /tvm/api/bin/single,TVM running.,"1. Send POST /tvm/api/bin/single with issuerId: 00000000000000000000000000000000 (non-existent)
+2. Verify HTTP response code","HTTP 400, 404, or 422. Non-existent issuerId rejected.",ISSUER_NOT_FOUND
+TSP Token Vault,06 BIN Creation,BIN Creation  SQL Injection in binValue (Security),Security,High,Rule 1,POST /tvm/api/bin/single,TVM running. issuerId available.,"1. Send POST /tvm/api/bin/single with binValue set to: '; DROP TABLE bins; --
+2. Verify HTTP response code
+3. Verify response body does NOT echo or execute the injected payload",HTTP 400 or 422. Payload sanitized and rejected. Response does not contain DROP TABLE. Database remains intact.,INVALID_INPUT
+TSP Token Vault,07 Account Range Creation,Account Range Creation  Happy Path (Q1/Q2/Q3),Functional,Critical,Rule 1,POST /tvm/api/account-range,"TC-ISS-001 and TC-BIN-001 completed (issuerId, binId available). vaultId available.","1. Send POST /tvm/api/account-range with header X-TV-ID: {{vaultId}} and body: {""issuerId"":""{{issuerId}}"",""binId"":""{{binId}}"",""panLowerLimit"":""1100000"",""panUpperLimit"":""9000000"",""listOfExpiry"":[{""quarter"":""Q1"",""year"":2027},{""quarter"":""Q2"",""year"":2027},{""quarter"":""Q3"",""year"":2027}]}
+2. Verify HTTP response code
+3. Extract and store accountRangeId",HTTP 200 or 201. Response contains accountRangeId. panLowerLimit=1100000 and panUpperLimit=9000000 reflected. listOfExpiry contains Q1/Q2/Q3 for year 2027.,N/A
+TSP Token Vault,07 Account Range Creation,Account Range  panLowerLimit Greater Than panUpperLimit (Boundary Negative),Boundary,High,Rule 1,POST /tvm/api/account-range,TVM running. issuerId and binId available.,"1. Send POST /tvm/api/account-range with panLowerLimit: 9000000 and panUpperLimit: 1100000 (inverted)
+2. Verify HTTP response code",HTTP 400 or 422. Inverted PAN range rejected.,INVALID_RANGE
+TSP Token Vault,07 Account Range Creation,Account Range  PAN on Exact Lower Boundary (Boundary),Boundary,Medium,Rule 1,POST /tvm/api/account-range,TVM running. issuerId and binId available. No overlapping range exists for 5000000.,"1. Send POST /tvm/api/account-range with panLowerLimit: 5000000 and panUpperLimit: 5000000 (single-value range) and listOfExpiry: [{quarter:Q4,year:2027}]
+2. Verify HTTP response code",HTTP 200 or 201. Single-value PAN range (lower = upper) accepted. Boundary value at lower limit is valid.,N/A
+TSP Token Vault,07 Account Range Creation,Account Range  Overlapping PAN Range (Negative),Negative,High,Rule 1,POST /tvm/api/account-range,TC-ACR-001 completed. Range 1100000–9000000 already registered.,"1. Send POST /tvm/api/account-range with panLowerLimit: 5000000 and panUpperLimit: 7000000 (overlaps existing range)
+2. Verify HTTP response code
+3. Verify error body contains OVERLAP or CONFLICT","HTTP 400, 409, or 422. Overlapping PAN range rejected. Error contains OVERLAP or CONFLICT or EXIST.",ACCOUNT_RANGE_OVERLAP
+TSP Token Vault,07 Account Range Creation,Account Range  Empty listOfExpiry (Negative),Negative,Medium,Rule 2,POST /tvm/api/account-range,TVM running. issuerId and binId available.,"1. Send POST /tvm/api/account-range with listOfExpiry: [] (empty array)
+2. Verify HTTP response code",HTTP 400 or 422. Empty expiry list rejected.,MISSING_FIELD
+TSP Token Vault,08 Token Requestor Creation,Token Requestor Creation  Happy Path,Functional,Critical,Pre-requisite,POST /tvm/api/token-requestor,"TC-ENC-001 completed (encryptedTransportKey, kcv available). vaultId available. TVM running.","1. Send POST /tvm/api/token-requestor with header X-TV-ID: {{vaultId}} and body: {""tokenFormFactor"":""00"",""encryptedTransportKey"":""{{encryptedTransportKey}}"",""kcv"":""{{kcv}}"",""serviceName"":""Service name"",""trName"":""Google Pay""}
+2. Verify HTTP response code
+3. Extract and store tokenRequestorId
+4. Extract and store requestorTransportKey if returned",HTTP 200 or 201. Response contains tokenRequestorId. trName=Google Pay reflected. tokenRequestorId stored for all downstream steps.,N/A
+TSP Token Vault,08 Token Requestor Creation,Token Requestor  Invalid tokenFormFactor (Negative),Negative,Medium,Pre-requisite,POST /tvm/api/token-requestor,TVM running. encryptedTransportKey available.,"1. Send POST /tvm/api/token-requestor with tokenFormFactor: 99 (unknown code)
+2. Verify HTTP response code",HTTP 400 or 422. Unknown tokenFormFactor code rejected.,INVALID_FORM_FACTOR
+TSP Token Vault,09 Token Use Setup,Token Use Setup  Happy Path (TDRC Configuration),Functional,High,Token Domain Restriction Controls,POST /tvm/api/token-requestor/token-use/setup,TC-TRQ-001 completed (tokenRequestorId available). vaultId available. TVM running.,"1. Send POST /tvm/api/token-requestor/token-use/setup with header X-TV-ID: {{vaultId}} and body: {""merchantInfos"":[{""merchantId"":""123456789012345"",""merchantName"":""Merchant""}],""modeOfTransaction"":""01"",""trId"":""{{tokenRequestorId}}""}
+2. Verify HTTP response code
+3. Verify modeOfTransaction=01 in request",HTTP 200 or 201. Token use (merchant domain + transaction mode) configured for token requestor. EMVCo TDRC restriction registered.,N/A
+TSP Token Vault,09 Token Use Setup,Token Use Setup  Invalid trId (Negative/TDRC),Negative,Medium,Token Domain Restriction Controls,POST /tvm/api/token-requestor/token-use/setup,TVM running.,"1. Send POST /tvm/api/token-requestor/token-use/setup with trId: NONEXISTENT_TR_99999
+2. Verify HTTP response code","HTTP 400, 404, or 422. Non-existent token requestor ID rejected.",REQUESTOR_NOT_FOUND
+TSP Token Vault,10 Token Life Setup,Token Life Setup  Happy Path,Functional,High,Token Expiry Rule,POST /tvm/api/token-life/authorization,"TC-TRQ-001 and TC-ISS-001 completed (tokenRequestorId, issuerId available). vaultId available.","1. Send POST /tvm/api/token-life/authorization with header X-TV-ID: {{vaultId}} and body: {""requestorId"":""{{tokenRequestorId}}"",""minPeriodInMonths"":0,""maxPeriodInMonths"":70,""issuerId"":""{{issuerId}}""}
+2. Verify HTTP response code
+3. Verify minPeriodInMonths=0 and maxPeriodInMonths=70 in request",HTTP 200 or 201. Token lifecycle authorization configured. min=0 and max=70 months accepted.,N/A
+TSP Token Vault,10 Token Life Setup,Token Life Setup  minPeriod Greater Than maxPeriod (Boundary Negative),Boundary,Medium,Token Expiry Rule,POST /tvm/api/token-life/authorization,TVM running. tokenRequestorId and issuerId available.,"1. Send POST /tvm/api/token-life/authorization with minPeriodInMonths: 70 and maxPeriodInMonths: 10 (inverted)
+2. Verify HTTP response code",HTTP 400 or 422. Inverted period range (min > max) rejected.,INVALID_PERIOD_RANGE
+TSP Token Vault,10 Token Life Setup,Token Life Setup  Negative maxPeriodInMonths (Boundary),Boundary,Medium,Token Expiry Rule,POST /tvm/api/token-life/authorization,TVM running. tokenRequestorId and issuerId available.,"1. Send POST /tvm/api/token-life/authorization with minPeriodInMonths: -5 and maxPeriodInMonths: -1
+2. Verify HTTP response code",HTTP 400 or 422. Negative period values rejected.,INVALID_PERIOD_RANGE
+TSP Token Vault,11 Token Range Setup,Token Range Setup  Happy Path (Q2/2027),Functional,Critical,Rule 2,POST /tvm/api/token-range,"TC-TRQ-001, TC-ISS-001, TC-BIN-001, TC-ACR-001 completed. Q2/2027 in listOfExpiry. vaultId available.","1. Send POST /tvm/api/token-range with header X-TV-ID: {{vaultId}} and body: {""tokenRangeSetupList"":[{""expiry"":{""quarter"":""Q2"",""year"":2027},""lowerLimit"":""9100000"",""upperLimit"":""9999999""}],""requestorId"":""{{tokenRequestorId}}"",""issuerId"":""{{issuerId}}"",""binId"":""{{binId}}""}
+2. Verify HTTP response code
+3. Verify lowerLimit < upperLimit in request
+4. Verify capacity/allocated/remaining if returned in response","HTTP 200 or 201. Q2/2027 token range configured. lowerLimit=9100000 < upperLimit=9999999. If capacity metadata returned: allocated=0, remaining=capacity.",N/A
+TSP Token Vault,11 Token Range Setup,Token Range Setup  Overlapping BIN Range (Negative/Rule 6),Negative,Critical,Rule 6,POST /tvm/api/token-range,TC-TRS-001 completed. Q2/2027 range 9100000–9999999 already configured.,"1. Send POST /tvm/api/token-range with Q2/2027 range 9500000–9800000 (overlaps existing)
+2. Verify HTTP response code
+3. Verify BIN_RANGE_OVERLAP_DETECTED in error body","HTTP 400, 409, or 422. Error body contains BIN_RANGE_OVERLAP_DETECTED or OVERLAP or CONFLICT.",BIN_RANGE_OVERLAP_DETECTED
+TSP Token Vault,11 Token Range Setup,Token Range Setup  lowerLimit Greater Than upperLimit (Boundary Negative),Boundary,High,Rule 2,POST /tvm/api/token-range,TVM running. tokenRequestorId and issuerId and binId available.,"1. Send POST /tvm/api/token-range with Q3/2027 range lowerLimit: 9999999 and upperLimit: 9100000 (inverted)
+2. Verify HTTP response code",HTTP 400 or 422. Inverted token range limits rejected.,INVALID_RANGE
+TSP Token Vault,11 Token Range Setup,Token Range Setup  Quarter Not In Account Range listOfExpiry (Rule 4),Negative,Critical,Rule 4,POST /tvm/api/token-range,TC-ACR-001 completed. Account range only has Q1/Q2/Q3 for 2027. Q4 is NOT in listOfExpiry.,"1. Send POST /tvm/api/token-range with Q4/2027 range lowerLimit: 7000000 and upperLimit: 7999999
+2. Verify HTTP response code
+3. Verify EXPIRY_QUARTER_MISMATCH in error body",HTTP 400 or 422. Q4/2027 not in account range listOfExpiry  EXPIRY_QUARTER_MISMATCH or MISMATCH or NOT_CONFIGURED returned.,EXPIRY_QUARTER_MISMATCH
+TSP Token Vault,12 Prepare Tokenization,Prepare Tokenization Request  Happy Path,Functional,Critical,Token tokenizeing,POST /api/mocker/encrypt/card-holder-data,TC-TRQ-001 completed (requestorTransportKey available). Mocker running on port 40029.,"1. Send POST /api/mocker/encrypt/card-holder-data with body containing transportKey={{requestorTransportKey}}, cardHolderData (name, pan=5244071100000061, expiry=08/28, assuranceInfo), deviceInfo fields
+2. Verify HTTP response code
+3. Extract and store cipherText as toTokenizeCipherText
+4. Extract and store deviceInfo fields (deviceId, walletId, seId, fingerPrint)
+5. Extract and store mac as toTokenizeMac",HTTP 200. Response contains cipherText (length > 20). deviceInfo object present with all 4 fields. mac field present. All values stored for Tokenize step.,N/A
+TSP Token Vault,12 Prepare Tokenization,Prepare Tokenization  Expired PAN (Negative/EMVCo Rule),Negative,High,Token Expiry Rule,POST /api/mocker/encrypt/card-holder-data,Mocker running. requestorTransportKey available.,"1. Send POST /api/mocker/encrypt/card-holder-data with PAN expiry: 01/20 (past date)
+2. Verify HTTP response code",HTTP 400 or 422. Expired PAN expiry date rejected at preparation stage.,EXPIRED_PAN
+TSP Token Vault,12 Prepare Tokenization,Prepare Tokenization  PAN Outside Account Range (Negative/Rule 1),Negative,Critical,Rule 1,POST /api/mocker/encrypt/card-holder-data,TC-ACR-001 completed. Account range is 1100000–9000000 (7-digit IAN). pan=9999999999999999 is outside configured account range.,"1. Send POST /api/mocker/encrypt/card-holder-data with pan: 9999999999999999 (outside configured range)
+2. Verify HTTP response code
+3. Verify ACCOUNT_NOT_ELIGIBLE in error body","HTTP 400, 404, or 422. Error body contains ACCOUNT_NOT_ELIGIBLE or NOT_ELIGIBLE or OUT_OF_RANGE.",ACCOUNT_NOT_ELIGIBLE
+TSP Token Vault,13 Tokenize,Tokenize  Happy Path (Successful Token Issuance),Functional,Critical,Rules 1+2+4,POST /api/tokens/tokenize,"TC-PTR-001 completed (toTokenizeCipherText, toTokenizeMac, deviceInfo fields available). tokenRequestorId available. TSP running on port 41001.","1. Send POST /api/tokens/tokenize with header X-TSP-TR-ID: {{tokenRequestorId}} and body: {cipherText:{{toTokenizeCipherText}}, deviceInfo:{deviceId,walletId,seId,fingerPrint}, mac:{{toTokenizeMac}}}
+2. Verify HTTP response code
+3. Extract and store tokenizedCipherText
+4. Extract and store tokenizedMac
+5. Verify response time < 3000ms",HTTP 200. Response contains cipherText and mac. Both stored in environment. X-TSP-TR-ID header confirmed in request. Response time < 3000ms.,N/A
+TSP Token Vault,13 Tokenize,Tokenize  Idempotency: Same PAN + Same Requestor Returns Same Token,Functional,High,Idempotency Rule,POST /api/tokens/tokenize,TC-TOK-001 completed. Same cipherText and deviceInfo available.,"1. Repeat identical POST /api/tokens/tokenize request from TC-TOK-001 using same toTokenizeCipherText, deviceInfo, and mac
+2. Verify HTTP response code
+3. Compare returned token with token from TC-TOK-001 (after decryption)",HTTP 200. Second tokenize call succeeds. Decrypted token value matches token from TC-TOK-001. EMVCo idempotency: same PAN + requestor returns same token.,N/A
+TSP Token Vault,13 Tokenize,Tokenize  Missing X-TSP-TR-ID Header (Security),Security,High,Pre-requisite,POST /api/tokens/tokenize,TSP service running. toTokenizeCipherText available.,"1. Send POST /api/tokens/tokenize with NO X-TSP-TR-ID header
+2. Include valid cipherText, deviceInfo, mac in body
+3. Verify HTTP response code","HTTP 400, 401, or 403. Request without Token Requestor ID header rejected.",MISSING_HEADER
+TSP Token Vault,13 Tokenize,Tokenize  Tampered MAC (Security),Security,High,Pre-requisite,POST /api/tokens/tokenize,TSP running. toTokenizeCipherText available. tokenRequestorId available.,"1. Send POST /api/tokens/tokenize with X-TSP-TR-ID: {{tokenRequestorId}}
+2. Set mac to: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA (tampered)
+3. Verify HTTP response code","HTTP 400, 401, or 422. Tampered MAC detected and request rejected. Message integrity check failure.",INVALID_MAC
+TSP Token Vault,13 Tokenize,Tokenize  Exhausted Token Range (Rule 3),Negative,Critical,Rule 3,POST /api/tokens/tokenize,Dedicated test vault configured with a token range where allocated = capacity (fully exhausted). EXHAUSTED_TR_TEST_001 requestor mapped to this exhausted range.,"1. Send POST /api/tokens/tokenize with X-TSP-TR-ID: EXHAUSTED_TR_TEST_001 and valid cipherText, deviceInfo, mac
+2. Verify HTTP response code
+3. Verify TOKEN_RANGE_EXHAUSTED in error body","HTTP 400, 409, or 422. Error body contains TOKEN_RANGE_EXHAUSTED or EXHAUSTED or CAPACITY exceeded. No token issued.",TOKEN_RANGE_EXHAUSTED
+TSP Token Vault,14 Tokenized CipherText Decryption,Decrypt Tokenized CipherText  Happy Path,Functional,Critical,Pre-requisite,POST /api/decryption,TC-TOK-001 completed (tokenizedCipherText available). requestorTransportKey available. Mocker running.,"1. Send POST /api/decryption with body: {cipherText:{{tokenizedCipherText}}, transportKey:{{requestorTransportKey}}}
+2. Verify HTTP response code
+3. Extract token/pan from decrypted response
+4. Validate token is 13–19 digit numeric string
+5. Run Luhn check on token value",HTTP 200. Decrypted response contains token or pan field. Token is 13–19 digit numeric. Token passes Luhn check (EMVCo requirement). Stored as issuedToken for detokenize step.,N/A
+TSP Token Vault,15 Tokenized MAC Validation,MAC Validation  Happy Path,Functional,High,Pre-requisite,POST /api/validate-mac,"TC-TOK-001 completed (tokenizedCipherText, tokenizedMac available). requestorTransportKey available.","1. Send POST /api/validate-mac with body: {plainText:{{tokenizedCipherText}}, transportKey:{{requestorTransportKey}}, mac:{{tokenizedMac}}}
+2. Verify HTTP response code
+3. Verify response indicates MAC is valid (true / valid / success)",HTTP 200. Response body indicates MAC is valid. Integrity of tokenized payload confirmed.,N/A
+TSP Token Vault,15 Tokenized MAC Validation,MAC Validation  Tampered MAC (Security),Security,High,Pre-requisite,POST /api/validate-mac,TC-TOK-001 completed. tokenizedCipherText and requestorTransportKey available.,"1. Send POST /api/validate-mac with the correct plainText and transportKey
+2. Set mac to: 0000000000000000000000000000000000000000000000000000000000000000 (all zeros / tampered)
+3. Verify response indicates MAC is invalid",HTTP 400/422 OR HTTP 200 with body indicating invalid=true or macValid=false or status=FAILED. Tampered MAC is flagged as invalid.,INVALID_MAC
+TSP Token Vault,16 De-Tokenize (Issuer VERIFY Mode),De-Tokenize  Issuer VERIFY Mode Happy Path,Functional,Critical,De-tokenization Rule,POST /tvm/api/tokens/de-tokenize/issuer,TC-DEC-001 completed (issuedToken available). vaultId and tokenRequestorId available. Token is ACTIVE. TVM running on port 40020.,"1. Send POST /tvm/api/tokens/de-tokenize/issuer with header X-TV-ID: {{vaultId}} and body: {mode:VERIFY, token:{{issuedToken}}, tokenExpiry:09/27, tokenRequestorId:{{tokenRequestorId}}, txData:{posEntryMode:07, merchantId:123456789012345}}
+2. Verify HTTP response code
+3. Extract and store detokenizationCipherText",HTTP 200. Response contains cipherText (encrypted PAN). detokenizationCipherText stored for issuer decryption step. mode=VERIFY confirmed in request.,N/A
+TSP Token Vault,16 De-Tokenize (Issuer VERIFY Mode),De-Tokenize  Invalid Token Format (Non-Luhn) (Negative),Negative,High,De-tokenization Rule,POST /tvm/api/tokens/de-tokenize/issuer,TVM running. vaultId and tokenRequestorId available.,"1. Send POST /tvm/api/tokens/de-tokenize/issuer with token: 1234567890123456 (fails Luhn check)
+2. Verify HTTP response code
+3. Verify INVALID_TOKEN_FORMAT in error body",HTTP 400 or 422. Non-Luhn-valid token rejected. Error body contains INVALID_TOKEN or INVALID_FORMAT or LUHN.,INVALID_TOKEN_FORMAT
+TSP Token Vault,16 De-Tokenize (Issuer VERIFY Mode),De-Tokenize  Missing X-TV-ID Header (Unauthorized/Security),Security,Critical,De-tokenization Rule,POST /tvm/api/tokens/de-tokenize/issuer,TVM running. issuedToken available.,"1. Send POST /tvm/api/tokens/de-tokenize/issuer with NO X-TV-ID header
+2. Include valid token, tokenExpiry, tokenRequestorId in body
+3. Verify HTTP response code","HTTP 400, 401, or 403. De-tokenization by unauthorized party (missing vault identity header) rejected. EMVCo: de-tokenization only permitted for authorized parties.",UNAUTHORIZED
+TSP Token Vault,16 De-Tokenize (Issuer VERIFY Mode),De-Tokenize  Token Domain Violation (TDRC),Functional,High,Token Domain Restriction Controls,POST /tvm/api/tokens/de-tokenize/issuer,TC-TUS-001 completed. Token use restricted to merchantId=123456789012345. vaultId and issuedToken available.,"1. Send POST /tvm/api/tokens/de-tokenize/issuer with merchantId: UNAUTHORIZED_MERCH_001 (not in TDRC setup)
+2. Verify HTTP response code
+3. Verify TOKEN_DOMAIN_VIOLATION in error body","HTTP 400, 403, or 422. Token used outside configured merchant domain rejected. Error body contains DOMAIN or TDRC or MERCHANT.",TOKEN_DOMAIN_VIOLATION
+TSP Token Vault,17 Detokenization CipherText Decryption,Decrypt Detokenization CipherText  Happy Path (PAN Recovery),Functional,Critical,De-tokenization Rule,POST /api/decryption,TC-DTK-001 completed (detokenizationCipherText available). issuerTransportKey available. Mocker running.,"1. Send POST /api/decryption with body: {cipherText:{{detokenizationCipherText}}, transportKey:{{issuerTransportKey}}}
+2. Verify HTTP response code
+3. Extract PAN from decrypted response
+4. Validate PAN is 13–19 digit numeric
+5. Verify PAN is different from the token value (issuedToken)",HTTP 200. Response contains pan or primaryAccountNumber. PAN is 13–19 digit numeric. PAN does NOT equal issuedToken (token ≠ PAN is an EMVCo fundamental requirement). Full round-trip validated.,N/A
+TSP Token Vault,17 Security & Fraud Controls,Idempotent duplicate request,Security,Critical,N/A,POST {{baseUrl_tvm}}/tvm/api/tokens/tokenize,Full setup flow completed (steps 01-11). Same request returns same token.,"1. POST {{baseUrl_tvm}}/tvm/api/tokens/tokenize
+2. Verify HTTP 200
+3. Run 1 pm.test() assertions","HTTP 200, all assertions pass",N/A
+TSP Token Vault,17 Security & Fraud Controls,Brute-force rate limit,Security,Critical,N/A,POST {{baseUrl_tvm}}/tvm/api/tokens/detokenize,Full setup flow completed (steps 01-11). Rate limiting.,"1. POST {{baseUrl_tvm}}/tvm/api/tokens/detokenize
+2. Verify HTTP 400,429
+3. Run 1 pm.test() assertions","HTTP 400,429, all assertions pass",RATE_LIMIT_EXCEEDED
+TSP Token Vault,17 Security & Fraud Controls,Bad Luhn check digit,Security,Critical,N/A,POST {{baseUrl_tvm}}/tvm/api/tokens/detokenize,Full setup flow completed (steps 01-11). Invalid Luhn.,"1. POST {{baseUrl_tvm}}/tvm/api/tokens/detokenize
+2. Verify HTTP 400
+3. Run 1 pm.test() assertions","HTTP 400, all assertions pass",INVALID_TOKEN_FORMAT
+TSP Token Vault,17 Security & Fraud Controls,Expired JWT in header,Security,Critical,N/A,POST {{baseUrl_tvm}}/tvm/api/tokens/tokenize,Full setup flow completed (steps 01-11). Expired auth token.,"1. POST {{baseUrl_tvm}}/tvm/api/tokens/tokenize
+2. Verify HTTP 401
+3. Run 1 pm.test() assertions","HTTP 401, all assertions pass",INVALID_AUTH_TOKEN
+TSP Token Vault,17 Security & Fraud Controls,Missing authorization,Security,Critical,N/A,POST {{baseUrl_tvm}}/tvm/api/tokens/tokenize,Full setup flow completed (steps 01-11). No auth header or X-TV-ID.,"1. POST {{baseUrl_tvm}}/tvm/api/tokens/tokenize
+2. Verify HTTP 401
+3. Run 1 pm.test() assertions","HTTP 401, all assertions pass",MISSING_AUTHORIZATION
+TSP Token Vault,17 Security & Fraud Controls,SQL injection in PAN,Security,Critical,N/A,POST {{baseUrl_tvm}}/tvm/api/tokens/tokenize,Full setup flow completed (steps 01-11). Input sanitized.,"1. POST {{baseUrl_tvm}}/tvm/api/tokens/tokenize
+2. Verify HTTP 400
+3. Run 1 pm.test() assertions","HTTP 400, all assertions pass",INVALID_INPUT
+TSP Token Vault,17 Security & Fraud Controls,TAL returned per ID&V method,Security,Critical,N/A,POST {{baseUrl_tvm}}/tvm/api/tokens/tokenize,Full setup flow completed (steps 01-11). TAL based on ID&V.,"1. POST {{baseUrl_tvm}}/tvm/api/tokens/tokenize
+2. Verify HTTP 200,201
+3. Run 2 pm.test() assertions","HTTP 200,201, all assertions pass",N/A
+TSP Token Vault,18 Error Code Validation,ACCOUNT_NOT_ELIGIBLE,Functional,Medium,R1,POST {{baseUrl_tvm}}/tvm/api/tokens/tokenize,Full setup flow completed (steps 01-11). Validate ACCOUNT_NOT_ELIGIBLE error.,"1. POST {{baseUrl_tvm}}/tvm/api/tokens/tokenize
+2. Verify HTTP 422
+3. Run 2 pm.test() assertions","HTTP 422, all assertions pass",ACCOUNT_NOT_ELIGIBLE
+TSP Token Vault,18 Error Code Validation,TOKEN_RANGE_EXHAUSTED,Functional,Medium,R3,POST {{baseUrl_tvm}}/tvm/api/tokens/tokenize,Full setup flow completed (steps 01-11). Validate TOKEN_RANGE_EXHAUSTED.,"1. POST {{baseUrl_tvm}}/tvm/api/tokens/tokenize
+2. Verify HTTP 422
+3. Run 2 pm.test() assertions","HTTP 422, all assertions pass",TOKEN_RANGE_EXHAUSTED
+TSP Token Vault,18 Error Code Validation,EXPIRY_QUARTER_MISMATCH,Negative,High,R4,POST {{baseUrl_tvm}}/tvm/api/tokens/tokenize,Full setup flow completed (steps 01-11). Validate EXPIRY_QUARTER_MISMATCH.,"1. POST {{baseUrl_tvm}}/tvm/api/tokens/tokenize
+2. Verify HTTP 422
+3. Run 2 pm.test() assertions","HTTP 422, all assertions pass",EXPIRY_QUARTER_MISMATCH
+TSP Token Vault,18 Error Code Validation,BIN_RANGE_OVERLAP_DETECTED,Functional,Medium,R6,POST {{baseUrl_tvm}}/tvm/api/token-range,Full setup flow completed (steps 01-11). Validate BIN_RANGE_OVERLAP_DETECTED.,"1. POST {{baseUrl_tvm}}/tvm/api/token-range
+2. Verify HTTP 400,409
+3. Run 2 pm.test() assertions","HTTP 400,409, all assertions pass",BIN_RANGE_OVERLAP_DETECTED
+TSP Token Vault,18 Error Code Validation,INVALID_TOKEN_FORMAT,Negative,High,N/A,POST {{baseUrl_tvm}}/tvm/api/tokens/detokenize,Full setup flow completed (steps 01-11). Non-numeric token.,"1. POST {{baseUrl_tvm}}/tvm/api/tokens/detokenize
+2. Verify HTTP 400
+3. Run 2 pm.test() assertions","HTTP 400, all assertions pass",INVALID_TOKEN_FORMAT
+TSP Token Vault,18 Error Code Validation,TOKEN_DOMAIN_VIOLATION,Functional,Medium,N/A,POST {{baseUrl_tvm}}/tvm/api/tokens/authorize,Full setup flow completed (steps 01-11). Domain violation.,"1. POST {{baseUrl_tvm}}/tvm/api/tokens/authorize
+2. Verify HTTP 403,422
+3. Run 2 pm.test() assertions","HTTP 403,422, all assertions pass",TOKEN_DOMAIN_VIOLATION
+TSP Token Vault,18 Error Code Validation,Empty required fields,Negative,High,N/A,POST {{baseUrl_tvm}}/tvm/api/tokens/tokenize,"Full setup flow completed (steps 01-11). Validate error response includes errorCode, errorMessage, traceId, timestamp.","1. POST {{baseUrl_tvm}}/tvm/api/tokens/tokenize
+2. Verify HTTP 400
+3. Run 2 pm.test() assertions","HTTP 400, all assertions pass",MISSING_REQUIRED_FIELDS
