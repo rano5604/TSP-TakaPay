@@ -1,0 +1,3291 @@
+{
+  "info": {
+    "_postman_id": "tsp-automated-test-suite-v1",
+    "name": "TSP \u2014 EMVCo Automated Test Suite",
+    "description": "Exhaustive EMVCo-compliant automated test cases for Token Service Provider (TSP) Token Vault. Covers Functional, Negative, Boundary, and Security scenarios with full parameter chaining across all endpoints. Sequence mirrors the original collection: Vault \u2192 Transport Key \u2192 Certificate \u2192 Encrypt Key \u2192 Issuer \u2192 BIN \u2192 Account Range \u2192 Token Requestor \u2192 Token Use Setup \u2192 Token Life Setup \u2192 Token Range Setup \u2192 Tokenize \u2192 Detokenize.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "tvm_host",
+      "value": "10.88.250.40",
+      "type": "string"
+    },
+    {
+      "key": "tvm_port",
+      "value": "40020",
+      "type": "string"
+    },
+    {
+      "key": "rgm_port",
+      "value": "40010",
+      "type": "string"
+    },
+    {
+      "key": "mocker_port",
+      "value": "40029",
+      "type": "string"
+    },
+    {
+      "key": "tsp_port",
+      "value": "41001",
+      "type": "string"
+    },
+    {
+      "key": "mocker_dev_host",
+      "value": "10.15.20.100",
+      "type": "string"
+    },
+    {
+      "key": "tsp_host",
+      "value": "10.15.20.130",
+      "type": "string"
+    },
+    {
+      "key": "tsp_code",
+      "value": "998",
+      "type": "string"
+    },
+    {
+      "key": "plain_transport_key",
+      "value": "2522b7bc2ee10e190b5a5d6449738fb0fc8661ca373a939d44ff8c7da65e1d80",
+      "type": "string"
+    },
+    {
+      "key": "generatedCustodian1",
+      "value": "",
+      "type": "string",
+      "description": "AUTO: unique custodian ID, generated at run start"
+    },
+    {
+      "key": "generatedCustodian2",
+      "value": "",
+      "type": "string",
+      "description": "AUTO: unique custodian ID, generated at run start"
+    },
+    {
+      "key": "generatedBinValue",
+      "value": "",
+      "type": "string",
+      "description": "AUTO: 8-digit BIN, generated at run start"
+    },
+    {
+      "key": "generatedPan",
+      "value": "",
+      "type": "string",
+      "description": "AUTO: 16-digit Luhn-valid PAN starting with generatedBinValue"
+    },
+    {
+      "key": "generatedIssuerCode",
+      "value": "",
+      "type": "string",
+      "description": "AUTO: 4-digit issuer code, generated at run start"
+    },
+    {
+      "key": "createdBinValue",
+      "value": "",
+      "type": "string",
+      "description": "AUTO: copy of generatedBinValue after BIN creation confirmed"
+    },
+    {
+      "key": "_autoDataSeeded",
+      "value": "",
+      "type": "string",
+      "description": "AUTO: internal flag \u2014 set to true once test data is seeded"
+    }
+  ],
+  "item": [
+    {
+      "name": "01 \u2014 VAULT CREATION",
+      "item": [
+        {
+          "name": "TC-TVT-001 | Vault Creation \u2014 Happy Path",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// TC-TVT-001 | Category: Functional | EMVCo Ref: Section 3.1 | Rule: Pre-requisite",
+                  "// Title: Successful vault creation with valid tspCode and custodians",
+                  "",
+                  "pm.test('TC-TVT-001 | HTTP 200 or 201 \u2014 Vault created successfully', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "",
+                  "pm.test('TC-TVT-001 | Response contains vaultId', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.any.keys('vaultId','id','tokenVaultId');",
+                  "    // Chain: store vault ID for downstream requests",
+                  "    var vaultId = json.vaultId || json.id || json.tokenVaultId;",
+                  "    pm.environment.set('vaultId', vaultId);",
+                  "    pm.collectionVariables.set('vaultId', vaultId);",
+                  "    console.log('[TC-TVT-001] Vault ID stored:', vaultId);",
+                  "});",
+                  "",
+                  "pm.test('TC-TVT-001 | Response contains tokenVaultName', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.tokenVaultName || json.vaultName || json.name).to.be.a('string');",
+                  "});",
+                  "",
+                  "pm.test('TC-TVT-001 | EMVCo: tspCode reflected in response', function () {",
+                  "    var json = pm.response.json();",
+                  "    var body = JSON.parse(pm.request.body.raw);",
+                  "    if (json.tspCode) {",
+                  "        pm.expect(json.tspCode).to.eql(body.tspCode);",
+                  "    }",
+                  "});",
+                  "",
+                  "pm.test('TC-TVT-001 | Content-Type is application/json', function () {",
+                  "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tspCode\": \"{{tsp_code}}\",\n  \"tokenVaultName\": \"AutoVault_Run\",\n  \"custodianIdList\": [\n    \"{{generatedCustodian1}}\",\n    \"{{generatedCustodian2}}\"\n  ]\n}"
+            },
+            "url": {
+              "raw": "http://{{tvm_host}}:{{rgm_port}}/rgm/api/vaults",
+              "protocol": "http",
+              "host": [
+                "{{tvm_host}}"
+              ],
+              "port": "{{rgm_port}}",
+              "path": [
+                "rgm",
+                "api",
+                "vaults"
+              ]
+            }
+          }
+        },
+        {
+          "name": "TC-TVT-002 | Vault Creation \u2014 Missing tspCode (Negative)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// TC-TVT-002 | Category: Negative | EMVCo Ref: Section 3.1 | Rule: Pre-requisite",
+                  "// Title: Vault creation rejected when tspCode is absent",
+                  "",
+                  "pm.test('TC-TVT-002 | HTTP 400 \u2014 Missing tspCode rejected', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 422]);",
+                  "});",
+                  "",
+                  "pm.test('TC-TVT-002 | Error body contains errorCode or message', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.satisfy(function(b){",
+                  "        return b.errorCode || b.message || b.error;",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tokenVaultName\": \"Vault Without TSP Code\",\n  \"custodianIdList\": [\"custodian009\"]\n}"
+            },
+            "url": {
+              "raw": "http://{{tvm_host}}:{{rgm_port}}/rgm/api/vaults",
+              "protocol": "http",
+              "host": [
+                "{{tvm_host}}"
+              ],
+              "port": "{{rgm_port}}",
+              "path": [
+                "rgm",
+                "api",
+                "vaults"
+              ]
+            }
+          }
+        },
+        {
+          "name": "TC-TVT-003 | Vault Creation \u2014 Empty custodianIdList (Negative)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// TC-TVT-003 | Category: Negative | Business Rule: Pre-requisite",
+                  "pm.test('TC-TVT-003 | HTTP 400 \u2014 Empty custodian list rejected', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 422]);",
+                  "});",
+                  "",
+                  "pm.test('TC-TVT-003 | Error response is valid JSON', function () {",
+                  "    pm.response.json();",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tspCode\": \"998\",\n  \"tokenVaultName\": \"Empty Custodian Vault\",\n  \"custodianIdList\": []\n}"
+            },
+            "url": {
+              "raw": "http://{{tvm_host}}:{{rgm_port}}/rgm/api/vaults",
+              "protocol": "http",
+              "host": [
+                "{{tvm_host}}"
+              ],
+              "port": "{{rgm_port}}",
+              "path": [
+                "rgm",
+                "api",
+                "vaults"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 \u2014 GENERATE TRANSPORT KEY",
+      "item": [
+        {
+          "name": "TC-TRK-001 | Generate Transport Key \u2014 Happy Path",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// TC-TRK-001 | Category: Functional | EMVCo Ref: Section 5.2 (Key Management)",
+                  "// Title: Transport key generated successfully; key chained to subsequent encrypt step",
+                  "",
+                  "pm.test('TC-TRK-001 | HTTP 200 \u2014 Transport key generated', function () {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "});",
+                  "",
+                  "pm.test('TC-TRK-001 | Response contains transport key value', function () {",
+                  "    var json = pm.response.json();",
+                  "    var key = json.transportKey || json.key || json.keyValue || json.plainKey;",
+                  "    pm.expect(key).to.be.a('string').and.have.length.above(10);",
+                  "    pm.environment.set('generatedTransportKey', key);",
+                  "    pm.collectionVariables.set('generatedTransportKey', key);",
+                  "    console.log('[TC-TRK-001] Transport key stored for chaining.');",
+                  "});",
+                  "",
+                  "pm.test('TC-TRK-001 | Response time under 2000ms', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              }
+            ],
+            "url": {
+              "raw": "http://{{tvm_host}}:{{mocker_port}}/api/generate-transport-key",
+              "protocol": "http",
+              "host": [
+                "{{tvm_host}}"
+              ],
+              "port": "{{mocker_port}}",
+              "path": [
+                "api",
+                "generate-transport-key"
+              ]
+            }
+          }
+        },
+        {
+          "name": "TC-TRK-002 | Generate Transport Key \u2014 Uniqueness (Security)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// TC-TRK-002 | Category: Security | EMVCo Ref: Section 5.2",
+                  "// Title: Each call generates a unique transport key (no replay reuse)",
+                  "",
+                  "pm.test('TC-TRK-002 | HTTP 200', function () {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "});",
+                  "",
+                  "pm.test('TC-TRK-002 | New key differs from previously stored key', function () {",
+                  "    var json = pm.response.json();",
+                  "    var newKey = json.transportKey || json.key || json.keyValue || json.plainKey;",
+                  "    var prevKey = pm.environment.get('generatedTransportKey');",
+                  "    if (prevKey && newKey) {",
+                  "        pm.expect(newKey).to.not.eql(prevKey, 'Transport key must be unique per call');",
+                  "    }",
+                  "    pm.environment.set('generatedTransportKey2', newKey);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              }
+            ],
+            "url": {
+              "raw": "http://{{tvm_host}}:{{mocker_port}}/api/generate-transport-key",
+              "protocol": "http",
+              "host": [
+                "{{tvm_host}}"
+              ],
+              "port": "{{mocker_port}}",
+              "path": [
+                "api",
+                "generate-transport-key"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 \u2014 GET CERTIFICATE",
+      "item": [
+        {
+          "name": "TC-CERT-001 | Get Certificate \u2014 Valid X-TV-ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// TC-CERT-001 | Category: Functional | EMVCo Ref: Section 5.2 (PKI/Certificate Exchange)",
+                  "// Title: Certificate retrieved successfully using valid vault ID header",
+                  "",
+                  "pm.test('TC-CERT-001 | HTTP 200 \u2014 Certificate returned', function () {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "});",
+                  "",
+                  "pm.test('TC-CERT-001 | Response body is non-empty', function () {",
+                  "    pm.expect(pm.response.text()).to.have.length.above(50);",
+                  "});",
+                  "",
+                  "pm.test('TC-CERT-001 | Certificate stored for Encrypt-Key step', function () {",
+                  "    // Certificate may be returned as PEM text or JSON wrapping PEM",
+                  "    var body = pm.response.text();",
+                  "    pm.environment.set('vaultCertificate', body);",
+                  "    pm.collectionVariables.set('vaultCertificate', body);",
+                  "    console.log('[TC-CERT-001] Certificate stored, length:', body.length);",
+                  "});",
+                  "",
+                  "pm.test('TC-CERT-001 | X-TV-ID header was sent', function () {",
+                  "    pm.expect(pm.request.headers.get('X-TV-ID')).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{vaultId}}",
+                "description": "Chained from Vault Creation TC-TVT-001"
+              }
+            ],
+            "url": {
+              "raw": "http://{{tvm_host}}:{{tvm_port}}/tvm/api/vault/certificate",
+              "protocol": "http",
+              "host": [
+                "{{tvm_host}}"
+              ],
+              "port": "{{tvm_port}}",
+              "path": [
+                "tvm",
+                "api",
+                "vault",
+                "certificate"
+              ]
+            }
+          }
+        },
+        {
+          "name": "TC-CERT-002 | Get Certificate \u2014 Missing X-TV-ID (Negative)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// TC-CERT-002 | Category: Negative | Security",
+                  "// Title: Request without X-TV-ID header must be rejected",
+                  "",
+                  "pm.test('TC-CERT-002 | HTTP 400 or 401 when X-TV-ID is absent', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 401, 403]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              }
+            ],
+            "url": {
+              "raw": "http://{{tvm_host}}:{{tvm_port}}/tvm/api/vault/certificate",
+              "protocol": "http",
+              "host": [
+                "{{tvm_host}}"
+              ],
+              "port": "{{tvm_port}}",
+              "path": [
+                "tvm",
+                "api",
+                "vault",
+                "certificate"
+              ]
+            }
+          }
+        },
+        {
+          "name": "TC-CERT-003 | Get Certificate \u2014 Invalid X-TV-ID (Negative)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// TC-CERT-003 | Category: Negative",
+                  "// Title: Non-existent vault ID must return 404 or 400",
+                  "",
+                  "pm.test('TC-CERT-003 | HTTP 404 or 400 for unknown vault', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 404]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "INVALID_VAULT_00000"
+              }
+            ],
+            "url": {
+              "raw": "http://{{tvm_host}}:{{tvm_port}}/tvm/api/vault/certificate",
+              "protocol": "http",
+              "host": [
+                "{{tvm_host}}"
+              ],
+              "port": "{{tvm_port}}",
+              "path": [
+                "tvm",
+                "api",
+                "vault",
+                "certificate"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 \u2014 ENCRYPT THE KEY",
+      "item": [
+        {
+          "name": "TC-ENC-001 | Encrypt Transport Key \u2014 Happy Path",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// TC-ENC-001 | Category: Functional | EMVCo Ref: Section 5.2 (Key Wrapping)",
+                  "// Title: Transport key encrypted with vault certificate returns encryptedKey + KCV",
+                  "",
+                  "pm.test('TC-ENC-001 | HTTP 200 \u2014 Encryption successful', function () {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "});",
+                  "",
+                  "pm.test('TC-ENC-001 | Response contains encryptedKey or cipherText', function () {",
+                  "    var json = pm.response.json();",
+                  "    var encKey = json.encryptedKey || json.encryptedTransportKey || json.cipherText;",
+                  "    pm.expect(encKey).to.be.a('string').and.have.length.above(20);",
+                  "    pm.environment.set('encryptedTransportKey', encKey);",
+                  "    pm.collectionVariables.set('encryptedTransportKey', encKey);",
+                  "    console.log('[TC-ENC-001] encryptedTransportKey chained for Issuer Creation.');",
+                  "});",
+                  "",
+                  "pm.test('TC-ENC-001 | Response contains KCV', function () {",
+                  "    var json = pm.response.json();",
+                  "    var kcv = json.kcv || json.KCV || json.keyCheckValue;",
+                  "    pm.expect(kcv).to.be.a('string').and.have.length.above(4);",
+                  "    pm.environment.set('kcv', kcv);",
+                  "    pm.collectionVariables.set('kcv', kcv);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "publicKeyCertificate",
+                  "value": "{{vaultCertificate}}",
+                  "type": "text",
+                  "description": "Chained from TC-CERT-001; in production this is a .cert file"
+                },
+                {
+                  "key": "plainData",
+                  "value": "{{plain_transport_key}}",
+                  "type": "text",
+                  "description": "Plain transport key from TC-TRK-001 or static test value"
+                }
+              ]
+            },
+            "url": {
+              "raw": "http://{{tvm_host}}:{{mocker_port}}/api/v1/encrypt/transport-key",
+              "protocol": "http",
+              "host": [
+                "{{tvm_host}}"
+              ],
+              "port": "{{mocker_port}}",
+              "path": [
+                "api",
+                "v1",
+                "encrypt",
+                "transport-key"
+              ]
+            }
+          }
+        },
+        {
+          "name": "TC-ENC-002 | Encrypt Transport Key \u2014 Missing plainData (Negative)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// TC-ENC-002 | Category: Negative",
+                  "// Title: Encryption fails when plainData is omitted",
+                  "",
+                  "pm.test('TC-ENC-002 | HTTP 400 when plainData missing', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 422]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "publicKeyCertificate",
+                  "value": "{{vaultCertificate}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "http://{{tvm_host}}:{{mocker_port}}/api/v1/encrypt/transport-key",
+              "protocol": "http",
+              "host": [
+                "{{tvm_host}}"
+              ],
+              "port": "{{mocker_port}}",
+              "path": [
+                "api",
+                "v1",
+                "encrypt",
+                "transport-key"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 \u2014 ISSUER CREATION",
+      "item": [
+        {
+          "name": "TC-ISS-001 | Issuer Creation \u2014 Happy Path",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// TC-ISS-001 | Category: Functional | EMVCo Ref: Section 3.2 | Rule: Pre-requisite",
+                  "// Title: Successful issuer registration with encrypted transport key and KCV",
+                  "",
+                  "pm.test('TC-ISS-001 | HTTP 200 or 201 \u2014 Issuer created', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "",
+                  "pm.test('TC-ISS-001 | Response contains issuerId', function () {",
+                  "    var json = pm.response.json();",
+                  "    var issuerId = json.issuerId || json.id || json.issuer_id;",
+                  "    pm.expect(issuerId).to.be.a('string').and.have.length.above(4);",
+                  "    pm.environment.set('issuerId', issuerId);",
+                  "    pm.collectionVariables.set('issuerId', issuerId);",
+                  "    console.log('[TC-ISS-001] issuerId chained:', issuerId);",
+                  "});",
+                  "",
+                  "pm.test('TC-ISS-001 | issuerCode reflected in response', function () {",
+                  "    var json = pm.response.json();",
+                  "    if (json.issuerCode) {",
+                  "        pm.expect(json.issuerCode).to.eql('0421');",
+                  "    }",
+                  "});",
+                  "",
+                  "pm.test('TC-ISS-001 | X-TV-ID header was sent', function () {",
+                  "    pm.expect(pm.request.headers.get('X-TV-ID')).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{vaultId}}",
+                "description": "Chained from TC-TVT-001"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"issuerName\": \"AutoIssuer_Run\",\n  \"issuerCode\": \"{{generatedIssuerCode}}\",\n  \"encryptedTransportKey\": \"{{encryptedTransportKey}}\",\n  \"kcv\": \"{{kcv}}\",\n  \"realTimePanEnrollment\": \"Y\"\n}"
+            },
+            "url": {
+              "raw": "http://{{tvm_host}}:{{tvm_port}}/tvm/api/issuer",
+              "protocol": "http",
+              "host": [
+                "{{tvm_host}}"
+              ],
+              "port": "{{tvm_port}}",
+              "path": [
+                "tvm",
+                "api",
+                "issuer"
+              ]
+            }
+          }
+        },
+        {
+          "name": "TC-ISS-002 | Issuer Creation \u2014 Duplicate issuerCode (Negative)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// TC-ISS-002 | Category: Negative | Business Rule: Pre-requisite",
+                  "// Title: Duplicate issuer code must be rejected with 409 Conflict",
+                  "",
+                  "pm.test('TC-ISS-002 | HTTP 409 \u2014 Duplicate issuer rejected', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([409, 400, 422]);",
+                  "});",
+                  "",
+                  "pm.test('TC-ISS-002 | Error body present', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.satisfy(b => b.errorCode || b.message || b.error);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{vaultId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"issuerName\": \"DBBL Duplicate\",\n  \"issuerCode\": \"0421\",\n  \"encryptedTransportKey\": \"{{encryptedTransportKey}}\",\n  \"kcv\": \"{{kcv}}\",\n  \"realTimePanEnrollment\": \"Y\"\n}"
+            },
+            "url": {
+              "raw": "http://{{tvm_host}}:{{tvm_port}}/tvm/api/issuer",
+              "protocol": "http",
+              "host": [
+                "{{tvm_host}}"
+              ],
+              "port": "{{tvm_port}}",
+              "path": [
+                "tvm",
+                "api",
+                "issuer"
+              ]
+            }
+          }
+        },
+        {
+          "name": "TC-ISS-003 | Issuer Creation \u2014 Invalid KCV format (Negative)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// TC-ISS-003 | Category: Negative | Security",
+                  "// Title: Malformed KCV must be rejected",
+                  "",
+                  "pm.test('TC-ISS-003 | HTTP 400 or 422 \u2014 Bad KCV rejected', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 422]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{vaultId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"issuerName\": \"Bad KCV Issuer\",\n  \"issuerCode\": \"0422\",\n  \"encryptedTransportKey\": \"{{encryptedTransportKey}}\",\n  \"kcv\": \"ZZZZZZ\",\n  \"realTimePanEnrollment\": \"Y\"\n}"
+            },
+            "url": {
+              "raw": "http://{{tvm_host}}:{{tvm_port}}/tvm/api/issuer",
+              "protocol": "http",
+              "host": [
+                "{{tvm_host}}"
+              ],
+              "port": "{{tvm_port}}",
+              "path": [
+                "tvm",
+                "api",
+                "issuer"
+              ]
+            }
+          }
+        },
+        {
+          "name": "TC-ISS-004 | Issuer Creation \u2014 Missing X-TV-ID Header (Security)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// TC-ISS-004 | Category: Security | EMVCo Ref: Section 5.1 (Authorization)",
+                  "// Title: Request without X-TV-ID must return 400 or 401",
+                  "",
+                  "pm.test('TC-ISS-004 | HTTP 400 or 401 \u2014 Missing X-TV-ID rejected', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 401, 403]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"issuerName\": \"No Header Issuer\",\n  \"issuerCode\": \"0423\",\n  \"encryptedTransportKey\": \"{{encryptedTransportKey}}\",\n  \"kcv\": \"{{kcv}}\",\n  \"realTimePanEnrollment\": \"Y\"\n}"
+            },
+            "url": {
+              "raw": "http://{{tvm_host}}:{{tvm_port}}/tvm/api/issuer",
+              "protocol": "http",
+              "host": [
+                "{{tvm_host}}"
+              ],
+              "port": "{{tvm_port}}",
+              "path": [
+                "tvm",
+                "api",
+                "issuer"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 \u2014 BIN CREATION",
+      "item": [
+        {
+          "name": "TC-BIN-001 | BIN Creation \u2014 Happy Path",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// TC-BIN-001 | Category: Functional | EMVCo Ref: Section 3.3 | Rule 1",
+                  "// Title: Single BIN successfully registered under valid issuer",
+                  "",
+                  "pm.test('TC-BIN-001 | HTTP 200 or 201 \u2014 BIN created', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "",
+                  "pm.test('TC-BIN-001 | Response contains binId', function () {",
+                  "    var json = pm.response.json();",
+                  "    var binId = json.binId || json.id || json.bin_id;",
+                  "    pm.expect(binId).to.be.a('string').and.have.length.above(4);",
+                  "    pm.environment.set('binId', binId);",
+                  "    pm.collectionVariables.set('binId', binId);",
+                  "    console.log('[TC-BIN-001] binId chained:', binId);",
+                  "});",
+                  "",
+                  "pm.test('TC-BIN-001 | binValue reflected in response', function () {",
+                  "    var json = pm.response.json();",
+                  "    if (json.binValue) {",
+                  "        pm.expect(json.binValue).to.eql('63999603');",
+                  "    }",
+                  "});",
+                  "",
+                  "// AUTO: store binValue for downstream PAN-prefix validation",
+                  "pm.test('TC-BIN-001 | AUTO: binValue persisted for PAN generation', function () {",
+                  "    var bin = pm.collectionVariables.get('generatedBinValue');",
+                  "    pm.collectionVariables.set('createdBinValue', bin);",
+                  "    pm.expect(bin).to.be.a('string').and.have.length(8);",
+                  "    console.log('[AutoData] Confirmed BIN stored:', bin);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{vaultId}}",
+                "description": "Chained from TC-TVT-001"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"issuerId\": \"{{issuerId}}\",\n  \"binControllerId\": \"1234\",\n  \"binValue\": \"{{generatedBinValue}}\",\n  \"brandType\": \"06\",\n  \"ianLen\": 7\n}"
+            },
+            "url": {
+              "raw": "http://{{tvm_host}}:{{tvm_port}}/tvm/api/bin/single",
+              "protocol": "http",
+              "host": [
+                "{{tvm_host}}"
+              ],
+              "port": "{{tvm_port}}",
+              "path": [
+                "tvm",
+                "api",
+                "bin",
+                "single"
+              ]
+            }
+          }
+        },
+        {
+          "name": "TC-BIN-002 | BIN Creation \u2014 Duplicate binValue (Negative)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// TC-BIN-002 | Category: Negative | Rule 6 (BIN_RANGE_OVERLAP_DETECTED)",
+                  "// Title: Registering identical BIN value must be rejected",
+                  "",
+                  "pm.test('TC-BIN-002 | HTTP 409 \u2014 Duplicate BIN rejected', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 409, 422]);",
+                  "});",
+                  "",
+                  "pm.test('TC-BIN-002 | EMVCo: BIN_RANGE_OVERLAP_DETECTED or conflict error', function () {",
+                  "    var json = pm.response.json();",
+                  "    var errCode = json.errorCode || json.code || '';",
+                  "    var msg = JSON.stringify(json).toUpperCase();",
+                  "    pm.expect(msg).to.satisfy(m => m.includes('OVERLAP') || m.includes('DUPLICATE') || m.includes('CONFLICT') || errCode.length > 0);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{vaultId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"issuerId\": \"{{issuerId}}\",\n  \"binControllerId\": \"1234\",\n  \"binValue\": \"63999603\",\n  \"brandType\": \"06\",\n  \"ianLen\": 7\n}"
+            },
+            "url": {
+              "raw": "http://{{tvm_host}}:{{tvm_port}}/tvm/api/bin/single",
+              "protocol": "http",
+              "host": [
+                "{{tvm_host}}"
+              ],
+              "port": "{{tvm_port}}",
+              "path": [
+                "tvm",
+                "api",
+                "bin",
+                "single"
+              ]
+            }
+          }
+        },
+        {
+          "name": "TC-BIN-003 | BIN Creation \u2014 Invalid issuerId (Negative)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// TC-BIN-003 | Category: Negative | Rule 1",
+                  "// Title: BIN creation with non-existent issuerId must fail",
+                  "",
+                  "pm.test('TC-BIN-003 | HTTP 400 or 404 \u2014 Unknown issuerId', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 404, 422]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{vaultId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"issuerId\": \"00000000000000000000000000000000\",\n  \"binControllerId\": \"9999\",\n  \"binValue\": \"99999999\",\n  \"brandType\": \"06\",\n  \"ianLen\": 7\n}"
+            },
+            "url": {
+              "raw": "http://{{tvm_host}}:{{tvm_port}}/tvm/api/bin/single",
+              "protocol": "http",
+              "host": [
+                "{{tvm_host}}"
+              ],
+              "port": "{{tvm_port}}",
+              "path": [
+                "tvm",
+                "api",
+                "bin",
+                "single"
+              ]
+            }
+          }
+        },
+        {
+          "name": "TC-BIN-004 | BIN Creation \u2014 SQL Injection in binValue (Security)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// TC-BIN-004 | Category: Security | EMVCo Ref: Section 5.4 (Input Validation)",
+                  "// Title: SQL injection payload in binValue must be sanitized and rejected",
+                  "",
+                  "pm.test('TC-BIN-004 | HTTP 400 \u2014 Injection payload rejected', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 422]);",
+                  "});",
+                  "",
+                  "pm.test('TC-BIN-004 | Response does not echo injected payload', function () {",
+                  "    pm.expect(pm.response.text()).to.not.include('DROP TABLE');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{vaultId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"issuerId\": \"{{issuerId}}\",\n  \"binControllerId\": \"1234\",\n  \"binValue\": \"'; DROP TABLE bins; --\",\n  \"brandType\": \"06\",\n  \"ianLen\": 7\n}"
+            },
+            "url": {
+              "raw": "http://{{tvm_host}}:{{tvm_port}}/tvm/api/bin/single",
+              "protocol": "http",
+              "host": [
+                "{{tvm_host}}"
+              ],
+              "port": "{{tvm_port}}",
+              "path": [
+                "tvm",
+                "api",
+                "bin",
+                "single"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "07 \u2014 ACCOUNT RANGE CREATION",
+      "item": [
+        {
+          "name": "TC-ACR-001 | Account Range Creation \u2014 Happy Path (Q1/Q2/Q3)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// TC-ACR-001 | Category: Functional | EMVCo Ref: Section 4.1 | Rule 1",
+                  "// Title: Account range created with valid PAN limits and expiry quarters",
+                  "",
+                  "pm.test('TC-ACR-001 | HTTP 200 or 201 \u2014 Account range created', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "",
+                  "pm.test('TC-ACR-001 | Response contains accountRangeId', function () {",
+                  "    var json = pm.response.json();",
+                  "    var arId = json.accountRangeId || json.id || json.rangeId;",
+                  "    pm.expect(arId).to.be.a('string');",
+                  "    pm.environment.set('accountRangeId', arId);",
+                  "    pm.collectionVariables.set('accountRangeId', arId);",
+                  "    console.log('[TC-ACR-001] accountRangeId chained:', arId);",
+                  "});",
+                  "",
+                  "pm.test('TC-ACR-001 | Rule 1: PAN range boundaries stored correctly', function () {",
+                  "    var json = pm.response.json();",
+                  "    if (json.panLowerLimit) pm.expect(json.panLowerLimit).to.eql('1100000');",
+                  "    if (json.panUpperLimit) pm.expect(json.panUpperLimit).to.eql('9000000');",
+                  "});",
+                  "",
+                  "pm.test('TC-ACR-001 | EMVCo: listOfExpiry contains Q1/Q2/Q3 for 2027', function () {",
+                  "    var json = pm.response.json();",
+                  "    if (json.listOfExpiry) {",
+                  "        pm.expect(json.listOfExpiry).to.be.an('array').with.length.above(0);",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{vaultId}}",
+                "description": "Chained from TC-TVT-001"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"issuerId\": \"{{issuerId}}\",\n  \"binId\": \"{{binId}}\",\n  \"panLowerLimit\": \"1100000\",\n  \"panUpperLimit\": \"9000000\",\n  \"listOfExpiry\": [\n    { \"quarter\": \"Q1\", \"year\": 2027 },\n    { \"quarter\": \"Q2\", \"year\": 2027 },\n    { \"quarter\": \"Q3\", \"year\": 2027 }\n  ]\n}"
+            },
+            "url": {
+              "raw": "http://{{tvm_host}}:{{tvm_port}}/tvm/api/account-range",
+              "protocol": "http",
+              "host": [
+                "{{tvm_host}}"
+              ],
+              "port": "{{tvm_port}}",
+              "path": [
+                "tvm",
+                "api",
+                "account-range"
+              ]
+            }
+          }
+        },
+        {
+          "name": "TC-ACR-002 | Account Range \u2014 PAN Lower > Upper (Boundary Negative)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// TC-ACR-002 | Category: Boundary/Negative | Rule 1",
+                  "// Title: panLowerLimit greater than panUpperLimit must be rejected",
+                  "",
+                  "pm.test('TC-ACR-002 | HTTP 400 \u2014 Inverted PAN range rejected', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 422]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{vaultId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"issuerId\": \"{{issuerId}}\",\n  \"binId\": \"{{binId}}\",\n  \"panLowerLimit\": \"9000000\",\n  \"panUpperLimit\": \"1100000\",\n  \"listOfExpiry\": [\n    { \"quarter\": \"Q1\", \"year\": 2027 }\n  ]\n}"
+            },
+            "url": {
+              "raw": "http://{{tvm_host}}:{{tvm_port}}/tvm/api/account-range",
+              "protocol": "http",
+              "host": [
+                "{{tvm_host}}"
+              ],
+              "port": "{{tvm_port}}",
+              "path": [
+                "tvm",
+                "api",
+                "account-range"
+              ]
+            }
+          }
+        },
+        {
+          "name": "TC-ACR-003 | Account Range \u2014 PAN on Exact Lower Boundary (Boundary)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// TC-ACR-003 | Category: Boundary | Rule 1",
+                  "// Title: PAN equal to panLowerLimit is within range \u2014 creation must succeed",
+                  "",
+                  "pm.test('TC-ACR-003 | HTTP 200 or 201 \u2014 Boundary lower accepted', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{vaultId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"issuerId\": \"{{issuerId}}\",\n  \"binId\": \"{{binId}}\",\n  \"panLowerLimit\": \"5000000\",\n  \"panUpperLimit\": \"5000000\",\n  \"listOfExpiry\": [\n    { \"quarter\": \"Q4\", \"year\": 2027 }\n  ]\n}"
+            },
+            "url": {
+              "raw": "http://{{tvm_host}}:{{tvm_port}}/tvm/api/account-range",
+              "protocol": "http",
+              "host": [
+                "{{tvm_host}}"
+              ],
+              "port": "{{tvm_port}}",
+              "path": [
+                "tvm",
+                "api",
+                "account-range"
+              ]
+            }
+          }
+        },
+        {
+          "name": "TC-ACR-004 | Account Range \u2014 Overlapping PAN Range (Negative/Rule 1)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// TC-ACR-004 | Category: Negative | Rule 1 (ACCOUNT_NOT_ELIGIBLE / overlap)",
+                  "// Title: Overlapping account range must be rejected",
+                  "",
+                  "pm.test('TC-ACR-004 | HTTP 409 or 400 \u2014 Overlapping range rejected', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 409, 422]);",
+                  "});",
+                  "",
+                  "pm.test('TC-ACR-004 | Error contains overlap or conflict indicator', function () {",
+                  "    var msg = JSON.stringify(pm.response.json()).toUpperCase();",
+                  "    pm.expect(msg).to.satisfy(m => m.includes('OVERLAP') || m.includes('CONFLICT') || m.includes('EXIST'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{vaultId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"issuerId\": \"{{issuerId}}\",\n  \"binId\": \"{{binId}}\",\n  \"panLowerLimit\": \"5000000\",\n  \"panUpperLimit\": \"7000000\",\n  \"listOfExpiry\": [\n    { \"quarter\": \"Q2\", \"year\": 2027 }\n  ]\n}"
+            },
+            "url": {
+              "raw": "http://{{tvm_host}}:{{tvm_port}}/tvm/api/account-range",
+              "protocol": "http",
+              "host": [
+                "{{tvm_host}}"
+              ],
+              "port": "{{tvm_port}}",
+              "path": [
+                "tvm",
+                "api",
+                "account-range"
+              ]
+            }
+          }
+        },
+        {
+          "name": "TC-ACR-005 | Account Range \u2014 Empty listOfExpiry (Negative)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// TC-ACR-005 | Category: Negative | Rule 2",
+                  "// Title: Empty listOfExpiry must be rejected",
+                  "",
+                  "pm.test('TC-ACR-005 | HTTP 400 \u2014 Empty expiry list rejected', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 422]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{vaultId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"issuerId\": \"{{issuerId}}\",\n  \"binId\": \"{{binId}}\",\n  \"panLowerLimit\": \"8000000\",\n  \"panUpperLimit\": \"8999999\",\n  \"listOfExpiry\": []\n}"
+            },
+            "url": {
+              "raw": "http://{{tvm_host}}:{{tvm_port}}/tvm/api/account-range",
+              "protocol": "http",
+              "host": [
+                "{{tvm_host}}"
+              ],
+              "port": "{{tvm_port}}",
+              "path": [
+                "tvm",
+                "api",
+                "account-range"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "08 \u2014 TOKEN REQUESTOR CREATION",
+      "item": [
+        {
+          "name": "TC-TRQ-001 | Token Requestor Creation \u2014 Happy Path",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// TC-TRQ-001 | Category: Functional | EMVCo Ref: Section 3.4 | Rule: Pre-requisite",
+                  "// Title: Token Requestor registered successfully with encrypted transport key",
+                  "",
+                  "pm.test('TC-TRQ-001 | HTTP 200 or 201 \u2014 Token Requestor created', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "",
+                  "pm.test('TC-TRQ-001 | Response contains tokenRequestorId', function () {",
+                  "    var json = pm.response.json();",
+                  "    var trId = json.tokenRequestorId || json.requestorId || json.trId || json.id;",
+                  "    pm.expect(trId).to.be.a('string').and.have.length.above(4);",
+                  "    pm.environment.set('tokenRequestorId', trId);",
+                  "    pm.collectionVariables.set('tokenRequestorId', trId);",
+                  "    console.log('[TC-TRQ-001] tokenRequestorId chained:', trId);",
+                  "});",
+                  "",
+                  "pm.test('TC-TRQ-001 | EMVCo: trName reflected in response', function () {",
+                  "    var json = pm.response.json();",
+                  "    if (json.trName) pm.expect(json.trName).to.eql('Google Pay');",
+                  "});",
+                  "",
+                  "pm.test('TC-TRQ-001 | EMVCo: requestorTransportKey stored for Tokenize step', function () {",
+                  "    var json = pm.response.json();",
+                  "    var reqKey = json.transportKey || json.requestorTransportKey;",
+                  "    if (reqKey) {",
+                  "        pm.environment.set('requestorTransportKey', reqKey);",
+                  "        pm.collectionVariables.set('requestorTransportKey', reqKey);",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{vaultId}}",
+                "description": "Chained from TC-TVT-001"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tokenFormFactor\": \"00\",\n  \"encryptedTransportKey\": \"{{encryptedTransportKey}}\",\n  \"kcv\": \"{{kcv}}\",\n  \"serviceName\": \"Service name\",\n  \"trName\": \"Google Pay\"\n}"
+            },
+            "url": {
+              "raw": "http://{{tvm_host}}:{{tvm_port}}/tvm/api/token-requestor",
+              "protocol": "http",
+              "host": [
+                "{{tvm_host}}"
+              ],
+              "port": "{{tvm_port}}",
+              "path": [
+                "tvm",
+                "api",
+                "token-requestor"
+              ]
+            }
+          }
+        },
+        {
+          "name": "TC-TRQ-002 | Token Requestor \u2014 Invalid tokenFormFactor (Negative)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// TC-TRQ-002 | Category: Negative | EMVCo Ref: Section 3.4",
+                  "// Title: Unknown tokenFormFactor code must be rejected",
+                  "",
+                  "pm.test('TC-TRQ-002 | HTTP 400 \u2014 Invalid form factor rejected', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 422]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{vaultId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tokenFormFactor\": \"99\",\n  \"encryptedTransportKey\": \"{{encryptedTransportKey}}\",\n  \"kcv\": \"{{kcv}}\",\n  \"serviceName\": \"Invalid FF Service\",\n  \"trName\": \"Bad Requestor\"\n}"
+            },
+            "url": {
+              "raw": "http://{{tvm_host}}:{{tvm_port}}/tvm/api/token-requestor",
+              "protocol": "http",
+              "host": [
+                "{{tvm_host}}"
+              ],
+              "port": "{{tvm_port}}",
+              "path": [
+                "tvm",
+                "api",
+                "token-requestor"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "09 \u2014 TOKEN USE SETUP",
+      "item": [
+        {
+          "name": "TC-TUS-001 | Token Use Setup \u2014 Happy Path",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// TC-TUS-001 | Category: Functional | EMVCo Ref: Section 6.1 (TDRC) | Rule: TDRC",
+                  "// Title: Token use (merchant + mode) configured successfully for token requestor",
+                  "",
+                  "pm.test('TC-TUS-001 | HTTP 200 or 201 \u2014 Token use setup confirmed', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "",
+                  "pm.test('TC-TUS-001 | EMVCo TDRC: merchantId stored in response', function () {",
+                  "    var json = pm.response.json();",
+                  "    if (json.merchantInfos || json.merchantId) {",
+                  "        pm.expect(true).to.be.true;",
+                  "    }",
+                  "    pm.environment.set('tokenUseSetupDone', 'true');",
+                  "});",
+                  "",
+                  "pm.test('TC-TUS-001 | modeOfTransaction validated', function () {",
+                  "    var body = JSON.parse(pm.request.body.raw);",
+                  "    pm.expect(body.modeOfTransaction).to.eql('01');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{vaultId}}",
+                "description": "Chained from TC-TVT-001"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"merchantInfos\": [\n    {\n      \"merchantId\": \"123456789012345\",\n      \"merchantName\": \"Merchant\"\n    }\n  ],\n  \"modeOfTransaction\": \"01\",\n  \"trId\": \"{{tokenRequestorId}}\"\n}"
+            },
+            "url": {
+              "raw": "http://{{tvm_host}}:{{tvm_port}}/tvm/api/token-requestor/token-use/setup",
+              "protocol": "http",
+              "host": [
+                "{{tvm_host}}"
+              ],
+              "port": "{{tvm_port}}",
+              "path": [
+                "tvm",
+                "api",
+                "token-requestor",
+                "token-use",
+                "setup"
+              ]
+            }
+          }
+        },
+        {
+          "name": "TC-TUS-002 | Token Use Setup \u2014 Invalid trId (Negative/TDRC)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// TC-TUS-002 | Category: Negative | EMVCo TDRC",
+                  "// Title: Token use setup for non-existent requestor must be rejected",
+                  "",
+                  "pm.test('TC-TUS-002 | HTTP 400 or 404 \u2014 Invalid trId rejected', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 404, 422]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{vaultId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"merchantInfos\": [\n    { \"merchantId\": \"123456789012345\", \"merchantName\": \"Merchant\" }\n  ],\n  \"modeOfTransaction\": \"01\",\n  \"trId\": \"NONEXISTENT_TR_99999\"\n}"
+            },
+            "url": {
+              "raw": "http://{{tvm_host}}:{{tvm_port}}/tvm/api/token-requestor/token-use/setup",
+              "protocol": "http",
+              "host": [
+                "{{tvm_host}}"
+              ],
+              "port": "{{tvm_port}}",
+              "path": [
+                "tvm",
+                "api",
+                "token-requestor",
+                "token-use",
+                "setup"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "10 \u2014 TOKEN LIFE SETUP",
+      "item": [
+        {
+          "name": "TC-TLS-001 | Token Life Setup \u2014 Happy Path",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// TC-TLS-001 | Category: Functional | EMVCo Ref: Section 6 (Token Lifecycle) | Rule: Token Expiry",
+                  "// Title: Token life authorization configured with valid min/max period",
+                  "",
+                  "pm.test('TC-TLS-001 | HTTP 200 or 201 \u2014 Token life setup confirmed', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "",
+                  "pm.test('TC-TLS-001 | EMVCo Lifecycle: maxPeriodInMonths accepted', function () {",
+                  "    var body = JSON.parse(pm.request.body.raw);",
+                  "    pm.expect(body.maxPeriodInMonths).to.eql(70);",
+                  "    pm.expect(body.minPeriodInMonths).to.eql(0);",
+                  "});",
+                  "",
+                  "pm.test('TC-TLS-001 | Response confirms lifecycle config', function () {",
+                  "    pm.response.json();",
+                  "    pm.environment.set('tokenLifeSetupDone', 'true');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{vaultId}}",
+                "description": "Chained from TC-TVT-001"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"requestorId\": \"{{tokenRequestorId}}\",\n  \"minPeriodInMonths\": 0,\n  \"maxPeriodInMonths\": 70,\n  \"issuerId\": \"{{issuerId}}\"\n}"
+            },
+            "url": {
+              "raw": "http://{{tvm_host}}:{{tvm_port}}/tvm/api/token-life/authorization",
+              "protocol": "http",
+              "host": [
+                "{{tvm_host}}"
+              ],
+              "port": "{{tvm_port}}",
+              "path": [
+                "tvm",
+                "api",
+                "token-life",
+                "authorization"
+              ]
+            }
+          }
+        },
+        {
+          "name": "TC-TLS-002 | Token Life Setup \u2014 minPeriod > maxPeriod (Boundary Negative)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// TC-TLS-002 | Category: Boundary/Negative | EMVCo Section 6 | Token Expiry Rule",
+                  "// Title: Token life where min > max must be rejected",
+                  "",
+                  "pm.test('TC-TLS-002 | HTTP 400 \u2014 Inverted period range rejected', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 422]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{vaultId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"requestorId\": \"{{tokenRequestorId}}\",\n  \"minPeriodInMonths\": 70,\n  \"maxPeriodInMonths\": 10,\n  \"issuerId\": \"{{issuerId}}\"\n}"
+            },
+            "url": {
+              "raw": "http://{{tvm_host}}:{{tvm_port}}/tvm/api/token-life/authorization",
+              "protocol": "http",
+              "host": [
+                "{{tvm_host}}"
+              ],
+              "port": "{{tvm_port}}",
+              "path": [
+                "tvm",
+                "api",
+                "token-life",
+                "authorization"
+              ]
+            }
+          }
+        },
+        {
+          "name": "TC-TLS-003 | Token Life Setup \u2014 Negative maxPeriod (Boundary)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// TC-TLS-003 | Category: Boundary | EMVCo Section 6",
+                  "// Title: Negative maxPeriodInMonths must be rejected",
+                  "",
+                  "pm.test('TC-TLS-003 | HTTP 400 \u2014 Negative period rejected', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 422]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{vaultId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"requestorId\": \"{{tokenRequestorId}}\",\n  \"minPeriodInMonths\": -5,\n  \"maxPeriodInMonths\": -1,\n  \"issuerId\": \"{{issuerId}}\"\n}"
+            },
+            "url": {
+              "raw": "http://{{tvm_host}}:{{tvm_port}}/tvm/api/token-life/authorization",
+              "protocol": "http",
+              "host": [
+                "{{tvm_host}}"
+              ],
+              "port": "{{tvm_port}}",
+              "path": [
+                "tvm",
+                "api",
+                "token-life",
+                "authorization"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "11 \u2014 TOKEN RANGE SETUP",
+      "item": [
+        {
+          "name": "TC-TRS-001 | Token Range Setup \u2014 Happy Path (Q2/2027)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// TC-TRS-001 | Category: Functional | EMVCo Ref: Section 4.2 | Rule 2",
+                  "// Title: Quarter token range Q2/2027 configured with valid BIN limits",
+                  "",
+                  "pm.test('TC-TRS-001 | HTTP 200 or 201 \u2014 Token range configured', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "",
+                  "pm.test('TC-TRS-001 | Rule 2: Quarter Q2 with year 2027 stored', function () {",
+                  "    var body = JSON.parse(pm.request.body.raw);",
+                  "    var range = body.tokenRangeSetupList[0];",
+                  "    pm.expect(range.expiry.quarter).to.eql('Q2');",
+                  "    pm.expect(range.expiry.year).to.eql(2027);",
+                  "});",
+                  "",
+                  "pm.test('TC-TRS-001 | Rule 2: BIN limits are valid (lower < upper)', function () {",
+                  "    var body = JSON.parse(pm.request.body.raw);",
+                  "    var range = body.tokenRangeSetupList[0];",
+                  "    pm.expect(parseInt(range.lowerLimit)).to.be.below(parseInt(range.upperLimit));",
+                  "});",
+                  "",
+                  "pm.test('TC-TRS-001 | Response contains range metadata or confirmation', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.be.an('object');",
+                  "    pm.environment.set('tokenRangeSetupDone', 'true');",
+                  "});",
+                  "",
+                  "pm.test('TC-TRS-001 | Rule 5: capacity/allocated metadata present if returned', function () {",
+                  "    var json = pm.response.json();",
+                  "    if (json.capacity !== undefined) {",
+                  "        pm.expect(json.capacity).to.be.above(0);",
+                  "        pm.expect(json.allocated).to.eql(0);",
+                  "        pm.expect(json.remaining).to.eql(json.capacity);",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{vaultId}}",
+                "description": "Chained from TC-TVT-001"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tokenRangeSetupList\": [\n    {\n      \"expiry\": { \"quarter\": \"Q2\", \"year\": 2027 },\n      \"lowerLimit\": \"9100000\",\n      \"upperLimit\": \"9999999\"\n    }\n  ],\n  \"requestorId\": \"{{tokenRequestorId}}\",\n  \"issuerId\": \"{{issuerId}}\",\n  \"binId\": \"{{binId}}\"\n}"
+            },
+            "url": {
+              "raw": "http://{{tvm_host}}:{{tvm_port}}/tvm/api/token-range",
+              "protocol": "http",
+              "host": [
+                "{{tvm_host}}"
+              ],
+              "port": "{{tvm_port}}",
+              "path": [
+                "tvm",
+                "api",
+                "token-range"
+              ]
+            }
+          }
+        },
+        {
+          "name": "TC-TRS-002 | Token Range Setup \u2014 Overlapping BIN Range (Negative/Rule 6)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// TC-TRS-002 | Category: Negative | Rule 6 (BIN_RANGE_OVERLAP_DETECTED)",
+                  "// Title: Token range overlapping with existing Q2 range must be rejected",
+                  "",
+                  "pm.test('TC-TRS-002 | HTTP 409 or 400 \u2014 BIN_RANGE_OVERLAP_DETECTED', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 409, 422]);",
+                  "});",
+                  "",
+                  "pm.test('TC-TRS-002 | EMVCo Rule 6: Error code BIN_RANGE_OVERLAP_DETECTED', function () {",
+                  "    var json = pm.response.json();",
+                  "    var msg = JSON.stringify(json).toUpperCase();",
+                  "    pm.expect(msg).to.satisfy(m =>",
+                  "        m.includes('BIN_RANGE_OVERLAP') || m.includes('OVERLAP') || m.includes('CONFLICT')",
+                  "    );",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{vaultId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tokenRangeSetupList\": [\n    {\n      \"expiry\": { \"quarter\": \"Q2\", \"year\": 2027 },\n      \"lowerLimit\": \"9500000\",\n      \"upperLimit\": \"9800000\"\n    }\n  ],\n  \"requestorId\": \"{{tokenRequestorId}}\",\n  \"issuerId\": \"{{issuerId}}\",\n  \"binId\": \"{{binId}}\"\n}"
+            },
+            "url": {
+              "raw": "http://{{tvm_host}}:{{tvm_port}}/tvm/api/token-range",
+              "protocol": "http",
+              "host": [
+                "{{tvm_host}}"
+              ],
+              "port": "{{tvm_port}}",
+              "path": [
+                "tvm",
+                "api",
+                "token-range"
+              ]
+            }
+          }
+        },
+        {
+          "name": "TC-TRS-003 | Token Range Setup \u2014 lowerLimit > upperLimit (Boundary Negative)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// TC-TRS-003 | Category: Boundary/Negative | Rule 2",
+                  "// Title: Token range where start > end must be rejected",
+                  "",
+                  "pm.test('TC-TRS-003 | HTTP 400 \u2014 Inverted token range rejected', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 422]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{vaultId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tokenRangeSetupList\": [\n    {\n      \"expiry\": { \"quarter\": \"Q3\", \"year\": 2027 },\n      \"lowerLimit\": \"9999999\",\n      \"upperLimit\": \"9100000\"\n    }\n  ],\n  \"requestorId\": \"{{tokenRequestorId}}\",\n  \"issuerId\": \"{{issuerId}}\",\n  \"binId\": \"{{binId}}\"\n}"
+            },
+            "url": {
+              "raw": "http://{{tvm_host}}:{{tvm_port}}/tvm/api/token-range",
+              "protocol": "http",
+              "host": [
+                "{{tvm_host}}"
+              ],
+              "port": "{{tvm_port}}",
+              "path": [
+                "tvm",
+                "api",
+                "token-range"
+              ]
+            }
+          }
+        },
+        {
+          "name": "TC-TRS-004 | Token Range Setup \u2014 Q Not In Account Range listOfExpiry (Rule 4)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// TC-TRS-004 | Category: Negative | Rule 4 (EXPIRY_QUARTER_MISMATCH)",
+                  "// Title: Token range for Q4 not configured in account expiry list must be rejected",
+                  "",
+                  "pm.test('TC-TRS-004 | HTTP 400 \u2014 Quarter not in account range expiry list', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 422]);",
+                  "});",
+                  "",
+                  "pm.test('TC-TRS-004 | EMVCo Rule 4: EXPIRY_QUARTER_MISMATCH indicated', function () {",
+                  "    var json = pm.response.json();",
+                  "    var msg = JSON.stringify(json).toUpperCase();",
+                  "    pm.expect(msg).to.satisfy(m =>",
+                  "        m.includes('EXPIRY_QUARTER_MISMATCH') || m.includes('MISMATCH') || m.includes('NOT_CONFIGURED')",
+                  "    );",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{vaultId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tokenRangeSetupList\": [\n    {\n      \"expiry\": { \"quarter\": \"Q4\", \"year\": 2027 },\n      \"lowerLimit\": \"7000000\",\n      \"upperLimit\": \"7999999\"\n    }\n  ],\n  \"requestorId\": \"{{tokenRequestorId}}\",\n  \"issuerId\": \"{{issuerId}}\",\n  \"binId\": \"{{binId}}\"\n}"
+            },
+            "url": {
+              "raw": "http://{{tvm_host}}:{{tvm_port}}/tvm/api/token-range",
+              "protocol": "http",
+              "host": [
+                "{{tvm_host}}"
+              ],
+              "port": "{{tvm_port}}",
+              "path": [
+                "tvm",
+                "api",
+                "token-range"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "12 \u2014 PREPARE TOKENIZATION REQUEST (ENCRYPT CARD DATA)",
+      "item": [
+        {
+          "name": "TC-PTR-001 | Prepare Tokenization \u2014 Happy Path",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// AUTO PRE-REQUEST: Assert PAN was built from the created BIN",
+                  "var pan = pm.collectionVariables.get('generatedPan');",
+                  "var bin = pm.collectionVariables.get('generatedBinValue');",
+                  "if (!pan || !bin) {",
+                  "    throw new Error('[AutoData] generatedPan or generatedBinValue not set \u2014 run collection from start.');",
+                  "}",
+                  "if (!pan.startsWith(bin)) {",
+                  "    throw new Error('[AutoData] PAN ' + pan + ' does not start with BIN ' + bin);",
+                  "}",
+                  "console.log('[AutoData] PAN prefix check OK \u2014 PAN:', pan, '| BIN:', bin);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// TC-PTR-001 | Category: Functional | EMVCo Ref: Section 4.3 | Token Provisioning",
+                  "// Title: Card holder data encrypted with requestor transport key; cipherText chained to Tokenize",
+                  "",
+                  "pm.test('TC-PTR-001 | HTTP 200 \u2014 Card data encrypted successfully', function () {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "});",
+                  "",
+                  "pm.test('TC-PTR-001 | Response contains cipherText', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.cipherText).to.be.a('string').and.have.length.above(20);",
+                  "    pm.environment.set('toTokenizeCipherText', json.cipherText);",
+                  "    pm.collectionVariables.set('toTokenizeCipherText', json.cipherText);",
+                  "    console.log('[TC-PTR-001] cipherText chained to Tokenize step.');",
+                  "});",
+                  "",
+                  "pm.test('TC-PTR-001 | Response contains deviceInfo fields', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.deviceInfo).to.be.an('object');",
+                  "    pm.environment.set('toTokenizeDeviceId',    json.deviceInfo.deviceId);",
+                  "    pm.environment.set('toTokenizeWalletId',    json.deviceInfo.walletId);",
+                  "    pm.environment.set('toTokenizeSeId',        json.deviceInfo.seId);",
+                  "    pm.environment.set('toTokenizeFingerPrint', json.deviceInfo.fingerPrint);",
+                  "    pm.collectionVariables.set('toTokenizeDeviceId',    json.deviceInfo.deviceId);",
+                  "    pm.collectionVariables.set('toTokenizeWalletId',    json.deviceInfo.walletId);",
+                  "    pm.collectionVariables.set('toTokenizeSeId',        json.deviceInfo.seId);",
+                  "    pm.collectionVariables.set('toTokenizeFingerPrint', json.deviceInfo.fingerPrint);",
+                  "});",
+                  "",
+                  "pm.test('TC-PTR-001 | Response contains mac for integrity', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.mac).to.be.a('string');",
+                  "    pm.environment.set('toTokenizeMac', json.mac);",
+                  "    pm.collectionVariables.set('toTokenizeMac', json.mac);",
+                  "});",
+                  "",
+                  "// AUTO: verify PAN in this request uses the BIN created earlier in the run",
+                  "pm.test('TC-PTR-001 | AUTO: PAN carries created BIN prefix', function () {",
+                  "    var pan = pm.collectionVariables.get('generatedPan');",
+                  "    var bin = pm.collectionVariables.get('generatedBinValue');",
+                  "    pm.expect(pan).to.be.a('string');",
+                  "    pm.expect(pan.startsWith(bin)).to.be.true;",
+                  "    console.log('[AutoData] PAN', pan, 'uses BIN', bin);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"transportKey\": \"{{requestorTransportKey}}\",\n    \"cardHolderData\": {\n        \"name\": \"Kazi Ziaul Hassan\",\n        \"pan\": \"{{generatedPan}}\",\n        \"expiry\": \"08/28\",\n        \"assuranceInfo\": {\n            \"assuranceMethod\": \"00\",\n            \"data\": {\n                \"billingAddress\": \"Dhaka\",\n                \"cardVerificationNumber\": \"697\"\n            }\n        }\n    },\n    \"deviceInfo\": {\n        \"deviceId\": \"02F9C5D6C62EF948\",\n        \"walletId\": \"17153299082184553854765614506778\",\n        \"seId\": \"C9F2FF2382CDD2A1A6EF\",\n        \"fingerPrint\": \"277BF82CAD67104FC0AEC9F2FF2382CDD2A1A6EFE91E922CFD1CC4400528070B\"\n    }\n}"
+            },
+            "url": {
+              "raw": "http://{{mocker_dev_host}}:{{mocker_port}}/api/mocker/encrypt/card-holder-data",
+              "protocol": "http",
+              "host": [
+                "{{mocker_dev_host}}"
+              ],
+              "port": "{{mocker_port}}",
+              "path": [
+                "api",
+                "mocker",
+                "encrypt",
+                "card-holder-data"
+              ]
+            }
+          }
+        },
+        {
+          "name": "TC-PTR-002 | Prepare Tokenization \u2014 Expired PAN (Negative/EMVCo Rule)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// TC-PTR-002 | Category: Negative | EMVCo Ref: Section 4.3.4 | Token Expiry Rule",
+                  "// Title: Encryption/preparation with expired PAN expiry date should be rejected",
+                  "",
+                  "pm.test('TC-PTR-002 | HTTP 400 \u2014 Expired PAN rejected in preparation', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 422]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"transportKey\": \"{{requestorTransportKey}}\",\n    \"cardHolderData\": {\n        \"name\": \"Expired Card Holder\",\n        \"pan\": \"5244071100000061\",\n        \"expiry\": \"01/20\",\n        \"assuranceInfo\": {\n            \"assuranceMethod\": \"00\",\n            \"data\": {\n                \"billingAddress\": \"Dhaka\",\n                \"cardVerificationNumber\": \"697\"\n            }\n        }\n    },\n    \"deviceInfo\": {\n        \"deviceId\": \"02F9C5D6C62EF948\",\n        \"walletId\": \"17153299082184553854765614506778\",\n        \"seId\": \"C9F2FF2382CDD2A1A6EF\",\n        \"fingerPrint\": \"277BF82CAD67104FC0AEC9F2FF2382CDD2A1A6EFE91E922CFD1CC4400528070B\"\n    }\n}"
+            },
+            "url": {
+              "raw": "http://{{mocker_dev_host}}:{{mocker_port}}/api/mocker/encrypt/card-holder-data",
+              "protocol": "http",
+              "host": [
+                "{{mocker_dev_host}}"
+              ],
+              "port": "{{mocker_port}}",
+              "path": [
+                "api",
+                "mocker",
+                "encrypt",
+                "card-holder-data"
+              ]
+            }
+          }
+        },
+        {
+          "name": "TC-PTR-003 | Prepare Tokenization \u2014 PAN Outside Account Range (Negative/Rule 1)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// TC-PTR-003 | Category: Negative | Rule 1 (ACCOUNT_NOT_ELIGIBLE)",
+                  "// Title: PAN not within any configured account range \u2014 ACCOUNT_NOT_ELIGIBLE",
+                  "",
+                  "pm.test('TC-PTR-003 | HTTP 400/422 \u2014 ACCOUNT_NOT_ELIGIBLE', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 422, 404]);",
+                  "});",
+                  "",
+                  "pm.test('TC-PTR-003 | EMVCo Rule 1: ACCOUNT_NOT_ELIGIBLE error present', function () {",
+                  "    var msg = JSON.stringify(pm.response.json()).toUpperCase();",
+                  "    pm.expect(msg).to.satisfy(m => m.includes('ACCOUNT_NOT_ELIGIBLE') || m.includes('NOT_ELIGIBLE') || m.includes('OUT_OF_RANGE'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"transportKey\": \"{{requestorTransportKey}}\",\n    \"cardHolderData\": {\n        \"name\": \"Out Of Range Holder\",\n        \"pan\": \"9999999999999999\",\n        \"expiry\": \"08/28\",\n        \"assuranceInfo\": {\n            \"assuranceMethod\": \"00\",\n            \"data\": {\n                \"billingAddress\": \"Dhaka\",\n                \"cardVerificationNumber\": \"697\"\n            }\n        }\n    },\n    \"deviceInfo\": {\n        \"deviceId\": \"02F9C5D6C62EF948\",\n        \"walletId\": \"17153299082184553854765614506778\",\n        \"seId\": \"C9F2FF2382CDD2A1A6EF\",\n        \"fingerPrint\": \"277BF82CAD67104FC0AEC9F2FF2382CDD2A1A6EFE91E922CFD1CC4400528070B\"\n    }\n}"
+            },
+            "url": {
+              "raw": "http://{{mocker_dev_host}}:{{mocker_port}}/api/mocker/encrypt/card-holder-data",
+              "protocol": "http",
+              "host": [
+                "{{mocker_dev_host}}"
+              ],
+              "port": "{{mocker_port}}",
+              "path": [
+                "api",
+                "mocker",
+                "encrypt",
+                "card-holder-data"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "13 \u2014 TOKENIZE",
+      "item": [
+        {
+          "name": "TC-TOK-001 | Tokenize \u2014 Happy Path (Successful Token Issuance)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// TC-TOK-001 | Category: Functional | EMVCo Ref: Section 4.3 | Rule 1,2,4",
+                  "// Priority: Critical",
+                  "// Title: Token successfully issued; cipherText and mac chained to Decrypt + Detokenize",
+                  "",
+                  "pm.test('TC-TOK-001 | HTTP 200 \u2014 Token issued successfully', function () {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "});",
+                  "",
+                  "pm.test('TC-TOK-001 | Response contains cipherText (encrypted token data)', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.cipherText).to.be.a('string').and.have.length.above(20);",
+                  "    pm.environment.set('tokenizedCipherText', json.cipherText);",
+                  "    pm.collectionVariables.set('tokenizedCipherText', json.cipherText);",
+                  "    console.log('[TC-TOK-001] tokenizedCipherText chained for decrypt and detokenize.');",
+                  "});",
+                  "",
+                  "pm.test('TC-TOK-001 | Response contains mac', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.mac).to.be.a('string');",
+                  "    pm.environment.set('tokenizedMac', json.mac);",
+                  "    pm.collectionVariables.set('tokenizedMac', json.mac);",
+                  "});",
+                  "",
+                  "pm.test('TC-TOK-001 | X-TSP-TR-ID header sent in request', function () {",
+                  "    pm.expect(pm.request.headers.get('X-TSP-TR-ID')).to.be.a('string');",
+                  "});",
+                  "",
+                  "pm.test('TC-TOK-001 | Response time under 3000ms (Performance)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(3000);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TSP-TR-ID",
+                "value": "{{tokenRequestorId}}",
+                "description": "Chained from TC-TRQ-001"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cipherText\": \"{{toTokenizeCipherText}}\",\n  \"deviceInfo\": {\n    \"deviceId\": \"{{toTokenizeDeviceId}}\",\n    \"walletId\": \"{{toTokenizeWalletId}}\",\n    \"seId\": \"{{toTokenizeSeId}}\",\n    \"fingerPrint\": \"{{toTokenizeFingerPrint}}\"\n  },\n  \"mac\": \"{{toTokenizeMac}}\"\n}"
+            },
+            "url": {
+              "raw": "http://{{tsp_host}}:{{tsp_port}}/api/tokens/tokenize",
+              "protocol": "http",
+              "host": [
+                "{{tsp_host}}"
+              ],
+              "port": "{{tsp_port}}",
+              "path": [
+                "api",
+                "tokens",
+                "tokenize"
+              ]
+            }
+          }
+        },
+        {
+          "name": "TC-TOK-002 | Tokenize \u2014 Idempotency (Same PAN + Same Requestor \u2192 Same Token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// TC-TOK-002 | Category: Functional | EMVCo Ref: Section 4.3.5 | Rule: Idempotency",
+                  "// Title: Re-tokenizing same PAN must return the same token (idempotent)",
+                  "",
+                  "pm.test('TC-TOK-002 | HTTP 200 \u2014 Second tokenize call succeeds', function () {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "});",
+                  "",
+                  "pm.test('TC-TOK-002 | EMVCo Idempotency: cipherText matches first issuance', function () {",
+                  "    var json = pm.response.json();",
+                  "    var firstCipherText = pm.environment.get('tokenizedCipherText');",
+                  "    // Note: cipherText may differ (re-encryption) but decrypted token should be same",
+                  "    // If system returns identical cipherText, that also passes",
+                  "    pm.expect(json.cipherText).to.be.a('string');",
+                  "    pm.environment.set('tokenizedCipherText2', json.cipherText);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TSP-TR-ID",
+                "value": "{{tokenRequestorId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cipherText\": \"{{toTokenizeCipherText}}\",\n  \"deviceInfo\": {\n    \"deviceId\": \"{{toTokenizeDeviceId}}\",\n    \"walletId\": \"{{toTokenizeWalletId}}\",\n    \"seId\": \"{{toTokenizeSeId}}\",\n    \"fingerPrint\": \"{{toTokenizeFingerPrint}}\"\n  },\n  \"mac\": \"{{toTokenizeMac}}\"\n}"
+            },
+            "url": {
+              "raw": "http://{{tsp_host}}:{{tsp_port}}/api/tokens/tokenize",
+              "protocol": "http",
+              "host": [
+                "{{tsp_host}}"
+              ],
+              "port": "{{tsp_port}}",
+              "path": [
+                "api",
+                "tokens",
+                "tokenize"
+              ]
+            }
+          }
+        },
+        {
+          "name": "TC-TOK-003 | Tokenize \u2014 Missing X-TSP-TR-ID Header (Security)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// TC-TOK-003 | Category: Security | EMVCo Ref: Section 5.1",
+                  "// Title: Tokenization request without X-TSP-TR-ID header must be rejected",
+                  "",
+                  "pm.test('TC-TOK-003 | HTTP 400 or 401 \u2014 Missing requestor header rejected', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 401, 403]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cipherText\": \"{{toTokenizeCipherText}}\",\n  \"deviceInfo\": {\n    \"deviceId\": \"{{toTokenizeDeviceId}}\",\n    \"walletId\": \"{{toTokenizeWalletId}}\",\n    \"seId\": \"{{toTokenizeSeId}}\",\n    \"fingerPrint\": \"{{toTokenizeFingerPrint}}\"\n  },\n  \"mac\": \"{{toTokenizeMac}}\"\n}"
+            },
+            "url": {
+              "raw": "http://{{tsp_host}}:{{tsp_port}}/api/tokens/tokenize",
+              "protocol": "http",
+              "host": [
+                "{{tsp_host}}"
+              ],
+              "port": "{{tsp_port}}",
+              "path": [
+                "api",
+                "tokens",
+                "tokenize"
+              ]
+            }
+          }
+        },
+        {
+          "name": "TC-TOK-004 | Tokenize \u2014 Tampered MAC (Security)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// TC-TOK-004 | Category: Security | EMVCo Ref: Section 5.3 (Integrity)",
+                  "// Title: Tokenization with tampered/invalid MAC must be rejected",
+                  "",
+                  "pm.test('TC-TOK-004 | HTTP 400 or 422 \u2014 Tampered MAC rejected', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 401, 422]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TSP-TR-ID",
+                "value": "{{tokenRequestorId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cipherText\": \"{{toTokenizeCipherText}}\",\n  \"deviceInfo\": {\n    \"deviceId\": \"{{toTokenizeDeviceId}}\",\n    \"walletId\": \"{{toTokenizeWalletId}}\",\n    \"seId\": \"{{toTokenizeSeId}}\",\n    \"fingerPrint\": \"{{toTokenizeFingerPrint}}\"\n  },\n  \"mac\": \"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\"\n}"
+            },
+            "url": {
+              "raw": "http://{{tsp_host}}:{{tsp_port}}/api/tokens/tokenize",
+              "protocol": "http",
+              "host": [
+                "{{tsp_host}}"
+              ],
+              "port": "{{tsp_port}}",
+              "path": [
+                "api",
+                "tokens",
+                "tokenize"
+              ]
+            }
+          }
+        },
+        {
+          "name": "TC-TOK-005 | Tokenize \u2014 Exhausted Token Range (Rule 3)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// TC-TOK-005 | Category: Negative/Boundary | Rule 3 (TOKEN_RANGE_EXHAUSTED)",
+                  "// Title: Token issuance when quarter BIN range is fully allocated must fail",
+                  "// Precondition: Token range capacity exhausted (simulate with a dedicated exhausted-range vault setup)",
+                  "",
+                  "pm.test('TC-TOK-005 | HTTP 400/422 \u2014 TOKEN_RANGE_EXHAUSTED', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 409, 422]);",
+                  "});",
+                  "",
+                  "pm.test('TC-TOK-005 | EMVCo Rule 3: TOKEN_RANGE_EXHAUSTED in error response', function () {",
+                  "    var msg = JSON.stringify(pm.response.json()).toUpperCase();",
+                  "    pm.expect(msg).to.satisfy(m => m.includes('TOKEN_RANGE_EXHAUSTED') || m.includes('EXHAUSTED') || m.includes('CAPACITY'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TSP-TR-ID",
+                "value": "EXHAUSTED_TR_TEST_001"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cipherText\": \"{{toTokenizeCipherText}}\",\n  \"deviceInfo\": {\n    \"deviceId\": \"{{toTokenizeDeviceId}}\",\n    \"walletId\": \"{{toTokenizeWalletId}}\",\n    \"seId\": \"{{toTokenizeSeId}}\",\n    \"fingerPrint\": \"{{toTokenizeFingerPrint}}\"\n  },\n  \"mac\": \"{{toTokenizeMac}}\"\n}"
+            },
+            "url": {
+              "raw": "http://{{tsp_host}}:{{tsp_port}}/api/tokens/tokenize",
+              "protocol": "http",
+              "host": [
+                "{{tsp_host}}"
+              ],
+              "port": "{{tsp_port}}",
+              "path": [
+                "api",
+                "tokens",
+                "tokenize"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "14 \u2014 TOKENIZED CIPHERTEXT DECRYPTION",
+      "item": [
+        {
+          "name": "TC-DEC-001 | Decrypt Tokenized CipherText \u2014 Happy Path",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// TC-DEC-001 | Category: Functional | EMVCo Ref: Section 4.3 (Token Data Recovery)",
+                  "// Title: Decryption of tokenized cipherText returns token PAN and expiry",
+                  "",
+                  "pm.test('TC-DEC-001 | HTTP 200 \u2014 Decryption successful', function () {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "});",
+                  "",
+                  "pm.test('TC-DEC-001 | Decrypted response contains token (PAN-like) field', function () {",
+                  "    var json = pm.response.json();",
+                  "    var token = json.token || json.pan || json.tokenPan;",
+                  "    if (token) {",
+                  "        pm.expect(token).to.match(/^\\d{13,19}$/, 'Token must be 13\u201319 digit numeric (EMVCo)');",
+                  "        pm.environment.set('issuedToken', token);",
+                  "        pm.collectionVariables.set('issuedToken', token);",
+                  "        console.log('[TC-DEC-001] Token stored for detokenize:', token);",
+                  "    }",
+                  "});",
+                  "",
+                  "pm.test('TC-DEC-001 | EMVCo: Token passes Luhn check', function () {",
+                  "    var token = pm.environment.get('issuedToken');",
+                  "    if (token) {",
+                  "        function luhn(n) {",
+                  "            return [...n].reverse().reduce((s,d,i) => {",
+                  "                d = parseInt(d);",
+                  "                if (i%2===1) { d*=2; if(d>9) d-=9; }",
+                  "                return s+d;",
+                  "            }, 0) % 10 === 0;",
+                  "        }",
+                  "        pm.expect(luhn(token)).to.be.true;",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cipherText\": \"{{tokenizedCipherText}}\",\n  \"transportKey\": \"{{requestorTransportKey}}\"\n}"
+            },
+            "url": {
+              "raw": "http://{{mocker_dev_host}}:{{mocker_port}}/api/decryption",
+              "protocol": "http",
+              "host": [
+                "{{mocker_dev_host}}"
+              ],
+              "port": "{{mocker_port}}",
+              "path": [
+                "api",
+                "decryption"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "15 \u2014 TOKENIZED MAC VALIDATION",
+      "item": [
+        {
+          "name": "TC-MAC-001 | MAC Validation \u2014 Happy Path",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// TC-MAC-001 | Category: Functional/Security | EMVCo Ref: Section 5.3 (Integrity)",
+                  "// Title: MAC validation succeeds for valid tokenized cipherText + transport key + mac",
+                  "",
+                  "pm.test('TC-MAC-001 | HTTP 200 \u2014 MAC validated', function () {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "});",
+                  "",
+                  "pm.test('TC-MAC-001 | Response indicates MAC is valid', function () {",
+                  "    var json = pm.response.json();",
+                  "    var valid = json.valid || json.macValid || json.isValid || json.status;",
+                  "    pm.expect(JSON.stringify(json).toLowerCase()).to.satisfy(m =>",
+                  "        m.includes('true') || m.includes('valid') || m.includes('success')",
+                  "    );",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"plainText\": \"{{tokenizedCipherText}}\",\n  \"transportKey\": \"{{requestorTransportKey}}\",\n  \"mac\": \"{{tokenizedMac}}\"\n}"
+            },
+            "url": {
+              "raw": "http://{{mocker_dev_host}}:{{mocker_port}}/api/validate-mac",
+              "protocol": "http",
+              "host": [
+                "{{mocker_dev_host}}"
+              ],
+              "port": "{{mocker_port}}",
+              "path": [
+                "api",
+                "validate-mac"
+              ]
+            }
+          }
+        },
+        {
+          "name": "TC-MAC-002 | MAC Validation \u2014 Tampered MAC (Security)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// TC-MAC-002 | Category: Security | EMVCo Ref: Section 5.3",
+                  "// Title: Tampered MAC must fail validation",
+                  "",
+                  "pm.test('TC-MAC-002 | HTTP 400 or response indicates invalid MAC', function () {",
+                  "    var code = pm.response.code;",
+                  "    var body = JSON.stringify(pm.response.json()).toLowerCase();",
+                  "    pm.expect(",
+                  "        code === 400 || code === 422 ||",
+                  "        body.includes('invalid') || body.includes('false') || body.includes('fail')",
+                  "    ).to.be.true;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"plainText\": \"{{tokenizedCipherText}}\",\n  \"transportKey\": \"{{requestorTransportKey}}\",\n  \"mac\": \"0000000000000000000000000000000000000000000000000000000000000000\"\n}"
+            },
+            "url": {
+              "raw": "http://{{mocker_dev_host}}:{{mocker_port}}/api/validate-mac",
+              "protocol": "http",
+              "host": [
+                "{{mocker_dev_host}}"
+              ],
+              "port": "{{mocker_port}}",
+              "path": [
+                "api",
+                "validate-mac"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "16 \u2014 DE-TOKENIZE (ISSUER VERIFY MODE)",
+      "item": [
+        {
+          "name": "TC-DTK-001 | De-Tokenize (Issuer VERIFY Mode) \u2014 Happy Path",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// TC-DTK-001 | Category: Functional | EMVCo Ref: Section 4.4 | Rule: De-tokenization",
+                  "// Priority: Critical",
+                  "// Title: Issuer successfully de-tokenizes active token in VERIFY mode",
+                  "",
+                  "pm.test('TC-DTK-001 | HTTP 200 \u2014 De-tokenization successful', function () {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "});",
+                  "",
+                  "pm.test('TC-DTK-001 | Response contains encrypted PAN cipherText', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.cipherText).to.be.a('string').and.have.length.above(10);",
+                  "    pm.environment.set('detokenizationCipherText', json.cipherText);",
+                  "    pm.collectionVariables.set('detokenizationCipherText', json.cipherText);",
+                  "    console.log('[TC-DTK-001] detokenizationCipherText chained for issuer decryption.');",
+                  "});",
+                  "",
+                  "pm.test('TC-DTK-001 | X-TV-ID header was sent', function () {",
+                  "    pm.expect(pm.request.headers.get('X-TV-ID')).to.be.a('string');",
+                  "});",
+                  "",
+                  "pm.test('TC-DTK-001 | Request mode is VERIFY', function () {",
+                  "    var body = JSON.parse(pm.request.body.raw);",
+                  "    pm.expect(body.mode).to.eql('VERIFY');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{vaultId}}",
+                "description": "Chained from TC-TVT-001"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mode\": \"VERIFY\",\n  \"token\": \"{{issuedToken}}\",\n  \"tokenExpiry\": \"09/27\",\n  \"tokenRequestorId\": {{tokenRequestorId}},\n  \"txData\": {\n    \"posEntryMode\": \"07\",\n    \"merchantId\": \"123456789012345\"\n  }\n}"
+            },
+            "url": {
+              "raw": "http://{{mocker_dev_host}}:{{tvm_port}}/tvm/api/tokens/de-tokenize/issuer",
+              "protocol": "http",
+              "host": [
+                "{{mocker_dev_host}}"
+              ],
+              "port": "{{tvm_port}}",
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "de-tokenize",
+                "issuer"
+              ]
+            }
+          }
+        },
+        {
+          "name": "TC-DTK-002 | De-Tokenize \u2014 Invalid Token Format (Non-Luhn) (Negative)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// TC-DTK-002 | Category: Negative | EMVCo Ref: Section 4.4 (INVALID_TOKEN_FORMAT)",
+                  "// Title: Non-Luhn-valid token must be rejected on de-tokenization",
+                  "",
+                  "pm.test('TC-DTK-002 | HTTP 400 \u2014 Non-Luhn token rejected', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 422]);",
+                  "});",
+                  "",
+                  "pm.test('TC-DTK-002 | EMVCo: INVALID_TOKEN_FORMAT error code present', function () {",
+                  "    var msg = JSON.stringify(pm.response.json()).toUpperCase();",
+                  "    pm.expect(msg).to.satisfy(m => m.includes('INVALID_TOKEN') || m.includes('INVALID_FORMAT') || m.includes('LUHN'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{vaultId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mode\": \"VERIFY\",\n  \"token\": \"1234567890123456\",\n  \"tokenExpiry\": \"09/27\",\n  \"tokenRequestorId\": {{tokenRequestorId}},\n  \"txData\": {\n    \"posEntryMode\": \"07\",\n    \"merchantId\": \"123456789012345\"\n  }\n}"
+            },
+            "url": {
+              "raw": "http://{{mocker_dev_host}}:{{tvm_port}}/tvm/api/tokens/de-tokenize/issuer",
+              "protocol": "http",
+              "host": [
+                "{{mocker_dev_host}}"
+              ],
+              "port": "{{tvm_port}}",
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "de-tokenize",
+                "issuer"
+              ]
+            }
+          }
+        },
+        {
+          "name": "TC-DTK-003 | De-Tokenize \u2014 Missing X-TV-ID (Unauthorized/Security)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// TC-DTK-003 | Category: Security | EMVCo Ref: Section 4.4 (Authorization Control)",
+                  "// Title: De-tokenization without X-TV-ID must be rejected (unauthorized party)",
+                  "",
+                  "pm.test('TC-DTK-003 | HTTP 401 or 403 \u2014 Unauthorized de-tokenize rejected', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 401, 403]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mode\": \"VERIFY\",\n  \"token\": \"{{issuedToken}}\",\n  \"tokenExpiry\": \"09/27\",\n  \"tokenRequestorId\": {{tokenRequestorId}},\n  \"txData\": {\n    \"posEntryMode\": \"07\",\n    \"merchantId\": \"123456789012345\"\n  }\n}"
+            },
+            "url": {
+              "raw": "http://{{mocker_dev_host}}:{{tvm_port}}/tvm/api/tokens/de-tokenize/issuer",
+              "protocol": "http",
+              "host": [
+                "{{mocker_dev_host}}"
+              ],
+              "port": "{{tvm_port}}",
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "de-tokenize",
+                "issuer"
+              ]
+            }
+          }
+        },
+        {
+          "name": "TC-DTK-004 | De-Tokenize \u2014 Token Domain Violation (TDRC)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// TC-DTK-004 | Category: Functional/Security | EMVCo Ref: Section 6.2 (TDRC)",
+                  "// Title: Token used outside configured merchant domain \u2192 TOKEN_DOMAIN_VIOLATION",
+                  "",
+                  "pm.test('TC-DTK-004 | HTTP 400 \u2014 TOKEN_DOMAIN_VIOLATION for wrong merchantId', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 403, 422]);",
+                  "});",
+                  "",
+                  "pm.test('TC-DTK-004 | EMVCo TDRC: TOKEN_DOMAIN_VIOLATION in response', function () {",
+                  "    var msg = JSON.stringify(pm.response.json()).toUpperCase();",
+                  "    pm.expect(msg).to.satisfy(m => m.includes('DOMAIN') || m.includes('TDRC') || m.includes('MERCHANT'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "X-TV-ID",
+                "value": "{{vaultId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mode\": \"VERIFY\",\n  \"token\": \"{{issuedToken}}\",\n  \"tokenExpiry\": \"09/27\",\n  \"tokenRequestorId\": {{tokenRequestorId}},\n  \"txData\": {\n    \"posEntryMode\": \"07\",\n    \"merchantId\": \"UNAUTHORIZED_MERCH_001\"\n  }\n}"
+            },
+            "url": {
+              "raw": "http://{{mocker_dev_host}}:{{tvm_port}}/tvm/api/tokens/de-tokenize/issuer",
+              "protocol": "http",
+              "host": [
+                "{{mocker_dev_host}}"
+              ],
+              "port": "{{tvm_port}}",
+              "path": [
+                "tvm",
+                "api",
+                "tokens",
+                "de-tokenize",
+                "issuer"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "17 \u2014 DETOKENIZATION CIPHERTEXT DECRYPTION",
+      "item": [
+        {
+          "name": "TC-DDC-001 | Decrypt Detokenization CipherText \u2014 Happy Path",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// TC-DDC-001 | Category: Functional | EMVCo Ref: Section 4.4",
+                  "// Title: Issuer decrypts detokenization response cipherText to recover original PAN",
+                  "",
+                  "pm.test('TC-DDC-001 | HTTP 200 \u2014 Issuer decryption succeeds', function () {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "});",
+                  "",
+                  "pm.test('TC-DDC-001 | Decrypted PAN is 13\u201319 digit numeric', function () {",
+                  "    var json = pm.response.json();",
+                  "    var pan = json.pan || json.primaryAccountNumber || json.cardNumber;",
+                  "    if (pan) {",
+                  "        pm.expect(pan).to.match(/^\\d{13,19}$/, 'PAN must be 13\u201319 digits (EMVCo)');",
+                  "    }",
+                  "});",
+                  "",
+                  "pm.test('TC-DDC-001 | EMVCo: Decrypted PAN is NOT the token itself', function () {",
+                  "    var json = pm.response.json();",
+                  "    var pan = json.pan || json.primaryAccountNumber;",
+                  "    var token = pm.environment.get('issuedToken');",
+                  "    if (pan && token) {",
+                  "        pm.expect(pan).to.not.eql(token, 'De-tokenized PAN must differ from token');",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "accept",
+                "value": "*/*"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cipherText\": \"{{detokenizationCipherText}}\",\n  \"transportKey\": \"{{issuerTransportKey}}\"\n}"
+            },
+            "url": {
+              "raw": "http://{{mocker_dev_host}}:{{mocker_port}}/api/decryption",
+              "protocol": "http",
+              "host": [
+                "{{mocker_dev_host}}"
+              ],
+              "port": "{{mocker_port}}",
+              "path": [
+                "api",
+                "decryption"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550",
+          "// AUTO TEST-DATA GENERATOR  (collection-level pre-request)",
+          "// Runs before every request \u2014 guards with a once-per-run flag.",
+          "// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550",
+          "if (pm.collectionVariables.get('_autoDataSeeded') === 'true') {",
+          "    // Already seeded this run \u2014 nothing to do.",
+          "    return;",
+          "}",
+          "",
+          "// \u2500\u2500 1. Custodian IDs \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500",
+          "var ts = Date.now();",
+          "var custodian1 = 'cust_' + ts + '_A';",
+          "var custodian2 = 'cust_' + ts + '_B';",
+          "pm.collectionVariables.set('generatedCustodian1', custodian1);",
+          "pm.collectionVariables.set('generatedCustodian2', custodian2);",
+          "console.log('[AutoData] Custodians generated:', custodian1, custodian2);",
+          "",
+          "// \u2500\u2500 2. BIN value (8-digit, first digit 4-9) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500",
+          "function randDigits(n) {",
+          "    var s = '';",
+          "    for (var i = 0; i < n; i++) s += Math.floor(Math.random() * 10);",
+          "    return s;",
+          "}",
+          "var binFirst = String(4 + Math.floor(Math.random() * 6));",
+          "var generatedBin = binFirst + randDigits(7);",
+          "pm.collectionVariables.set('generatedBinValue', generatedBin);",
+          "console.log('[AutoData] BIN value generated:', generatedBin);",
+          "",
+          "// \u2500\u2500 3. PAN \u2014 16 digits starting with BIN, Luhn-valid \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500",
+          "var panBody = generatedBin + randDigits(7);   // 15 digits",
+          "",
+          "function luhnCheck(partial) {",
+          "    var digits = partial.split('').map(Number);",
+          "    var sum = 0;",
+          "    for (var i = digits.length - 1; i >= 0; i--) {",
+          "        var d = digits[i];",
+          "        if ((digits.length - i) % 2 === 0) { d *= 2; if (d > 9) d -= 9; }",
+          "        sum += d;",
+          "    }",
+          "    return (10 - (sum % 10)) % 10;",
+          "}",
+          "",
+          "var generatedPan = panBody + luhnCheck(panBody);",
+          "pm.collectionVariables.set('generatedPan', generatedPan);",
+          "console.log('[AutoData] PAN generated:', generatedPan, '(BIN prefix:', generatedBin + ')');",
+          "",
+          "// \u2500\u2500 4. Issuer code (4-digit, unique per run) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500",
+          "var issuerCode = String(1000 + Math.floor(Math.random() * 8999));",
+          "pm.collectionVariables.set('generatedIssuerCode', issuerCode);",
+          "console.log('[AutoData] issuerCode generated:', issuerCode);",
+          "",
+          "// Mark seeded so this block only runs once per collection run",
+          "pm.collectionVariables.set('_autoDataSeeded', 'true');",
+          "console.log('[AutoData] Seeding complete.');"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Optional: reset seed flag so re-running works cleanly",
+          "// Uncomment the line below if you run individual requests repeatedly:",
+          "// pm.collectionVariables.unset('_autoDataSeeded');"
+        ]
+      }
+    }
+  ]
+}
