@@ -1,0 +1,25 @@
+{
+  "name": "tsp-takapay",
+  "version": "1.0.0",
+  "description": "Token Service Provider (TSP) - TakaPay Postman test collections",
+  "scripts": {
+    "test": "newman run TSP_Final_Automated_postman_collection.json -e TSP_TakaPay_environment.json",
+    "test:report": "newman run TSP_Final_Automated_postman_collection.json -e TSP_TakaPay_environment.json -r htmlextra --reporter-htmlextra-export reports/final-report.html",
+    "generate": "node scripts/generate-final-collection.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rano5604/TSP-TakaPay.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/rano5604/TSP-TakaPay/issues"
+  },
+  "homepage": "https://github.com/rano5604/TSP-TakaPay#readme",
+  "devDependencies": {
+    "newman": "^6.2.2",
+    "newman-reporter-htmlextra": "^1.23.1"
+  }
+}
