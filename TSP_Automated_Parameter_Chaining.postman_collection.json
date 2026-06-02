@@ -1,0 +1,1947 @@
+{
+  "info": {
+    "_postman_id": "tsp-automated-parameter-chaining-source-sequence",
+    "name": "TSP - Automated Parameter Chaining Test Cases",
+    "description": "Automated Postman test cases generated from TSP.postman_collection.json on main. The request order matches the source collection exactly, starting with vault creation. Scripts implement prompt-driven test data seeding, response parameter chaining, and dynamic headers such as X-TV-ID and X-TSP-TR-ID.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "34788178"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Collection-level auto data generator based on Test_Case_Generation_Prompt_v2.md.",
+          "// Seeds once per collection run and keeps values stable for downstream parameter chaining.",
+          "function setVar(key, value) {",
+          "    pm.collectionVariables.set(key, value);",
+          "    if (pm.environment && pm.environment.set) { pm.environment.set(key, value); }",
+          "}",
+          "function getVar(key) {",
+          "    return pm.collectionVariables.get(key) || (pm.environment && pm.environment.get ? pm.environment.get(key) : undefined);",
+          "}",
+          "function randDigits(n) {",
+          "    var s = '';",
+          "    for (var i = 0; i < n; i++) { s += Math.floor(Math.random() * 10); }",
+          "    return s;",
+          "}",
+          "function luhnCheckDigit(partial) {",
+          "    var sum = 0;",
+          "    var shouldDouble = true;",
+          "    for (var i = partial.length - 1; i >= 0; i--) {",
+          "        var digit = parseInt(partial.charAt(i), 10);",
+          "        if (shouldDouble) { digit *= 2; if (digit > 9) { digit -= 9; } }",
+          "        sum += digit;",
+          "        shouldDouble = !shouldDouble;",
+          "    }",
+          "    return String((10 - (sum % 10)) % 10);",
+          "}",
+          "if (getVar('_autoDataSeeded') !== 'true') {",
+          "    var ts = Date.now();",
+          "    var runId = String(ts);",
+          "    var binFirst = String(4 + Math.floor(Math.random() * 6));",
+          "    var generatedBin = binFirst + randDigits(7);",
+          "    var accountSuffix = String(1100000 + Math.floor(Math.random() * 7900000));",
+          "    var panWithoutCheck = generatedBin + accountSuffix;",
+          "    var generatedPan = panWithoutCheck + luhnCheckDigit(panWithoutCheck);",
+          "    var issuerCode = String(1000 + Math.floor(Math.random() * 9000));",
+          "    var merchantId = '9' + randDigits(14);",
+          "    setVar('testRunId', runId);",
+          "    setVar('generatedCustodian1', 'cust_' + ts + '_A');",
+          "    setVar('generatedCustodian2', 'cust_' + ts + '_B');",
+          "    setVar('generatedBinValue', generatedBin);",
+          "    setVar('generatedPan', generatedPan);",
+          "    setVar('generatedPanExpiry', '05/27');",
+          "    setVar('panLowerLimit', '1100000');",
+          "    setVar('panUpperLimit', '9000000');",
+          "    setVar('tokenLowerLimit', '9100000');",
+          "    setVar('tokenUpperLimit', '9999999');",
+          "    setVar('generatedIssuerCode', issuerCode);",
+          "    setVar('generatedMerchantId', merchantId);",
+          "    setVar('deviceId', randDigits(16));",
+          "    setVar('walletId', randDigits(32));",
+          "    setVar('seId', randDigits(20));",
+          "    setVar('fingerPrint', randDigits(64));",
+          "    setVar('_autoDataSeeded', 'true');",
+          "    console.log('[AutoData] Seeded run', runId, 'BIN', generatedBin, 'PAN', generatedPan);",
+          "}",
+          "var generatedKey = getVar('generatedTransportKey');",
+          "var fallbackKey = getVar('plain_transport_key');",
+          "setVar('activeTransportKey', generatedKey || fallbackKey);"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Shared lightweight checks applied after each request.",
+          "pm.test('Response time is under 5000ms', function () {",
+          "    pm.expect(pm.response.responseTime).to.be.below(5000);",
+          "});"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl_rgm",
+      "value": "http://10.88.250.40:40010",
+      "type": "string",
+      "description": "RGM base URL"
+    },
+    {
+      "key": "baseUrl_tvm",
+      "value": "http://10.88.250.40:40020",
+      "type": "string",
+      "description": "TVM base URL"
+    },
+    {
+      "key": "baseUrl_crypto",
+      "value": "http://10.88.250.40:40029",
+      "type": "string",
+      "description": "Crypto/mocker base URL"
+    },
+    {
+      "key": "baseUrl_mocker_dev",
+      "value": "http://10.15.20.100:40029",
+      "type": "string",
+      "description": "Mocker dev base URL for card data encryption/decryption"
+    },
+    {
+      "key": "baseUrl_tsp",
+      "value": "http://10.15.20.130:41001",
+      "type": "string",
+      "description": "TSP tokenize base URL"
+    },
+    {
+      "key": "tspCode",
+      "value": "998",
+      "type": "string",
+      "description": "TSP code used for vault creation"
+    },
+    {
+      "key": "tsp_code",
+      "value": "998",
+      "type": "string",
+      "description": "Compatibility alias for existing collections"
+    },
+    {
+      "key": "tvId",
+      "value": "9985003",
+      "type": "string",
+      "description": "Chained X-TV-ID; seeded default supports partial runs"
+    },
+    {
+      "key": "tokenRequestorId",
+      "value": "99850031692",
+      "type": "string",
+      "description": "Chained X-TSP-TR-ID; seeded default supports partial runs"
+    },
+    {
+      "key": "plain_transport_key",
+      "value": "2522b7bc2ee10e190b5a5d6449738fb0fc8661ca373a939d44ff8c7da65e1d80",
+      "type": "string",
+      "description": "Fallback plain transport key"
+    },
+    {
+      "key": "publicKeyCertificatePath",
+      "value": "/C:/Users/sanaul.islam/Downloads/test_tsp.cert",
+      "type": "string",
+      "description": "Fallback certificate file path if the API requires a file upload"
+    },
+    {
+      "key": "testRunId",
+      "value": "",
+      "type": "string",
+      "description": "AUTO: unique run identifier"
+    },
+    {
+      "key": "generatedCustodian1",
+      "value": "",
+      "type": "string",
+      "description": "AUTO: cust_<timestamp>_A"
+    },
+    {
+      "key": "generatedCustodian2",
+      "value": "",
+      "type": "string",
+      "description": "AUTO: cust_<timestamp>_B"
+    },
+    {
+      "key": "generatedBinValue",
+      "value": "",
+      "type": "string",
+      "description": "AUTO: 8-digit BIN, first digit 4-9"
+    },
+    {
+      "key": "generatedPan",
+      "value": "",
+      "type": "string",
+      "description": "AUTO: 16-digit Luhn-valid PAN starting with generatedBinValue"
+    },
+    {
+      "key": "generatedPanExpiry",
+      "value": "05/27",
+      "type": "string",
+      "description": "AUTO: Q2 2027 expiry aligned to token range"
+    },
+    {
+      "key": "panLowerLimit",
+      "value": "1100000",
+      "type": "string",
+      "description": "AUTO: account range lower IAN bound"
+    },
+    {
+      "key": "panUpperLimit",
+      "value": "9000000",
+      "type": "string",
+      "description": "AUTO: account range upper IAN bound"
+    },
+    {
+      "key": "tokenLowerLimit",
+      "value": "9100000",
+      "type": "string",
+      "description": "Token range lower limit for Q2 2027"
+    },
+    {
+      "key": "tokenUpperLimit",
+      "value": "9999999",
+      "type": "string",
+      "description": "Token range upper limit for Q2 2027"
+    },
+    {
+      "key": "generatedIssuerCode",
+      "value": "",
+      "type": "string",
+      "description": "AUTO: unique 4-digit issuer code"
+    },
+    {
+      "key": "generatedMerchantId",
+      "value": "",
+      "type": "string",
+      "description": "AUTO: 15-digit merchant ID"
+    },
+    {
+      "key": "deviceId",
+      "value": "",
+      "type": "string",
+      "description": "AUTO: device ID used in tokenization"
+    },
+    {
+      "key": "walletId",
+      "value": "",
+      "type": "string",
+      "description": "AUTO: wallet ID used in tokenization"
+    },
+    {
+      "key": "seId",
+      "value": "",
+      "type": "string",
+      "description": "AUTO: secure element ID"
+    },
+    {
+      "key": "fingerPrint",
+      "value": "",
+      "type": "string",
+      "description": "AUTO: device fingerprint"
+    },
+    {
+      "key": "_autoDataSeeded",
+      "value": "",
+      "type": "string",
+      "description": "AUTO: internal seed guard"
+    },
+    {
+      "key": "vaultId",
+      "value": "",
+      "type": "string",
+      "description": "CHAINED: vault ID from vault creation"
+    },
+    {
+      "key": "vaultCertificate",
+      "value": "",
+      "type": "string",
+      "description": "CHAINED: certificate from Get Certificate"
+    },
+    {
+      "key": "activeTransportKey",
+      "value": "",
+      "type": "string",
+      "description": "CHAINED: generated or fallback transport key"
+    },
+    {
+      "key": "generatedTransportKey",
+      "value": "",
+      "type": "string",
+      "description": "CHAINED: Generate Transport Key response"
+    },
+    {
+      "key": "encryptedTransportKey",
+      "value": "",
+      "type": "string",
+      "description": "CHAINED: Encrypt Key response"
+    },
+    {
+      "key": "kcv",
+      "value": "",
+      "type": "string",
+      "description": "CHAINED: key check value"
+    },
+    {
+      "key": "issuerId",
+      "value": "",
+      "type": "string",
+      "description": "CHAINED: Issuer Creation response"
+    },
+    {
+      "key": "binId",
+      "value": "",
+      "type": "string",
+      "description": "CHAINED: BIN Creation response"
+    },
+    {
+      "key": "accountRangeId",
+      "value": "",
+      "type": "string",
+      "description": "CHAINED: Account Range Creation response"
+    },
+    {
+      "key": "trId",
+      "value": "",
+      "type": "string",
+      "description": "CHAINED: Token Requestor Creation response"
+    },
+    {
+      "key": "toTokenizeCipherText",
+      "value": "",
+      "type": "string",
+      "description": "CHAINED: Prepare Tokenization response"
+    },
+    {
+      "key": "toTokenizeMac",
+      "value": "",
+      "type": "string",
+      "description": "CHAINED: Prepare Tokenization response"
+    },
+    {
+      "key": "tokenizedCipherText",
+      "value": "",
+      "type": "string",
+      "description": "CHAINED: Tokenize response"
+    },
+    {
+      "key": "tokenizedMac",
+      "value": "",
+      "type": "string",
+      "description": "CHAINED: Tokenize response"
+    },
+    {
+      "key": "provisionedToken",
+      "value": "",
+      "type": "string",
+      "description": "CHAINED: token from tokenize/decryption"
+    },
+    {
+      "key": "provisionedTokenExpiry",
+      "value": "05/27",
+      "type": "string",
+      "description": "CHAINED: token expiry from tokenize/decryption"
+    },
+    {
+      "key": "detokenizationCipherText",
+      "value": "",
+      "type": "string",
+      "description": "CHAINED: detokenization response"
+    }
+  ],
+  "item": [
+    {
+      "name": "TC-TVT-001 | Valut Creation | automated chain source step 01",
+      "description": "Source request: Valut Creation. Functional setup case from the prompt; chains vaultId/tvId for downstream X-TV-ID headers.",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "function setVar(key, value) {",
+              "    if (value !== undefined && value !== null && value !== '') {",
+              "        pm.collectionVariables.set(key, value);",
+              "        if (pm.environment && pm.environment.set) { pm.environment.set(key, value); }",
+              "    }",
+              "}",
+              "function getVar(key) {",
+              "    return pm.collectionVariables.get(key) || (pm.environment && pm.environment.get ? pm.environment.get(key) : undefined);",
+              "}",
+              "function requireVars(keys) {",
+              "    var missing = keys.filter(function (key) { return !getVar(key); });",
+              "    if (missing.length) { throw new Error('Missing chained variable(s): ' + missing.join(', ')); }",
+              "}",
+              "function responseJson() {",
+              "    try { return pm.response.json(); } catch (e) { return {}; }",
+              "}",
+              "function payload() {",
+              "    var json = responseJson();",
+              "    if (json && json.data) { return json.data; }",
+              "    if (json && json.result) { return json.result; }",
+              "    return json || {};",
+              "}",
+              "function pick(obj, keys) {",
+              "    for (var i = 0; i < keys.length; i++) {",
+              "        if (obj && obj[keys[i]] !== undefined && obj[keys[i]] !== null && obj[keys[i]] !== '') { return obj[keys[i]]; }",
+              "    }",
+              "    return undefined;",
+              "}",
+              "function parseMaybeJson(value) {",
+              "    if (!value || typeof value !== 'string') { return value; }",
+              "    try { return JSON.parse(value); } catch (e) { return value; }",
+              "}",
+              "",
+              "pm.test('TC-TVT-001 | HTTP 200/201 vault creation succeeds', function () {",
+              "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+              "});",
+              "pm.test('TC-TVT-001 | response returns vault identifier for chaining', function () {",
+              "    var body = payload();",
+              "    var tvId = pick(body, ['tvId', 'tokenVaultId', 'vaultId', 'id', 'tokenVaultIdentifier']);",
+              "    pm.expect(tvId, 'vaultId/tvId').to.exist;",
+              "    setVar('vaultId', tvId);",
+              "    setVar('tvId', tvId);",
+              "    console.log('[Chain] tvId =', tvId);",
+              "});",
+              "pm.test('TC-TVT-001 | request used auto-generated custodians', function () {",
+              "    var requestBody = JSON.parse(pm.request.body.raw);",
+              "    pm.expect(requestBody.custodianIdList[0]).to.match(/^cust_\\d+_A$/);",
+              "    pm.expect(requestBody.custodianIdList[1]).to.match(/^cust_\\d+_B$/);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "accept",
+            "value": "*/*"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"tspCode\": \"{{tspCode}}\",\n  \"tokenVaultName\": \"AutoVault_{{testRunId}}\",\n  \"custodianIdList\": [\n    \"{{generatedCustodian1}}\",\n    \"{{generatedCustodian2}}\"\n  ]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": "{{baseUrl_rgm}}/rgm/api/vaults"
+      },
+      "response": []
+    },
+    {
+      "name": "TC-GTK-001 | Generate Transport Key | automated chain source step 02",
+      "description": "Chains generated transport key into activeTransportKey for encryption, tokenization preparation, and decryption calls.",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "function setVar(key, value) {",
+              "    if (value !== undefined && value !== null && value !== '') {",
+              "        pm.collectionVariables.set(key, value);",
+              "        if (pm.environment && pm.environment.set) { pm.environment.set(key, value); }",
+              "    }",
+              "}",
+              "function getVar(key) {",
+              "    return pm.collectionVariables.get(key) || (pm.environment && pm.environment.get ? pm.environment.get(key) : undefined);",
+              "}",
+              "function requireVars(keys) {",
+              "    var missing = keys.filter(function (key) { return !getVar(key); });",
+              "    if (missing.length) { throw new Error('Missing chained variable(s): ' + missing.join(', ')); }",
+              "}",
+              "function responseJson() {",
+              "    try { return pm.response.json(); } catch (e) { return {}; }",
+              "}",
+              "function payload() {",
+              "    var json = responseJson();",
+              "    if (json && json.data) { return json.data; }",
+              "    if (json && json.result) { return json.result; }",
+              "    return json || {};",
+              "}",
+              "function pick(obj, keys) {",
+              "    for (var i = 0; i < keys.length; i++) {",
+              "        if (obj && obj[keys[i]] !== undefined && obj[keys[i]] !== null && obj[keys[i]] !== '') { return obj[keys[i]]; }",
+              "    }",
+              "    return undefined;",
+              "}",
+              "function parseMaybeJson(value) {",
+              "    if (!value || typeof value !== 'string') { return value; }",
+              "    try { return JSON.parse(value); } catch (e) { return value; }",
+              "}",
+              "",
+              "pm.test('TC-GTK-001 | HTTP 200 transport key generated', function () { pm.expect(pm.response.code).to.eql(200); });",
+              "pm.test('TC-GTK-001 | response contains transport key', function () {",
+              "    var body = payload();",
+              "    var key = pick(body, ['transportKey', 'plainTransportKey', 'plainKey', 'key', 'keyValue']);",
+              "    pm.expect(key, 'transport key').to.be.a('string').and.have.length.above(10);",
+              "    setVar('generatedTransportKey', key);",
+              "    setVar('activeTransportKey', key);",
+              "    setVar('requestorTransportKey', key);",
+              "    setVar('issuerTransportKey', key);",
+              "});",
+              "pm.test('TC-GTK-001 | optional KCV is chained when returned', function () {",
+              "    var body = payload();",
+              "    setVar('kcv', pick(body, ['kcv', 'KCV', 'keyCheckValue']));",
+              "    pm.expect(pm.response.code).to.eql(200);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "accept",
+            "value": "*/*"
+          }
+        ],
+        "url": "{{baseUrl_crypto}}/api/generate-transport-key"
+      },
+      "response": []
+    },
+    {
+      "name": "TC-CRT-001 | Get Certificate | automated chain source step 03",
+      "description": "Uses chained X-TV-ID header and stores certificate content for Encrypt The Key.",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "function getVar(key) { return pm.collectionVariables.get(key) || (pm.environment && pm.environment.get ? pm.environment.get(key) : undefined); }",
+              "function setVar(key, value) { if (value !== undefined && value !== null && value !== '') { pm.collectionVariables.set(key, value); if (pm.environment && pm.environment.set) { pm.environment.set(key, value); } } }",
+              "function requireVars(keys) { var missing = keys.filter(function (key) { return !getVar(key); }); if (missing.length) { throw new Error('Missing chained variable(s): ' + missing.join(', ')); } }",
+              "setVar('activeTransportKey', getVar('generatedTransportKey') || getVar('plain_transport_key'));",
+              "requireVars([\"tvId\"]);"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "function setVar(key, value) {",
+              "    if (value !== undefined && value !== null && value !== '') {",
+              "        pm.collectionVariables.set(key, value);",
+              "        if (pm.environment && pm.environment.set) { pm.environment.set(key, value); }",
+              "    }",
+              "}",
+              "function getVar(key) {",
+              "    return pm.collectionVariables.get(key) || (pm.environment && pm.environment.get ? pm.environment.get(key) : undefined);",
+              "}",
+              "function requireVars(keys) {",
+              "    var missing = keys.filter(function (key) { return !getVar(key); });",
+              "    if (missing.length) { throw new Error('Missing chained variable(s): ' + missing.join(', ')); }",
+              "}",
+              "function responseJson() {",
+              "    try { return pm.response.json(); } catch (e) { return {}; }",
+              "}",
+              "function payload() {",
+              "    var json = responseJson();",
+              "    if (json && json.data) { return json.data; }",
+              "    if (json && json.result) { return json.result; }",
+              "    return json || {};",
+              "}",
+              "function pick(obj, keys) {",
+              "    for (var i = 0; i < keys.length; i++) {",
+              "        if (obj && obj[keys[i]] !== undefined && obj[keys[i]] !== null && obj[keys[i]] !== '') { return obj[keys[i]]; }",
+              "    }",
+              "    return undefined;",
+              "}",
+              "function parseMaybeJson(value) {",
+              "    if (!value || typeof value !== 'string') { return value; }",
+              "    try { return JSON.parse(value); } catch (e) { return value; }",
+              "}",
+              "",
+              "pm.test('TC-CRT-001 | HTTP 200 certificate returned', function () { pm.expect(pm.response.code).to.eql(200); });",
+              "pm.test('TC-CRT-001 | certificate is chained for key encryption', function () {",
+              "    var body = payload();",
+              "    var cert = pick(body, ['certificate', 'publicKeyCertificate', 'cert', 'vaultCertificate', 'data']);",
+              "    if (!cert && typeof pm.response.text() === 'string') { cert = pm.response.text(); }",
+              "    pm.expect(cert, 'certificate').to.be.a('string').and.have.length.above(20);",
+              "    setVar('vaultCertificate', cert);",
+              "});",
+              "pm.test('TC-CRT-001 | X-TV-ID header was parameterized', function () {",
+              "    pm.expect(pm.request.headers.get('X-TV-ID')).to.eql(getVar('tvId'));",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "accept",
+            "value": "*/*"
+          },
+          {
+            "key": "X-TV-ID",
+            "value": "{{tvId}}"
+          }
+        ],
+        "url": "{{baseUrl_tvm}}/tvm/api/vault/certificate"
+      },
+      "response": []
+    },
+    {
+      "name": "TC-ENC-001 | Encrypt The Key | automated chain source step 04",
+      "description": "Encrypts the active transport key using the chained vault certificate; stores encryptedTransportKey and kcv.",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "function getVar(key) { return pm.collectionVariables.get(key) || (pm.environment && pm.environment.get ? pm.environment.get(key) : undefined); }",
+              "function setVar(key, value) { if (value !== undefined && value !== null && value !== '') { pm.collectionVariables.set(key, value); if (pm.environment && pm.environment.set) { pm.environment.set(key, value); } } }",
+              "function requireVars(keys) { var missing = keys.filter(function (key) { return !getVar(key); }); if (missing.length) { throw new Error('Missing chained variable(s): ' + missing.join(', ')); } }",
+              "setVar('activeTransportKey', getVar('generatedTransportKey') || getVar('plain_transport_key'));",
+              "requireVars([\"activeTransportKey\", \"vaultCertificate\"]);"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "function setVar(key, value) {",
+              "    if (value !== undefined && value !== null && value !== '') {",
+              "        pm.collectionVariables.set(key, value);",
+              "        if (pm.environment && pm.environment.set) { pm.environment.set(key, value); }",
+              "    }",
+              "}",
+              "function getVar(key) {",
+              "    return pm.collectionVariables.get(key) || (pm.environment && pm.environment.get ? pm.environment.get(key) : undefined);",
+              "}",
+              "function requireVars(keys) {",
+              "    var missing = keys.filter(function (key) { return !getVar(key); });",
+              "    if (missing.length) { throw new Error('Missing chained variable(s): ' + missing.join(', ')); }",
+              "}",
+              "function responseJson() {",
+              "    try { return pm.response.json(); } catch (e) { return {}; }",
+              "}",
+              "function payload() {",
+              "    var json = responseJson();",
+              "    if (json && json.data) { return json.data; }",
+              "    if (json && json.result) { return json.result; }",
+              "    return json || {};",
+              "}",
+              "function pick(obj, keys) {",
+              "    for (var i = 0; i < keys.length; i++) {",
+              "        if (obj && obj[keys[i]] !== undefined && obj[keys[i]] !== null && obj[keys[i]] !== '') { return obj[keys[i]]; }",
+              "    }",
+              "    return undefined;",
+              "}",
+              "function parseMaybeJson(value) {",
+              "    if (!value || typeof value !== 'string') { return value; }",
+              "    try { return JSON.parse(value); } catch (e) { return value; }",
+              "}",
+              "",
+              "pm.test('TC-ENC-001 | HTTP 200 transport key encryption succeeds', function () { pm.expect(pm.response.code).to.eql(200); });",
+              "pm.test('TC-ENC-001 | encrypted transport key is chained', function () {",
+              "    var body = payload();",
+              "    var enc = pick(body, ['encryptedTransportKey', 'encryptedKey', 'cipherText', 'ciphertext']);",
+              "    pm.expect(enc, 'encrypted transport key').to.be.a('string').and.have.length.above(20);",
+              "    setVar('encryptedTransportKey', enc);",
+              "});",
+              "pm.test('TC-ENC-001 | KCV is chained', function () {",
+              "    var body = payload();",
+              "    var kcv = pick(body, ['kcv', 'KCV', 'keyCheckValue']);",
+              "    pm.expect(kcv, 'kcv').to.be.a('string').and.match(/^[A-Fa-f0-9]{6,}$/);",
+              "    setVar('kcv', kcv);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "accept",
+            "value": "*/*"
+          }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "publicKeyCertificate",
+              "value": "{{vaultCertificate}}",
+              "type": "text",
+              "description": "Chained from Get Certificate; switch to file/src if this API requires multipart file upload."
+            },
+            {
+              "key": "plainData",
+              "value": "{{activeTransportKey}}",
+              "type": "text",
+              "description": "Generated transport key, with plain_transport_key fallback."
+            }
+          ]
+        },
+        "url": "{{baseUrl_crypto}}/api/v1/encrypt/transport-key"
+      },
+      "response": []
+    },
+    {
+      "name": "TC-ISS-001 | Issuer Creation | automated chain source step 05",
+      "description": "Uses chained X-TV-ID, encryptedTransportKey, and KCV; stores issuerId.",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "function getVar(key) { return pm.collectionVariables.get(key) || (pm.environment && pm.environment.get ? pm.environment.get(key) : undefined); }",
+              "function setVar(key, value) { if (value !== undefined && value !== null && value !== '') { pm.collectionVariables.set(key, value); if (pm.environment && pm.environment.set) { pm.environment.set(key, value); } } }",
+              "function requireVars(keys) { var missing = keys.filter(function (key) { return !getVar(key); }); if (missing.length) { throw new Error('Missing chained variable(s): ' + missing.join(', ')); } }",
+              "setVar('activeTransportKey', getVar('generatedTransportKey') || getVar('plain_transport_key'));",
+              "requireVars([\"tvId\", \"encryptedTransportKey\", \"kcv\"]);"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "function setVar(key, value) {",
+              "    if (value !== undefined && value !== null && value !== '') {",
+              "        pm.collectionVariables.set(key, value);",
+              "        if (pm.environment && pm.environment.set) { pm.environment.set(key, value); }",
+              "    }",
+              "}",
+              "function getVar(key) {",
+              "    return pm.collectionVariables.get(key) || (pm.environment && pm.environment.get ? pm.environment.get(key) : undefined);",
+              "}",
+              "function requireVars(keys) {",
+              "    var missing = keys.filter(function (key) { return !getVar(key); });",
+              "    if (missing.length) { throw new Error('Missing chained variable(s): ' + missing.join(', ')); }",
+              "}",
+              "function responseJson() {",
+              "    try { return pm.response.json(); } catch (e) { return {}; }",
+              "}",
+              "function payload() {",
+              "    var json = responseJson();",
+              "    if (json && json.data) { return json.data; }",
+              "    if (json && json.result) { return json.result; }",
+              "    return json || {};",
+              "}",
+              "function pick(obj, keys) {",
+              "    for (var i = 0; i < keys.length; i++) {",
+              "        if (obj && obj[keys[i]] !== undefined && obj[keys[i]] !== null && obj[keys[i]] !== '') { return obj[keys[i]]; }",
+              "    }",
+              "    return undefined;",
+              "}",
+              "function parseMaybeJson(value) {",
+              "    if (!value || typeof value !== 'string') { return value; }",
+              "    try { return JSON.parse(value); } catch (e) { return value; }",
+              "}",
+              "",
+              "pm.test('TC-ISS-001 | HTTP 200/201 issuer creation succeeds', function () { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });",
+              "pm.test('TC-ISS-001 | issuerId is chained', function () {",
+              "    var body = payload();",
+              "    var issuerId = pick(body, ['issuerId', 'id']);",
+              "    pm.expect(issuerId, 'issuerId').to.exist;",
+              "    setVar('issuerId', issuerId);",
+              "});",
+              "pm.test('TC-ISS-001 | X-TV-ID header uses chained tvId', function () { pm.expect(pm.request.headers.get('X-TV-ID')).to.eql(getVar('tvId')); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "accept",
+            "value": "*/*"
+          },
+          {
+            "key": "X-TV-ID",
+            "value": "{{tvId}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"issuerName\": \"AutoIssuer_{{testRunId}}\",\n  \"issuerCode\": \"{{generatedIssuerCode}}\",\n  \"encryptedTransportKey\": \"{{encryptedTransportKey}}\",\n  \"kcv\": \"{{kcv}}\",\n  \"realTimePanEnrollment\": \"Y\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": "{{baseUrl_tvm}}/tvm/api/issuer"
+      },
+      "response": []
+    },
+    {
+      "name": "TC-BIN-001 | BIN Creation | automated chain source step 06",
+      "description": "Creates a BIN using generated BIN value and chained issuerId; stores binId.",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "function getVar(key) { return pm.collectionVariables.get(key) || (pm.environment && pm.environment.get ? pm.environment.get(key) : undefined); }",
+              "function setVar(key, value) { if (value !== undefined && value !== null && value !== '') { pm.collectionVariables.set(key, value); if (pm.environment && pm.environment.set) { pm.environment.set(key, value); } } }",
+              "function requireVars(keys) { var missing = keys.filter(function (key) { return !getVar(key); }); if (missing.length) { throw new Error('Missing chained variable(s): ' + missing.join(', ')); } }",
+              "setVar('activeTransportKey', getVar('generatedTransportKey') || getVar('plain_transport_key'));",
+              "requireVars([\"tvId\", \"issuerId\"]);"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "function setVar(key, value) {",
+              "    if (value !== undefined && value !== null && value !== '') {",
+              "        pm.collectionVariables.set(key, value);",
+              "        if (pm.environment && pm.environment.set) { pm.environment.set(key, value); }",
+              "    }",
+              "}",
+              "function getVar(key) {",
+              "    return pm.collectionVariables.get(key) || (pm.environment && pm.environment.get ? pm.environment.get(key) : undefined);",
+              "}",
+              "function requireVars(keys) {",
+              "    var missing = keys.filter(function (key) { return !getVar(key); });",
+              "    if (missing.length) { throw new Error('Missing chained variable(s): ' + missing.join(', ')); }",
+              "}",
+              "function responseJson() {",
+              "    try { return pm.response.json(); } catch (e) { return {}; }",
+              "}",
+              "function payload() {",
+              "    var json = responseJson();",
+              "    if (json && json.data) { return json.data; }",
+              "    if (json && json.result) { return json.result; }",
+              "    return json || {};",
+              "}",
+              "function pick(obj, keys) {",
+              "    for (var i = 0; i < keys.length; i++) {",
+              "        if (obj && obj[keys[i]] !== undefined && obj[keys[i]] !== null && obj[keys[i]] !== '') { return obj[keys[i]]; }",
+              "    }",
+              "    return undefined;",
+              "}",
+              "function parseMaybeJson(value) {",
+              "    if (!value || typeof value !== 'string') { return value; }",
+              "    try { return JSON.parse(value); } catch (e) { return value; }",
+              "}",
+              "",
+              "pm.test('TC-BIN-001 | HTTP 200/201 BIN creation succeeds', function () { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });",
+              "pm.test('TC-BIN-001 | binId and binValue are chained', function () {",
+              "    var body = payload();",
+              "    var binId = pick(body, ['binId', 'id']);",
+              "    var binValue = pick(body, ['binValue', 'bin']);",
+              "    pm.expect(binId, 'binId').to.exist;",
+              "    setVar('binId', binId);",
+              "    setVar('createdBinValue', binValue || getVar('generatedBinValue'));",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "accept",
+            "value": "*/*"
+          },
+          {
+            "key": "X-TV-ID",
+            "value": "{{tvId}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"issuerId\": \"{{issuerId}}\",\n  \"binControllerId\": \"1234\",\n  \"binValue\": \"{{generatedBinValue}}\",\n  \"brandType\": \"06\",\n  \"ianLen\": 7\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": "{{baseUrl_tvm}}/tvm/api/bin/single"
+      },
+      "response": []
+    },
+    {
+      "name": "TC-ACR-001 | Account Range Creation | automated chain source step 07",
+      "description": "Creates an account range aligned to generated PAN and Q2 2027 token range; stores accountRangeId.",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "function getVar(key) { return pm.collectionVariables.get(key) || (pm.environment && pm.environment.get ? pm.environment.get(key) : undefined); }",
+              "function setVar(key, value) { if (value !== undefined && value !== null && value !== '') { pm.collectionVariables.set(key, value); if (pm.environment && pm.environment.set) { pm.environment.set(key, value); } } }",
+              "function requireVars(keys) { var missing = keys.filter(function (key) { return !getVar(key); }); if (missing.length) { throw new Error('Missing chained variable(s): ' + missing.join(', ')); } }",
+              "setVar('activeTransportKey', getVar('generatedTransportKey') || getVar('plain_transport_key'));",
+              "requireVars([\"tvId\", \"issuerId\", \"binId\", \"generatedPan\", \"generatedBinValue\"]);",
+              "var pan = getVar('generatedPan');",
+              "var bin = getVar('generatedBinValue');",
+              "if (pan && bin && pan.indexOf(bin) !== 0) { throw new Error('Generated PAN must start with generated BIN'); }"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "function setVar(key, value) {",
+              "    if (value !== undefined && value !== null && value !== '') {",
+              "        pm.collectionVariables.set(key, value);",
+              "        if (pm.environment && pm.environment.set) { pm.environment.set(key, value); }",
+              "    }",
+              "}",
+              "function getVar(key) {",
+              "    return pm.collectionVariables.get(key) || (pm.environment && pm.environment.get ? pm.environment.get(key) : undefined);",
+              "}",
+              "function requireVars(keys) {",
+              "    var missing = keys.filter(function (key) { return !getVar(key); });",
+              "    if (missing.length) { throw new Error('Missing chained variable(s): ' + missing.join(', ')); }",
+              "}",
+              "function responseJson() {",
+              "    try { return pm.response.json(); } catch (e) { return {}; }",
+              "}",
+              "function payload() {",
+              "    var json = responseJson();",
+              "    if (json && json.data) { return json.data; }",
+              "    if (json && json.result) { return json.result; }",
+              "    return json || {};",
+              "}",
+              "function pick(obj, keys) {",
+              "    for (var i = 0; i < keys.length; i++) {",
+              "        if (obj && obj[keys[i]] !== undefined && obj[keys[i]] !== null && obj[keys[i]] !== '') { return obj[keys[i]]; }",
+              "    }",
+              "    return undefined;",
+              "}",
+              "function parseMaybeJson(value) {",
+              "    if (!value || typeof value !== 'string') { return value; }",
+              "    try { return JSON.parse(value); } catch (e) { return value; }",
+              "}",
+              "",
+              "pm.test('TC-ACR-001 | HTTP 200/201 account range creation succeeds', function () { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });",
+              "pm.test('TC-ACR-001 | accountRangeId is chained when returned', function () {",
+              "    var body = payload();",
+              "    setVar('accountRangeId', pick(body, ['accountRangeId', 'id']));",
+              "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+              "});",
+              "pm.test('TC-ACR-001 | generated PAN starts with generated BIN', function () { pm.expect(getVar('generatedPan')).to.match(new RegExp('^' + getVar('generatedBinValue'))); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "accept",
+            "value": "*/*"
+          },
+          {
+            "key": "X-TV-ID",
+            "value": "{{tvId}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"issuerId\": \"{{issuerId}}\",\n  \"binId\": \"{{binId}}\",\n  \"panLowerLimit\": \"{{panLowerLimit}}\",\n  \"panUpperLimit\": \"{{panUpperLimit}}\",\n  \"listOfExpiry\": [\n    { \"quarter\": \"Q1\", \"year\": 2027 },\n    { \"quarter\": \"Q2\", \"year\": 2027 },\n    { \"quarter\": \"Q3\", \"year\": 2027 }\n  ]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": "{{baseUrl_tvm}}/tvm/api/account-range"
+      },
+      "response": []
+    },
+    {
+      "name": "TC-TRQ-001 | Token Requester Creation | automated chain source step 08",
+      "description": "Creates token requestor and chains tokenRequestorId/trId for X-TSP-TR-ID and setup calls.",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "function getVar(key) { return pm.collectionVariables.get(key) || (pm.environment && pm.environment.get ? pm.environment.get(key) : undefined); }",
+              "function setVar(key, value) { if (value !== undefined && value !== null && value !== '') { pm.collectionVariables.set(key, value); if (pm.environment && pm.environment.set) { pm.environment.set(key, value); } } }",
+              "function requireVars(keys) { var missing = keys.filter(function (key) { return !getVar(key); }); if (missing.length) { throw new Error('Missing chained variable(s): ' + missing.join(', ')); } }",
+              "setVar('activeTransportKey', getVar('generatedTransportKey') || getVar('plain_transport_key'));",
+              "requireVars([\"tvId\", \"encryptedTransportKey\", \"kcv\"]);"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "function setVar(key, value) {",
+              "    if (value !== undefined && value !== null && value !== '') {",
+              "        pm.collectionVariables.set(key, value);",
+              "        if (pm.environment && pm.environment.set) { pm.environment.set(key, value); }",
+              "    }",
+              "}",
+              "function getVar(key) {",
+              "    return pm.collectionVariables.get(key) || (pm.environment && pm.environment.get ? pm.environment.get(key) : undefined);",
+              "}",
+              "function requireVars(keys) {",
+              "    var missing = keys.filter(function (key) { return !getVar(key); });",
+              "    if (missing.length) { throw new Error('Missing chained variable(s): ' + missing.join(', ')); }",
+              "}",
+              "function responseJson() {",
+              "    try { return pm.response.json(); } catch (e) { return {}; }",
+              "}",
+              "function payload() {",
+              "    var json = responseJson();",
+              "    if (json && json.data) { return json.data; }",
+              "    if (json && json.result) { return json.result; }",
+              "    return json || {};",
+              "}",
+              "function pick(obj, keys) {",
+              "    for (var i = 0; i < keys.length; i++) {",
+              "        if (obj && obj[keys[i]] !== undefined && obj[keys[i]] !== null && obj[keys[i]] !== '') { return obj[keys[i]]; }",
+              "    }",
+              "    return undefined;",
+              "}",
+              "function parseMaybeJson(value) {",
+              "    if (!value || typeof value !== 'string') { return value; }",
+              "    try { return JSON.parse(value); } catch (e) { return value; }",
+              "}",
+              "",
+              "pm.test('TC-TRQ-001 | HTTP 200/201 token requestor creation succeeds', function () { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });",
+              "pm.test('TC-TRQ-001 | tokenRequestorId/trId is chained', function () {",
+              "    var body = payload();",
+              "    var trId = pick(body, ['trId', 'tokenRequestorId', 'requestorId', 'id']);",
+              "    pm.expect(trId, 'token requestor id').to.exist;",
+              "    setVar('tokenRequestorId', trId);",
+              "    setVar('trId', trId);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "accept",
+            "value": "*/*"
+          },
+          {
+            "key": "X-TV-ID",
+            "value": "{{tvId}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"tokenFormFactor\": \"00\",\n  \"encryptedTransportKey\": \"{{encryptedTransportKey}}\",\n  \"kcv\": \"{{kcv}}\",\n  \"serviceName\": \"Auto Service {{testRunId}}\",\n  \"trName\": \"Auto Wallet {{testRunId}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": "{{baseUrl_tvm}}/tvm/api/token-requestor"
+      },
+      "response": []
+    },
+    {
+      "name": "TC-TUS-001 | Token Use Set-up | automated chain source step 09",
+      "description": "Configures token domain restriction controls for the chained token requestor.",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "function getVar(key) { return pm.collectionVariables.get(key) || (pm.environment && pm.environment.get ? pm.environment.get(key) : undefined); }",
+              "function setVar(key, value) { if (value !== undefined && value !== null && value !== '') { pm.collectionVariables.set(key, value); if (pm.environment && pm.environment.set) { pm.environment.set(key, value); } } }",
+              "function requireVars(keys) { var missing = keys.filter(function (key) { return !getVar(key); }); if (missing.length) { throw new Error('Missing chained variable(s): ' + missing.join(', ')); } }",
+              "setVar('activeTransportKey', getVar('generatedTransportKey') || getVar('plain_transport_key'));",
+              "requireVars([\"tvId\", \"tokenRequestorId\"]);"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "function setVar(key, value) {",
+              "    if (value !== undefined && value !== null && value !== '') {",
+              "        pm.collectionVariables.set(key, value);",
+              "        if (pm.environment && pm.environment.set) { pm.environment.set(key, value); }",
+              "    }",
+              "}",
+              "function getVar(key) {",
+              "    return pm.collectionVariables.get(key) || (pm.environment && pm.environment.get ? pm.environment.get(key) : undefined);",
+              "}",
+              "function requireVars(keys) {",
+              "    var missing = keys.filter(function (key) { return !getVar(key); });",
+              "    if (missing.length) { throw new Error('Missing chained variable(s): ' + missing.join(', ')); }",
+              "}",
+              "function responseJson() {",
+              "    try { return pm.response.json(); } catch (e) { return {}; }",
+              "}",
+              "function payload() {",
+              "    var json = responseJson();",
+              "    if (json && json.data) { return json.data; }",
+              "    if (json && json.result) { return json.result; }",
+              "    return json || {};",
+              "}",
+              "function pick(obj, keys) {",
+              "    for (var i = 0; i < keys.length; i++) {",
+              "        if (obj && obj[keys[i]] !== undefined && obj[keys[i]] !== null && obj[keys[i]] !== '') { return obj[keys[i]]; }",
+              "    }",
+              "    return undefined;",
+              "}",
+              "function parseMaybeJson(value) {",
+              "    if (!value || typeof value !== 'string') { return value; }",
+              "    try { return JSON.parse(value); } catch (e) { return value; }",
+              "}",
+              "",
+              "pm.test('TC-TUS-001 | HTTP 200/201/204 token use setup succeeds', function () { pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]); });",
+              "pm.test('TC-TUS-001 | token use setup flag is chained', function () { setVar('tokenUseSetupDone', 'true'); pm.expect(getVar('tokenRequestorId')).to.exist; });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "accept",
+            "value": "*/*"
+          },
+          {
+            "key": "X-TV-ID",
+            "value": "{{tvId}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"merchantInfos\": [\n    {\n      \"merchantId\": \"{{generatedMerchantId}}\",\n      \"merchantName\": \"Auto Merchant {{testRunId}}\"\n    }\n  ],\n  \"modeOfTransaction\": \"01\",\n  \"trId\": \"{{tokenRequestorId}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": "{{baseUrl_tvm}}/tvm/api/token-requestor/token-use/setup"
+      },
+      "response": []
+    },
+    {
+      "name": "TC-TLS-001 | Token Life Set-Up | automated chain source step 10",
+      "description": "Authorizes token lifetime for the chained issuer and token requestor.",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "function getVar(key) { return pm.collectionVariables.get(key) || (pm.environment && pm.environment.get ? pm.environment.get(key) : undefined); }",
+              "function setVar(key, value) { if (value !== undefined && value !== null && value !== '') { pm.collectionVariables.set(key, value); if (pm.environment && pm.environment.set) { pm.environment.set(key, value); } } }",
+              "function requireVars(keys) { var missing = keys.filter(function (key) { return !getVar(key); }); if (missing.length) { throw new Error('Missing chained variable(s): ' + missing.join(', ')); } }",
+              "setVar('activeTransportKey', getVar('generatedTransportKey') || getVar('plain_transport_key'));",
+              "requireVars([\"tvId\", \"tokenRequestorId\", \"issuerId\"]);"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "function setVar(key, value) {",
+              "    if (value !== undefined && value !== null && value !== '') {",
+              "        pm.collectionVariables.set(key, value);",
+              "        if (pm.environment && pm.environment.set) { pm.environment.set(key, value); }",
+              "    }",
+              "}",
+              "function getVar(key) {",
+              "    return pm.collectionVariables.get(key) || (pm.environment && pm.environment.get ? pm.environment.get(key) : undefined);",
+              "}",
+              "function requireVars(keys) {",
+              "    var missing = keys.filter(function (key) { return !getVar(key); });",
+              "    if (missing.length) { throw new Error('Missing chained variable(s): ' + missing.join(', ')); }",
+              "}",
+              "function responseJson() {",
+              "    try { return pm.response.json(); } catch (e) { return {}; }",
+              "}",
+              "function payload() {",
+              "    var json = responseJson();",
+              "    if (json && json.data) { return json.data; }",
+              "    if (json && json.result) { return json.result; }",
+              "    return json || {};",
+              "}",
+              "function pick(obj, keys) {",
+              "    for (var i = 0; i < keys.length; i++) {",
+              "        if (obj && obj[keys[i]] !== undefined && obj[keys[i]] !== null && obj[keys[i]] !== '') { return obj[keys[i]]; }",
+              "    }",
+              "    return undefined;",
+              "}",
+              "function parseMaybeJson(value) {",
+              "    if (!value || typeof value !== 'string') { return value; }",
+              "    try { return JSON.parse(value); } catch (e) { return value; }",
+              "}",
+              "",
+              "pm.test('TC-TLS-001 | HTTP 200/201/204 token life setup succeeds', function () { pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]); });",
+              "pm.test('TC-TLS-001 | token life setup flag is chained', function () { setVar('tokenLifeSetupDone', 'true'); pm.expect(getVar('issuerId')).to.exist; });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "accept",
+            "value": "*/*"
+          },
+          {
+            "key": "X-TV-ID",
+            "value": "{{tvId}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"requestorId\": \"{{tokenRequestorId}}\",\n  \"minPeriodInMonths\": 0,\n  \"maxPeriodInMonths\": 70,\n  \"issuerId\": \"{{issuerId}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": "{{baseUrl_tvm}}/tvm/api/token-life/authorization"
+      },
+      "response": []
+    },
+    {
+      "name": "TC-TRS-001 | Token Range Set-Up | automated chain source step 11",
+      "description": "Configures Q2 2027 token range aligned to generatedPanExpiry=05/27.",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "function getVar(key) { return pm.collectionVariables.get(key) || (pm.environment && pm.environment.get ? pm.environment.get(key) : undefined); }",
+              "function setVar(key, value) { if (value !== undefined && value !== null && value !== '') { pm.collectionVariables.set(key, value); if (pm.environment && pm.environment.set) { pm.environment.set(key, value); } } }",
+              "function requireVars(keys) { var missing = keys.filter(function (key) { return !getVar(key); }); if (missing.length) { throw new Error('Missing chained variable(s): ' + missing.join(', ')); } }",
+              "setVar('activeTransportKey', getVar('generatedTransportKey') || getVar('plain_transport_key'));",
+              "requireVars([\"tvId\", \"tokenRequestorId\", \"issuerId\", \"binId\"]);"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "function setVar(key, value) {",
+              "    if (value !== undefined && value !== null && value !== '') {",
+              "        pm.collectionVariables.set(key, value);",
+              "        if (pm.environment && pm.environment.set) { pm.environment.set(key, value); }",
+              "    }",
+              "}",
+              "function getVar(key) {",
+              "    return pm.collectionVariables.get(key) || (pm.environment && pm.environment.get ? pm.environment.get(key) : undefined);",
+              "}",
+              "function requireVars(keys) {",
+              "    var missing = keys.filter(function (key) { return !getVar(key); });",
+              "    if (missing.length) { throw new Error('Missing chained variable(s): ' + missing.join(', ')); }",
+              "}",
+              "function responseJson() {",
+              "    try { return pm.response.json(); } catch (e) { return {}; }",
+              "}",
+              "function payload() {",
+              "    var json = responseJson();",
+              "    if (json && json.data) { return json.data; }",
+              "    if (json && json.result) { return json.result; }",
+              "    return json || {};",
+              "}",
+              "function pick(obj, keys) {",
+              "    for (var i = 0; i < keys.length; i++) {",
+              "        if (obj && obj[keys[i]] !== undefined && obj[keys[i]] !== null && obj[keys[i]] !== '') { return obj[keys[i]]; }",
+              "    }",
+              "    return undefined;",
+              "}",
+              "function parseMaybeJson(value) {",
+              "    if (!value || typeof value !== 'string') { return value; }",
+              "    try { return JSON.parse(value); } catch (e) { return value; }",
+              "}",
+              "",
+              "pm.test('TC-TRS-001 | HTTP 200/201/204 token range setup succeeds', function () { pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]); });",
+              "pm.test('TC-TRS-001 | token range setup flag/id is chained', function () {",
+              "    var body = payload();",
+              "    setVar('tokenRangeId', pick(body, ['tokenRangeId', 'id']));",
+              "    setVar('tokenRangeSetupDone', 'true');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "accept",
+            "value": "*/*"
+          },
+          {
+            "key": "X-TV-ID",
+            "value": "{{tvId}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"tokenRangeSetupList\": [\n    {\n      \"expiry\": {\n        \"quarter\": \"Q2\",\n        \"year\": 2027\n      },\n      \"lowerLimit\": \"{{tokenLowerLimit}}\",\n      \"upperLimit\": \"{{tokenUpperLimit}}\"\n    }\n  ],\n  \"requestorId\": \"{{tokenRequestorId}}\",\n  \"issuerId\": \"{{issuerId}}\",\n  \"binId\": \"{{binId}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": "{{baseUrl_tvm}}/tvm/api/token-range"
+      },
+      "response": []
+    },
+    {
+      "name": "TC-PTR-001 | Prepare-Tokenization-Request Copy | automated chain source step 12",
+      "description": "Encrypts cardholder data using generated PAN; includes pre-request PAN/BIN guard required by the prompt.",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "function getVar(key) { return pm.collectionVariables.get(key) || (pm.environment && pm.environment.get ? pm.environment.get(key) : undefined); }",
+              "function setVar(key, value) { if (value !== undefined && value !== null && value !== '') { pm.collectionVariables.set(key, value); if (pm.environment && pm.environment.set) { pm.environment.set(key, value); } } }",
+              "function requireVars(keys) { var missing = keys.filter(function (key) { return !getVar(key); }); if (missing.length) { throw new Error('Missing chained variable(s): ' + missing.join(', ')); } }",
+              "setVar('activeTransportKey', getVar('generatedTransportKey') || getVar('plain_transport_key'));",
+              "requireVars([\"activeTransportKey\", \"generatedPan\", \"generatedBinValue\", \"generatedPanExpiry\"]);",
+              "var pan = getVar('generatedPan');",
+              "var bin = getVar('generatedBinValue');",
+              "if (pan.indexOf(bin) !== 0) { throw new Error('Prepare Tokenization guard failed: generated PAN does not start with generated BIN'); }"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "function setVar(key, value) {",
+              "    if (value !== undefined && value !== null && value !== '') {",
+              "        pm.collectionVariables.set(key, value);",
+              "        if (pm.environment && pm.environment.set) { pm.environment.set(key, value); }",
+              "    }",
+              "}",
+              "function getVar(key) {",
+              "    return pm.collectionVariables.get(key) || (pm.environment && pm.environment.get ? pm.environment.get(key) : undefined);",
+              "}",
+              "function requireVars(keys) {",
+              "    var missing = keys.filter(function (key) { return !getVar(key); });",
+              "    if (missing.length) { throw new Error('Missing chained variable(s): ' + missing.join(', ')); }",
+              "}",
+              "function responseJson() {",
+              "    try { return pm.response.json(); } catch (e) { return {}; }",
+              "}",
+              "function payload() {",
+              "    var json = responseJson();",
+              "    if (json && json.data) { return json.data; }",
+              "    if (json && json.result) { return json.result; }",
+              "    return json || {};",
+              "}",
+              "function pick(obj, keys) {",
+              "    for (var i = 0; i < keys.length; i++) {",
+              "        if (obj && obj[keys[i]] !== undefined && obj[keys[i]] !== null && obj[keys[i]] !== '') { return obj[keys[i]]; }",
+              "    }",
+              "    return undefined;",
+              "}",
+              "function parseMaybeJson(value) {",
+              "    if (!value || typeof value !== 'string') { return value; }",
+              "    try { return JSON.parse(value); } catch (e) { return value; }",
+              "}",
+              "",
+              "pm.test('TC-PTR-001 | HTTP 200 cardholder data encrypted', function () { pm.expect(pm.response.code).to.eql(200); });",
+              "pm.test('TC-PTR-001 | cipherText and MAC are chained for Tokenize', function () {",
+              "    var body = payload();",
+              "    var cipher = pick(body, ['cipherText', 'ciphertext']);",
+              "    var mac = pick(body, ['mac', 'MAC']);",
+              "    pm.expect(cipher, 'cipherText').to.be.a('string').and.have.length.above(10);",
+              "    pm.expect(mac, 'mac').to.be.a('string').and.have.length.above(5);",
+              "    setVar('toTokenizeCipherText', cipher);",
+              "    setVar('toTokenizeMac', mac);",
+              "    var device = body.deviceInfo || {};",
+              "    setVar('toTokenizeDeviceId', device.deviceId || getVar('deviceId'));",
+              "    setVar('toTokenizeWalletId', device.walletId || getVar('walletId'));",
+              "    setVar('toTokenizeSeId', device.seId || getVar('seId'));",
+              "    setVar('toTokenizeFingerPrint', device.fingerPrint || getVar('fingerPrint'));",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"transportKey\": \"{{activeTransportKey}}\",\n  \"cardHolderData\": {\n    \"name\": \"Auto Cardholder {{testRunId}}\",\n    \"pan\": \"{{generatedPan}}\",\n    \"expiry\": \"{{generatedPanExpiry}}\",\n    \"assuranceInfo\": {\n      \"assuranceMethod\": \"00\",\n      \"data\": {\n        \"billingAddress\": \"Dhaka\",\n        \"cardVerificationNumber\": \"697\"\n      }\n    }\n  },\n  \"deviceInfo\": {\n    \"deviceId\": \"{{deviceId}}\",\n    \"walletId\": \"{{walletId}}\",\n    \"seId\": \"{{seId}}\",\n    \"fingerPrint\": \"{{fingerPrint}}\",\n    \"nfcCapable\": true,\n    \"nfcEnabled\": true\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": "{{baseUrl_mocker_dev}}/api/mocker/encrypt/card-holder-data"
+      },
+      "response": []
+    },
+    {
+      "name": "TC-TOK-001 | Tokenize Copy | automated chain source step 13",
+      "description": "Tokenizes prepared card data using chained X-TSP-TR-ID header; stores tokenized cipher/MAC and direct token if returned.",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "function getVar(key) { return pm.collectionVariables.get(key) || (pm.environment && pm.environment.get ? pm.environment.get(key) : undefined); }",
+              "function setVar(key, value) { if (value !== undefined && value !== null && value !== '') { pm.collectionVariables.set(key, value); if (pm.environment && pm.environment.set) { pm.environment.set(key, value); } } }",
+              "function requireVars(keys) { var missing = keys.filter(function (key) { return !getVar(key); }); if (missing.length) { throw new Error('Missing chained variable(s): ' + missing.join(', ')); } }",
+              "setVar('activeTransportKey', getVar('generatedTransportKey') || getVar('plain_transport_key'));",
+              "requireVars([\"tokenRequestorId\", \"toTokenizeCipherText\", \"toTokenizeMac\"]);"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "function setVar(key, value) {",
+              "    if (value !== undefined && value !== null && value !== '') {",
+              "        pm.collectionVariables.set(key, value);",
+              "        if (pm.environment && pm.environment.set) { pm.environment.set(key, value); }",
+              "    }",
+              "}",
+              "function getVar(key) {",
+              "    return pm.collectionVariables.get(key) || (pm.environment && pm.environment.get ? pm.environment.get(key) : undefined);",
+              "}",
+              "function requireVars(keys) {",
+              "    var missing = keys.filter(function (key) { return !getVar(key); });",
+              "    if (missing.length) { throw new Error('Missing chained variable(s): ' + missing.join(', ')); }",
+              "}",
+              "function responseJson() {",
+              "    try { return pm.response.json(); } catch (e) { return {}; }",
+              "}",
+              "function payload() {",
+              "    var json = responseJson();",
+              "    if (json && json.data) { return json.data; }",
+              "    if (json && json.result) { return json.result; }",
+              "    return json || {};",
+              "}",
+              "function pick(obj, keys) {",
+              "    for (var i = 0; i < keys.length; i++) {",
+              "        if (obj && obj[keys[i]] !== undefined && obj[keys[i]] !== null && obj[keys[i]] !== '') { return obj[keys[i]]; }",
+              "    }",
+              "    return undefined;",
+              "}",
+              "function parseMaybeJson(value) {",
+              "    if (!value || typeof value !== 'string') { return value; }",
+              "    try { return JSON.parse(value); } catch (e) { return value; }",
+              "}",
+              "",
+              "pm.test('TC-TOK-001 | HTTP 200/201 tokenization succeeds', function () { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });",
+              "pm.test('TC-TOK-001 | tokenized cipherText and MAC are chained', function () {",
+              "    var body = payload();",
+              "    var cipher = pick(body, ['cipherText', 'ciphertext']);",
+              "    var mac = pick(body, ['mac', 'MAC']);",
+              "    pm.expect(cipher, 'tokenized cipherText').to.be.a('string').and.have.length.above(10);",
+              "    setVar('tokenizedCipherText', cipher);",
+              "    setVar('tokenizedMac', mac);",
+              "    setVar('provisionedToken', pick(body, ['token', 'paymentToken', 'provisionedToken']));",
+              "    setVar('provisionedTokenExpiry', pick(body, ['tokenExpiry', 'expiry']) || getVar('generatedPanExpiry'));",
+              "});",
+              "pm.test('TC-TOK-001 | X-TSP-TR-ID header uses chained tokenRequestorId', function () { pm.expect(pm.request.headers.get('X-TSP-TR-ID')).to.eql(getVar('tokenRequestorId')); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "accept",
+            "value": "*/*"
+          },
+          {
+            "key": "X-TSP-TR-ID",
+            "value": "{{tokenRequestorId}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"cipherText\": \"{{toTokenizeCipherText}}\",\n  \"deviceInfo\": {\n    \"deviceId\": \"{{toTokenizeDeviceId}}\",\n    \"walletId\": \"{{toTokenizeWalletId}}\",\n    \"seId\": \"{{toTokenizeSeId}}\",\n    \"fingerPrint\": \"{{toTokenizeFingerPrint}}\"\n  },\n  \"mac\": \"{{toTokenizeMac}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": "{{baseUrl_tsp}}/api/tokens/tokenize"
+      },
+      "response": []
+    },
+    {
+      "name": "TC-DEC-001 | Tokenized-CipherText-Decryption Copy | automated chain source step 14",
+      "description": "Decrypts tokenized cipherText and extracts provisioned token for detokenization.",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "function getVar(key) { return pm.collectionVariables.get(key) || (pm.environment && pm.environment.get ? pm.environment.get(key) : undefined); }",
+              "function setVar(key, value) { if (value !== undefined && value !== null && value !== '') { pm.collectionVariables.set(key, value); if (pm.environment && pm.environment.set) { pm.environment.set(key, value); } } }",
+              "function requireVars(keys) { var missing = keys.filter(function (key) { return !getVar(key); }); if (missing.length) { throw new Error('Missing chained variable(s): ' + missing.join(', ')); } }",
+              "setVar('activeTransportKey', getVar('generatedTransportKey') || getVar('plain_transport_key'));",
+              "requireVars([\"tokenizedCipherText\", \"activeTransportKey\"]);"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "function setVar(key, value) {",
+              "    if (value !== undefined && value !== null && value !== '') {",
+              "        pm.collectionVariables.set(key, value);",
+              "        if (pm.environment && pm.environment.set) { pm.environment.set(key, value); }",
+              "    }",
+              "}",
+              "function getVar(key) {",
+              "    return pm.collectionVariables.get(key) || (pm.environment && pm.environment.get ? pm.environment.get(key) : undefined);",
+              "}",
+              "function requireVars(keys) {",
+              "    var missing = keys.filter(function (key) { return !getVar(key); });",
+              "    if (missing.length) { throw new Error('Missing chained variable(s): ' + missing.join(', ')); }",
+              "}",
+              "function responseJson() {",
+              "    try { return pm.response.json(); } catch (e) { return {}; }",
+              "}",
+              "function payload() {",
+              "    var json = responseJson();",
+              "    if (json && json.data) { return json.data; }",
+              "    if (json && json.result) { return json.result; }",
+              "    return json || {};",
+              "}",
+              "function pick(obj, keys) {",
+              "    for (var i = 0; i < keys.length; i++) {",
+              "        if (obj && obj[keys[i]] !== undefined && obj[keys[i]] !== null && obj[keys[i]] !== '') { return obj[keys[i]]; }",
+              "    }",
+              "    return undefined;",
+              "}",
+              "function parseMaybeJson(value) {",
+              "    if (!value || typeof value !== 'string') { return value; }",
+              "    try { return JSON.parse(value); } catch (e) { return value; }",
+              "}",
+              "",
+              "pm.test('TC-DEC-001 | HTTP 200 tokenized cipherText decrypts', function () { pm.expect(pm.response.code).to.eql(200); });",
+              "pm.test('TC-DEC-001 | decrypted token is chained when present', function () {",
+              "    var body = payload();",
+              "    var plain = pick(body, ['plainText', 'plaintext', 'data']) || body;",
+              "    var parsed = parseMaybeJson(plain);",
+              "    var token = typeof parsed === 'object' ? pick(parsed, ['token', 'paymentToken', 'provisionedToken']) : undefined;",
+              "    var expiry = typeof parsed === 'object' ? pick(parsed, ['tokenExpiry', 'expiry']) : undefined;",
+              "    setVar('tokenizedPlainText', typeof plain === 'string' ? plain : JSON.stringify(plain));",
+              "    setVar('provisionedToken', token || getVar('provisionedToken'));",
+              "    setVar('provisionedTokenExpiry', expiry || getVar('provisionedTokenExpiry') || getVar('generatedPanExpiry'));",
+              "    pm.expect(getVar('provisionedToken'), 'provisioned token from tokenize or decryption').to.exist;",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "accept",
+            "value": "*/*"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"cipherText\": \"{{tokenizedCipherText}}\",\n  \"transportKey\": \"{{activeTransportKey}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": "{{baseUrl_mocker_dev}}/api/decryption"
+      },
+      "response": []
+    },
+    {
+      "name": "TC-MAC-001 | Tokenized-Mac-Validation Copy | automated chain source step 15",
+      "description": "Validates the MAC returned by Tokenize before detokenization.",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "function getVar(key) { return pm.collectionVariables.get(key) || (pm.environment && pm.environment.get ? pm.environment.get(key) : undefined); }",
+              "function setVar(key, value) { if (value !== undefined && value !== null && value !== '') { pm.collectionVariables.set(key, value); if (pm.environment && pm.environment.set) { pm.environment.set(key, value); } } }",
+              "function requireVars(keys) { var missing = keys.filter(function (key) { return !getVar(key); }); if (missing.length) { throw new Error('Missing chained variable(s): ' + missing.join(', ')); } }",
+              "setVar('activeTransportKey', getVar('generatedTransportKey') || getVar('plain_transport_key'));",
+              "requireVars([\"tokenizedCipherText\", \"activeTransportKey\", \"tokenizedMac\"]);"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "function setVar(key, value) {",
+              "    if (value !== undefined && value !== null && value !== '') {",
+              "        pm.collectionVariables.set(key, value);",
+              "        if (pm.environment && pm.environment.set) { pm.environment.set(key, value); }",
+              "    }",
+              "}",
+              "function getVar(key) {",
+              "    return pm.collectionVariables.get(key) || (pm.environment && pm.environment.get ? pm.environment.get(key) : undefined);",
+              "}",
+              "function requireVars(keys) {",
+              "    var missing = keys.filter(function (key) { return !getVar(key); });",
+              "    if (missing.length) { throw new Error('Missing chained variable(s): ' + missing.join(', ')); }",
+              "}",
+              "function responseJson() {",
+              "    try { return pm.response.json(); } catch (e) { return {}; }",
+              "}",
+              "function payload() {",
+              "    var json = responseJson();",
+              "    if (json && json.data) { return json.data; }",
+              "    if (json && json.result) { return json.result; }",
+              "    return json || {};",
+              "}",
+              "function pick(obj, keys) {",
+              "    for (var i = 0; i < keys.length; i++) {",
+              "        if (obj && obj[keys[i]] !== undefined && obj[keys[i]] !== null && obj[keys[i]] !== '') { return obj[keys[i]]; }",
+              "    }",
+              "    return undefined;",
+              "}",
+              "function parseMaybeJson(value) {",
+              "    if (!value || typeof value !== 'string') { return value; }",
+              "    try { return JSON.parse(value); } catch (e) { return value; }",
+              "}",
+              "",
+              "pm.test('TC-MAC-001 | HTTP 200 MAC validation succeeds', function () { pm.expect(pm.response.code).to.eql(200); });",
+              "pm.test('TC-MAC-001 | MAC validation response is positive when flag returned', function () {",
+              "    var body = payload();",
+              "    var valid = pick(body, ['valid', 'isValid', 'macValid', 'verified']);",
+              "    if (valid !== undefined) { pm.expect(valid).to.be.oneOf([true, 'true', 'VALID', 'valid']); }",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "accept",
+            "value": "*/*"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"plainText\": \"{{tokenizedCipherText}}\",\n  \"transportKey\": \"{{activeTransportKey}}\",\n  \"mac\": \"{{tokenizedMac}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": "{{baseUrl_mocker_dev}}/api/validate-mac"
+      },
+      "response": []
+    },
+    {
+      "name": "TC-DTK-001 | TVM-Detokenize-Issuer-Verify-Mode Copy | automated chain source step 16",
+      "description": "Uses chained X-TV-ID and tokenRequestorId to detokenize issuer VERIFY mode; stores detokenization cipherText.",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "function getVar(key) { return pm.collectionVariables.get(key) || (pm.environment && pm.environment.get ? pm.environment.get(key) : undefined); }",
+              "function setVar(key, value) { if (value !== undefined && value !== null && value !== '') { pm.collectionVariables.set(key, value); if (pm.environment && pm.environment.set) { pm.environment.set(key, value); } } }",
+              "function requireVars(keys) { var missing = keys.filter(function (key) { return !getVar(key); }); if (missing.length) { throw new Error('Missing chained variable(s): ' + missing.join(', ')); } }",
+              "setVar('activeTransportKey', getVar('generatedTransportKey') || getVar('plain_transport_key'));",
+              "requireVars([\"tvId\", \"tokenRequestorId\", \"provisionedToken\", \"provisionedTokenExpiry\"]);"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "function setVar(key, value) {",
+              "    if (value !== undefined && value !== null && value !== '') {",
+              "        pm.collectionVariables.set(key, value);",
+              "        if (pm.environment && pm.environment.set) { pm.environment.set(key, value); }",
+              "    }",
+              "}",
+              "function getVar(key) {",
+              "    return pm.collectionVariables.get(key) || (pm.environment && pm.environment.get ? pm.environment.get(key) : undefined);",
+              "}",
+              "function requireVars(keys) {",
+              "    var missing = keys.filter(function (key) { return !getVar(key); });",
+              "    if (missing.length) { throw new Error('Missing chained variable(s): ' + missing.join(', ')); }",
+              "}",
+              "function responseJson() {",
+              "    try { return pm.response.json(); } catch (e) { return {}; }",
+              "}",
+              "function payload() {",
+              "    var json = responseJson();",
+              "    if (json && json.data) { return json.data; }",
+              "    if (json && json.result) { return json.result; }",
+              "    return json || {};",
+              "}",
+              "function pick(obj, keys) {",
+              "    for (var i = 0; i < keys.length; i++) {",
+              "        if (obj && obj[keys[i]] !== undefined && obj[keys[i]] !== null && obj[keys[i]] !== '') { return obj[keys[i]]; }",
+              "    }",
+              "    return undefined;",
+              "}",
+              "function parseMaybeJson(value) {",
+              "    if (!value || typeof value !== 'string') { return value; }",
+              "    try { return JSON.parse(value); } catch (e) { return value; }",
+              "}",
+              "",
+              "pm.test('TC-DTK-001 | HTTP 200 detokenization succeeds', function () { pm.expect(pm.response.code).to.eql(200); });",
+              "pm.test('TC-DTK-001 | detokenization cipherText is chained', function () {",
+              "    var body = payload();",
+              "    var cipher = pick(body, ['cipherText', 'ciphertext']);",
+              "    pm.expect(cipher, 'detokenization cipherText').to.be.a('string').and.have.length.above(10);",
+              "    setVar('detokenizationCipherText', cipher);",
+              "});",
+              "pm.test('TC-DTK-001 | X-TV-ID header uses chained tvId', function () { pm.expect(pm.request.headers.get('X-TV-ID')).to.eql(getVar('tvId')); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "accept",
+            "value": "*/*"
+          },
+          {
+            "key": "X-TV-ID",
+            "value": "{{tvId}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"mode\": \"VERIFY\",\n  \"token\": \"{{provisionedToken}}\",\n  \"tokenExpiry\": \"{{provisionedTokenExpiry}}\",\n  \"tokenRequestorId\": {{tokenRequestorId}},\n  \"txData\": {\n    \"posEntryMode\": \"07\",\n    \"merchantId\": \"{{generatedMerchantId}}\"\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": "{{baseUrl_tvm}}/tvm/api/tokens/de-tokenize/issuer"
+      },
+      "response": []
+    },
+    {
+      "name": "TC-DDC-001 | Detokenization-CipherText-Decryption Copy | automated chain source step 17",
+      "description": "Decrypts detokenization response and validates the original PAN is recovered when present.",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "function getVar(key) { return pm.collectionVariables.get(key) || (pm.environment && pm.environment.get ? pm.environment.get(key) : undefined); }",
+              "function setVar(key, value) { if (value !== undefined && value !== null && value !== '') { pm.collectionVariables.set(key, value); if (pm.environment && pm.environment.set) { pm.environment.set(key, value); } } }",
+              "function requireVars(keys) { var missing = keys.filter(function (key) { return !getVar(key); }); if (missing.length) { throw new Error('Missing chained variable(s): ' + missing.join(', ')); } }",
+              "setVar('activeTransportKey', getVar('generatedTransportKey') || getVar('plain_transport_key'));",
+              "requireVars([\"detokenizationCipherText\", \"activeTransportKey\"]);"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "function setVar(key, value) {",
+              "    if (value !== undefined && value !== null && value !== '') {",
+              "        pm.collectionVariables.set(key, value);",
+              "        if (pm.environment && pm.environment.set) { pm.environment.set(key, value); }",
+              "    }",
+              "}",
+              "function getVar(key) {",
+              "    return pm.collectionVariables.get(key) || (pm.environment && pm.environment.get ? pm.environment.get(key) : undefined);",
+              "}",
+              "function requireVars(keys) {",
+              "    var missing = keys.filter(function (key) { return !getVar(key); });",
+              "    if (missing.length) { throw new Error('Missing chained variable(s): ' + missing.join(', ')); }",
+              "}",
+              "function responseJson() {",
+              "    try { return pm.response.json(); } catch (e) { return {}; }",
+              "}",
+              "function payload() {",
+              "    var json = responseJson();",
+              "    if (json && json.data) { return json.data; }",
+              "    if (json && json.result) { return json.result; }",
+              "    return json || {};",
+              "}",
+              "function pick(obj, keys) {",
+              "    for (var i = 0; i < keys.length; i++) {",
+              "        if (obj && obj[keys[i]] !== undefined && obj[keys[i]] !== null && obj[keys[i]] !== '') { return obj[keys[i]]; }",
+              "    }",
+              "    return undefined;",
+              "}",
+              "function parseMaybeJson(value) {",
+              "    if (!value || typeof value !== 'string') { return value; }",
+              "    try { return JSON.parse(value); } catch (e) { return value; }",
+              "}",
+              "",
+              "pm.test('TC-DDC-001 | HTTP 200 detokenization cipherText decrypts', function () { pm.expect(pm.response.code).to.eql(200); });",
+              "pm.test('TC-DDC-001 | decrypted PAN matches generated PAN when returned', function () {",
+              "    var body = payload();",
+              "    var plain = pick(body, ['plainText', 'plaintext', 'data']) || body;",
+              "    var parsed = parseMaybeJson(plain);",
+              "    var pan = typeof parsed === 'object' ? pick(parsed, ['pan', 'accountNumber', 'originalPan']) : undefined;",
+              "    setVar('detokenizedPlainText', typeof plain === 'string' ? plain : JSON.stringify(plain));",
+              "    if (pan) { pm.expect(pan).to.eql(getVar('generatedPan')); } else { pm.expect(pm.response.code).to.eql(200); }",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "accept",
+            "value": "*/*"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"cipherText\": \"{{detokenizationCipherText}}\",\n  \"transportKey\": \"{{activeTransportKey}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": "{{baseUrl_mocker_dev}}/api/decryption"
+      },
+      "response": []
+    }
+  ]
+}
